@@ -22,7 +22,7 @@ RDLogger.DisableLog('rdApp.*')
 
 D_FEATS = ['psim', 'prank', 'pnm', 'site', 'site_tot', 'n_shift', 'n_unshift', 'steps', 'n_prod_parent', 'abs_delta',
            'delta_sign', 'parent_ha', 'n_parents', 'best_psim', 'psim_gap']
-C_FEATS = ['cscore', 'evA', 'evB', 'cntA', 'cntB', 'pair_rank', 'n_pairs', 'is_amide', 'mA', 'mB', 'n_prod_pair'] + \
+C_FEATS = ['cscore', 'evA', 'evB', 'cntA', 'cntB', 'pair_rank', 'n_pairs', 'is_amide', 'is_glyco', 'mA', 'mB', 'n_prod_pair'] + \
           [f'eA{i}' for i in range(6)] + [f'eB{i}' for i in range(6)]
 Q_FEATS = ['M', 'n_spec', 'has_pos', 'is_d', 'ha', 'n_d', 'n_c']
 T_FEATS = [f't_{n}' for n in _TRANSFORMS]
@@ -41,8 +41,9 @@ def std_ik14(smi):
 
 class NovelEngine:
     def __init__(self, analog_lib: AnalogLib, blocks: BlockLib, pubchem: KeySet, known_keys: KeySet, key_mass: dict,
-                 n_parents=20, n_pairs=40, model=None):
+                 n_parents=20, n_pairs=40, model=None, mode='novel'):
         self.L, self.B, self.pc, self.known = analog_lib, blocks, pubchem, known_keys
+        self.mode = mode          # 'novel': drop PubChem/known structures; 'known': keep only those; 'all'
         self.key_mass = key_mass
         self.n_parents, self.n_pairs = n_parents, n_pairs
         self.model = model
@@ -125,7 +126,7 @@ class NovelEngine:
                 if smi in rows:
                     continue
                 r = dict(smiles=smi, src='c', cscore=p['score'], evA=p['evA'], evB=p['evB'], cntA=np.log1p(p['cntA']),
-                         cntB=np.log1p(p['cntB']), pair_rank=r_, n_pairs=p['n_pairs'], is_amide=float(link == 'amide'),
+                         cntB=np.log1p(p['cntB']), pair_rank=r_, n_pairs=p['n_pairs'], is_amide=float(link == 'amide'), is_glyco=float(link == 'glyco'),
                          mA=p['mA'], mB=p['mB'], n_prod_pair=len(prods), h=p['score'] - 0.3 - 0.02 * r_)
                 for i, v in enumerate(p['evA_vec']):
                     r[f'eA{i}'] = v
@@ -138,10 +139,14 @@ class NovelEngine:
         ks = [std_ik14(s) for s in df.smiles]
         df = df.assign(std=ks)
         df = df[df['std'].notna()]
-        known = self.pc.contains(list(df['std'])) | self.known.contains(list(df['std']))
+        ks = list(df['std'])
+        known = self.pc.contains(ks)
+        for kset in (self.known if isinstance(self.known, (list, tuple)) else [self.known]):
+            known |= kset.contains(ks)
         allow = np.array([k in set(allow_keys) for k in df['std']], bool)
         excl = np.array([k in set(exclude_keys) for k in df['std']], bool)
-        df = df[(~known | allow) & (~excl | allow)].copy()
+        keep = {'novel': ~known, 'known': known, 'all': np.ones(len(known), bool)}[self.mode]
+        df = df[(keep | allow) & (~excl | allow)].copy()
         df['ha'] = [Chem.MolFromSmiles(s).GetNumHeavyAtoms() for s in df.smiles]
         df['key'] = [key14(s) for s in df.smiles]
         df = df[df.key.notna()].sort_values('h', ascending=False).drop_duplicates('key')

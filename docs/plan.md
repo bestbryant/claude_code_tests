@@ -37,7 +37,14 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | date | kernel | what | public |
 |---|---|---|---|
 | 10-17 | casmi26-s2s-fork v1 | unchanged fork of dmitriigluzdov s2s (E006 lineage, v51 = 0.450), image pinned | pending |
-| 10-17 | casmi26-novel-probe v2 | ONLY novel candidates (class-3 reach probe) | pending |
+| 10-17 | casmi26-novel-probe v2 | ONLY novel candidates (class-3 reach probe) | 0.010 |
+
+## Lesson from the class-3 probe (Oct 17)
+The novel-only list scored 0.010 public, against ~0.045 expected from the PubChem-absent proxy (MRR 0.10 x ~45% class 3).
+The proxy overstates reach ~4-5x: absent training molecules (reverse-metabolomics conjugates, synthetic analogs) are
+much easier than Enveda's novel test compounds. Class 3 via analog derivation/conjugation is worth at most ~0.005-0.01
+as an overlay. Pivot: use the same machinery (analog derivation + site localisation) for class-2 isomer ranking
+(known-only probe pending).
 
 ## Compliance notes (public pipeline we forked)
 - ICEBERG/GLACIER: MassSpecGym checkpoints (allowed).

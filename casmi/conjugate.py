@@ -120,6 +120,7 @@ def candidate_pairs(lib: BlockLib, M, qmz, qit, positive=True, tol_da=0.004, top
 _RX = {
     'amide': AllChem.ReactionFromSmarts('[C:1](=[O:2])[OH].[N;!H0;!$(NC=O):3]>>[C:1](=[O:2])[N:3]'),
     'ester': AllChem.ReactionFromSmarts('[C:1](=[O:2])[OH].[O;H1;!$(OC=O):3][#6:4]>>[C:1](=[O:2])[O:3][#6:4]'),
+    'glyco': AllChem.ReactionFromSmarts('[C;R:1]([O;R:5])[OH].[O;H1;!$(OC=O):3][#6:4]>>[C:1]([O:5])[O:3][#6:4]'),
 }
 
 

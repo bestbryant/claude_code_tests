@@ -44,13 +44,20 @@ def main(argv):
     S = structures(train_p)
     build_analog_lib(train_p, f'{work}/analog_lib.npz')
     P = hydrolyse_all(S, procs=procs)
+    extra_pieces = os.path.join(os.path.dirname(pck), 'blocks_pieces_coconut.parquet')
+    if os.path.exists(extra_pieces):           # natural-product building blocks mined from COCONUT
+        P = pd.concat([P, pd.read_parquet(extra_pieces)], ignore_index=True)
     print('novel resources', f'{time.time()-t0:.0f}s', flush=True)
     model = None
     if model_p:
         import lightgbm as lgb
         model = lgb.Booster(model_file=model_p)
+    known = [KeySet(np.unique(pack(list(S.inchikey14))))]
+    coco = os.path.join(os.path.dirname(pck), 'coconut_keys_u64.npy')
+    if os.path.exists(coco):
+        known.append(KeySet.load(coco))
     E = NovelEngine(AnalogLib(f'{work}/analog_lib.npz'), BlockLib(P, min_count=1), KeySet.load(pck),
-                    KeySet(np.unique(pack(list(S.inchikey14)))), dict(zip(S.inchikey14, S.mass)), model=model)
+                    known, dict(zip(S.inchikey14, S.mass)), model=model, mode=os.environ.get('CASMI_NOVEL_MODE', 'novel'))
     TEST = pd.read_parquet(test_p)
     mids = list(dict.fromkeys(TEST.molecule_id.astype(str)))
     TEST['molecule_id'] = TEST.molecule_id.astype(str)
