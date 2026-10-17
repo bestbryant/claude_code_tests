@@ -10,8 +10,12 @@ LOCAL = os.environ.get('CASMI_LOCAL') == '1'
 if not LOCAL:
     whl = [w for w in glob.glob('/kaggle/input/**/rdkit-2026.3.3-*.whl', recursive=True) if tag in w]
     subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-index', '--no-deps', whl[0]], check=True)
-CODE = os.environ.get('CASMI_CODE') or os.path.dirname(os.path.dirname(
-    sorted(glob.glob('/kaggle/input/**/casmi/novel.py', recursive=True), key=len)[0]))
+CODE = os.environ.get('CASMI_CODE')
+if not CODE:   # the dataset may mount the package flat; copy it into a 'casmi' package dir
+    import shutil
+    src = os.path.dirname(sorted(glob.glob('/kaggle/input/**/novel.py', recursive=True), key=len)[0])
+    CODE = '/kaggle/working/pkg'
+    shutil.copytree(src, f'{CODE}/casmi', dirs_exist_ok=True)
 sys.path.insert(0, CODE)
 import numpy as np, pandas as pd
 from multiprocessing import Pool

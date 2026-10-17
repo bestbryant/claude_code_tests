@@ -50,6 +50,12 @@ _TRANSFORMS: Dict[str, Tuple[str, Dict[str, int]]] = {
     'caffeoyl_O': ('[O;H1;!$(OC=O):1]>>[O:1]C(=O)C=Cc1ccc(O)c(O)c1', dict(C=9, H=6, O=3)),
     'galloyl_O': ('[O;H1;!$(OC=O):1]>>[O:1]C(=O)c1cc(O)c(O)c(O)c1', dict(C=7, H=4, O=4)),
     'benzoyl_O': ('[O;H1;!$(OC=O):1]>>[O:1]C(=O)c1ccccc1', dict(C=7, H=4, O=1)),
+    # chain homologation / branching (homolog series are common among novel conjugates and lipids)
+    'chain_ext': ('[C;H2;!R:1]-[C;!R;!$(C=O):2]>>[C:1]C[C:2]', dict(C=1, H=2)),
+    'hydroxymethyl_c': ('[c;H1:1]>>[c:1]CO', dict(C=1, H=2, O=1)),
+    'methyl_C': ('[C;H2,H1;!$(C=O);!$(C-[O,N]):1]>>[C:1]C', dict(C=1, H=2)),
+    'fluoro_c': ('[c;H1:1]>>[c:1]F', dict(F=1, H=-1)),
+    'dbond_shift': ('[C:1]=[C;!R:2]-[C;H2;!R:3]>>[C:1]-[C:2]=[C:3]', dict()),
     # removals
     'demethyl_O': ('[O:1][CH3]>>[O:1]', dict(C=-1, H=-2)),
     'demethyl_N': ('[N:1][CH3]>>[N:1]', dict(C=-1, H=-2)),
@@ -65,6 +71,9 @@ _TRANSFORMS: Dict[str, Tuple[str, Dict[str, int]]] = {
     'deprenyl': ('[c:1]CC=C(C)C>>[c:1]', dict(C=-5, H=-8)),
     'decarboxyl': ('[C,c:1]C(=O)[OH]>>[C,c:1]', dict(C=-1, O=-2)),
     'demethoxy': ('[c:1]O[CH3]>>[c:1]', dict(C=-1, H=-2, O=-1)),
+    'chain_short': ('[C;!R:1]-[C;H2;!R]-[C;!R:2]>>[C:1][C:2]', dict(C=-1, H=-2)),
+    'demethyl_C': ('[C:1]-[C;H3]>>[C:1]', dict(C=-1, H=-2)),
+    'defluoro': ('[c:1]F>>[c:1]', dict(F=-1, H=1)),
 }
 
 

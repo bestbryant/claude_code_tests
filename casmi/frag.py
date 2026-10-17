@@ -53,7 +53,7 @@ def fragments(mol, max_cuts=2, max_frags=4000):
         if len(cs) == 2:
             for c in cs:
                 res.setdefault(c, 1)
-    if max_cuts >= 2:
+    if max_cuts >= 2 and len(chain) <= 45:
         pairs = []
         for x in range(len(chain)):
             for y in range(x + 1, len(chain)):

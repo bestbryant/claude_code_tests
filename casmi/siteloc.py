@@ -4,18 +4,33 @@ Parent peaks that reappear unshifted in the query come from fragments that do no
 peaks that reappear shifted by delta come from fragments that do. A candidate site is scored by how many
 (intensity-weighted) parent peaks have an explaining fragment consistent with that pattern.
 """
+from collections import OrderedDict
+
 import numpy as np
 
 from .frag import fragments, annotate
 from .spectra import modcos_shifted_flags
 
+_FCACHE = OrderedDict()
+
+
+def _frags_cached(mol, key):
+    """Fragments of `mol`; `key` must identify the molecule with this exact atom order (e.g. its input SMILES)."""
+    if key is None:
+        return fragments(mol)
+    if key not in _FCACHE:
+        _FCACHE[key] = fragments(mol)
+        if len(_FCACHE) > 4096:
+            _FCACHE.popitem(last=False)
+    return _FCACHE[key]
+
 
 class ParentEvidence:
-    def __init__(self, parent_mol, pmz, pit, qmz, qit, delta, positive=True, tol=0.01):
+    def __init__(self, parent_mol, pmz, pit, qmz, qit, delta, positive=True, tol=0.01, cache_key=None):
         self.flags, self.w = modcos_shifted_flags(pmz.astype(np.float64), pit.astype(np.float64),
                                                   qmz.astype(np.float64), qit.astype(np.float64), delta, tol)
         idx = np.where(self.flags > 0)[0]
-        self.frags = fragments(parent_mol) if len(idx) else []
+        self.frags = _frags_cached(parent_mol, cache_key) if len(idx) else []
         ann = annotate(self.frags, pmz[idx], positive, tol) if len(idx) else []
         self.peaks = [(int(self.flags[i]), float(self.w[i]), [a[0] for a in ann[t]]) for t, i in enumerate(idx) if ann[t]]
         self.n_shift = int((self.flags == 2).sum()); self.n_unshift = int((self.flags == 1).sum())

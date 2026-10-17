@@ -73,42 +73,48 @@ def _mass(s):
 
 
 def ion_evidence(masses, ions, qmz, qit, tol=0.01):
-    """Vector of summed query intensity matched by each piece's ion series (each query peak counted once per piece)."""
-    ev = np.zeros(len(masses))
-    for off in ions:
+    """(n_pieces, n_ion_types) matrix: max query intensity matched by each ion type of each piece."""
+    ev = np.zeros((len(masses), len(ions)))
+    if len(qmz) == 0:
+        return ev
+    for c, off in enumerate(ions):
         t = masses + off
         lo = np.searchsorted(qmz, t - tol); hi = np.searchsorted(qmz, t + tol)
-        has = hi > lo
-        if has.any():
-            # max intensity within the window
-            cs = np.maximum.reduceat(np.append(qit, 0), np.minimum(lo, len(qit))) if False else None
-            v = np.array([qit[a:b].max() if b > a else 0.0 for a, b in zip(lo[has], hi[has])])
-            ev[has] += v
+        for r in np.where(hi > lo)[0]:
+            ev[r, c] = qit[lo[r]:hi[r]].max()
     return ev
 
 
 def candidate_pairs(lib: BlockLib, M, qmz, qit, positive=True, tol_da=0.004, top=200, w_prior=0.15, counts=None):
-    """Ranked (score, acid_smiles, partner_smiles) for neutral mass M."""
+    """Ranked list of dict(score, acid, partner, evA, evB, cntA, cntB, evA_vec, evB_vec) for neutral mass M."""
     A, B = dict(lib.acids), dict(lib.parts)
     if counts is not None:
         A['cnt'], B['cnt'] = counts
     ions = ION_POS if positive else ION_NEG
-    evA = ion_evidence(A['mass'], ions['acid'], qmz, qit)
-    evB = ion_evidence(B['mass'], ions['partner'], qmz, qit)
+    EA = ion_evidence(A['mass'], ions['acid'], qmz, qit)
+    EB = ion_evidence(B['mass'], ions['partner'], qmz, qit)
+    evA, evB = EA.sum(1), EB.sum(1)
     out = []
     target = M + H2O
+    lcA, lcB = np.log1p(np.maximum(A['cnt'], 0)), np.log1p(np.maximum(B['cnt'], 0))
     for i in range(len(A['mass'])):
         need = target - A['mass'][i]
         if need < 14:
             break
+        if A['cnt'][i] <= 0:
+            continue
         lo = np.searchsorted(B['mass'], need - tol_da); hi = np.searchsorted(B['mass'], need + tol_da)
         for j in range(lo, hi):
-            if A['cnt'][i] <= 0 or B['cnt'][j] <= 0:
+            if B['cnt'][j] <= 0:
                 continue
-            s = evA[i] + evB[j] + w_prior * (np.log1p(A['cnt'][i]) + np.log1p(B['cnt'][j]))
-            out.append((s, i, j))
+            out.append((evA[i] + evB[j] + w_prior * (lcA[i] + lcB[j]), i, j))
     out.sort(key=lambda x: -x[0])
-    return [(s, A['smiles'][i], B['smiles'][j], evA[i], evB[j]) for s, i, j in out[:top]]
+    res = []
+    for s, i, j in out[:top]:
+        res.append(dict(score=s, acid=A['smiles'][i], partner=B['smiles'][j], evA=evA[i], evB=evB[j],
+                        cntA=A['cnt'][i], cntB=B['cnt'][j], evA_vec=EA[i], evB_vec=EB[j],
+                        mA=A['mass'][i], mB=B['mass'][j], n_pairs=len(out)))
+    return res
 
 
 _RX = {
@@ -118,10 +124,11 @@ _RX = {
 
 
 def join(acid, partner, max_products=24):
+    """Products of joining acid and partner: list of (smiles, linkage)."""
     a, b = Chem.MolFromSmiles(acid), Chem.MolFromSmiles(partner)
     if a is None or b is None:
         return []
-    out = []
+    out, seen = [], set()
     for name, rx in _RX.items():
         try:
             prods = rx.RunReactants((a, b))
@@ -132,8 +139,8 @@ def join(acid, partner, max_products=24):
                 m = p[0]; Chem.SanitizeMol(m); s = Chem.MolToSmiles(m)
             except Exception:
                 continue
-            if s not in out:
-                out.append(s)
+            if s not in seen:
+                seen.add(s); out.append((s, name))
             if len(out) >= max_products:
                 return out
     return out
