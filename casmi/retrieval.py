@@ -33,13 +33,14 @@ def tanimoto_packed(a, B):
 
 
 class Retrieval:
-    def __init__(self, pool_dir, analog_lib: AnalogLib, prior_path=None, ppm=10.0, min_da=0.002):
+    def __init__(self, pool_dir, analog_lib: AnalogLib, prior_path=None, ppm=10.0, min_da=0.002, lib_full=None):
         self.P = pd.read_parquet(f'{pool_dir}/pool.parquet')
         self.fp = np.load(f'{pool_dir}/pool_fp.npy', mmap_mode='r')
         self.mass = self.P.mass.values
         self.key_idx = {k: i for i, k in enumerate(self.P.key.values)}
         self.L = analog_lib
-        self.lib_of = pd.Series(np.arange(len(analog_lib.key))).groupby(analog_lib.key).apply(list).to_dict()
+        self.LF = lib_full if lib_full is not None else analog_lib     # direct library matching (more spectra)
+        self.lib_of = pd.Series(np.arange(len(self.LF.key))).groupby(self.LF.key).apply(list).to_dict()
         self.ppm, self.min_da = ppm, min_da
         pri = np.zeros((len(self.P), len(PRIOR_COLS)))
         if prior_path:
@@ -83,14 +84,15 @@ class Retrieval:
         for c, k in enumerate(keys):
             if k in hide:
                 continue
+            LF = self.LF
             for j in self.lib_of.get(k, ()):
-                if int(L.row[j]) in hrows:
+                if int(LF.row[j]) in hrows:
                     continue
-                a, b = L.off[j], L.off[j + 1]
+                a, b = LF.off[j], LF.off[j + 1]
                 for q in Q:
-                    if q['pol'] != L.pol[j]:
+                    if q['pol'] != LF.pol[j]:
                         continue
-                    s = entropy_sim(q['mz'], q['it'], L.mz[a:b], L.it[a:b], 0.01)
+                    s = entropy_sim(q['mz'], q['it'], LF.mz[a:b], LF.it[a:b], 0.01)
                     if s > lib[c]:
                         lib[c] = s
                     lib_n[c] += 1
