@@ -47,10 +47,21 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
 (known-only probe pending).
 
 ## Compliance notes (public pipeline we forked)
-- ICEBERG/GLACIER: MassSpecGym checkpoints (allowed).
-- prvsiyan rank_train.npz (engine-2 ranker rows): construction method unpublished -> reproducibility risk.
-- ahmedberatozer FPNet/ranker weights: code shipped in dataset; training reproducibility to verify.
-- Long-term: retrain every learned component with our code on permitted data before final selection.
+The fork mounts dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets, byte copies of:
+| component | author | licence | reproducible? |
+|---|---|---|---|
+| casmi26-v4b/v3 models, fpnet-full1, v2-pool (engine 1 code + FPNet/ranker weights) | ahmedberatozer | "other": non-commercial w/ attribution | code shipped; training not verified |
+| casmi26-iceberg / casmi26-glacier | ahmedberatozer (ms-pred MIT, MassSpecGym weights) | MIT weights | allowed by host |
+| casmi26-fp-models-v2 (FPNet) | prvsiyan | CC-BY-NC-SA-4.0 | training script published in a kernel |
+| casmi26-ranker-features (rank_train.npz) | prvsiyan | CC-BY-NC-SA-4.0 | construction unpublished -> NOT reproducible |
+| coconut-casmi26-candidates, chebi-lipidmaps | prvsiyan | CC-BY-NC-SA-4.0 | derived from COCONUT/ChEBI |
+| casmi26-simulated-ranker-rows | megayak | CC0 | ? |
+| hengck23-dreams-enveda-casmi26 | hengck23 | MIT | ? |
+| casmi-chebi-lmsd-structures | sergiomalv | CC-BY-4.0 | yes |
+Host rules: winning solution must be licensable to the sponsor (open source, commercial use allowed) and every
+weight reproducible from public code + permitted data. NC licences inherited only from train.parquet are tolerated.
+=> The forked 0.45 pipeline is at best uncertain for a prize. A prize-eligible final entry needs our own code and
+weights for every learned component (allowed third-party: MassSpecGym ICEBERG/GLACIER, DreaMS, FRIGID, PubChem counts).
 
 ## Next
 1. LTR (LightGBM lambdarank) over novel candidates (rows dump running) -> better class-3 top-1.

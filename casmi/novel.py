@@ -154,7 +154,7 @@ class NovelEngine:
 
     def rank(self, df, n=25):
         if len(df) == 0:
-            return df
+            return df.assign(z=pd.Series(dtype=float))
         if self.model is not None:
             df = df.assign(z=self.model.predict(df[FEATS].astype(float).values))
         else:
