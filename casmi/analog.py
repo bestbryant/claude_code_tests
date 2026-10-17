@@ -25,6 +25,7 @@ class AnalogLib:
         self.mz, self.it, self.off = z['mz'], z['it'].astype(np.float32), z['off']
         self.key, self.smiles, self.nmass, self.pol = z['key'], z['smiles'], z['nmass'], z['pol']
         self.adduct, self.prec, self.lib = z['adduct'], z['prec'], z['lib']
+        self.row = z['row'] if 'row' in z.files else np.full(len(self.key), -1)
         # precursor-ion mass used for the shift: the shift applies between ion masses of the same adduct type;
         # across adducts we use neutral masses (fragments of different adducts rarely align anyway)
         self.order = {p: np.where(self.pol == p)[0] for p in (0, 1)}
