@@ -1,0 +1,11 @@
+# competition data must not be redistributed (rules 2.4.b)
+data/
+*.parquet
+*.npy
+*.npz
+*.pt
+*.pkl
+*.gz
+__pycache__/
+kernels/*/submission.csv
+kernels/*/output/
