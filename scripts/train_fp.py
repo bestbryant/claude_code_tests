@@ -26,6 +26,9 @@ sfp = T['fp']
 tr = np.where(split == 0)[0]
 w = np.where(inst_id[tr] == 1, 2.0, 1.0); w /= w.sum()          # timsTOF spectra sampled twice as often
 model = SparseDualEncoder().to(dev)
+import os
+if os.environ.get('FP_INIT'):          # resume from a checkpoint
+    model.load_state_dict(torch.load(os.environ['FP_INIT'], map_location=dev))
 opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-4)
 total = epochs * steps
 sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=1e-3, total_steps=total, pct_start=0.05)
