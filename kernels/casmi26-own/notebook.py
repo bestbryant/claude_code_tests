@@ -11,7 +11,7 @@ first = lambda pat: sorted(glob.glob(f'/kaggle/input/**/{pat}', recursive=True),
 shutil.copytree(os.path.dirname(first('retrieval.py')), '/kaggle/working/pkg/casmi', dirs_exist_ok=True)
 COMP = os.path.dirname(first('test.parquet'))
 POOL = os.path.dirname(first('pool.parquet'))
-MODELS = os.path.dirname(first('ret_ranker.txt'))
+MODELS = os.path.dirname(first(OWN_RANKER + '.txt'))
 r = subprocess.run([sys.executable, '-m', 'casmi.run_own', f'{COMP}/test.parquet', f'{COMP}/train.parquet', POOL, MODELS,
                     '/kaggle/working/own_lists.json', '/kaggle/working/own', '4'], capture_output=True, text=True,
                    cwd='/kaggle/working/pkg', env={**os.environ, 'PYTHONPATH': '/kaggle/working/pkg', 'NUMBA_NUM_THREADS': '1', 'OWN_RANKER': OWN_RANKER})
