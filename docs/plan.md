@@ -54,6 +54,22 @@ much easier than Enveda's novel test compounds. Class 3 via analog derivation/co
 as an overlay. Pivot: use the same machinery (analog derivation + site localisation) for class-2 isomer ranking
 (known-only probe pending).
 
+## Forward models (Oct 18)
+- Isomer discrimination inside the truth's formula group (enveda-180 validation queries, stage-1 top 20, n=77-148):
+  GLACIER top-1 0.743, ICEBERG 0.714, own FP encoder 0.568, analog channel 0.74; FP+GLACIER 0.804,
+  FP+analog+GLACIER+ICEBERG 0.870. enveda-180 is not in MassSpecGym, so no forward-model leakage.
+- GLACIER is ~6x faster than ICEBERG on CPU (8.6 vs 1.35 predictions/s/thread) -> usable as a ranker FEATURE:
+  two-stage ranker (stage 1 = current ranker, top 30 -> GLACIER -> stage 2 with GLACIER features).
+- Compliance: ms-pred code (MIT) + MassSpecGym weights (allowed by host). The public package's LinSATNet stand-in is
+  replaceable by the original MIT LinSATNet 0.1.3 (identical scores, max diff 4e-4). Still third-party: the DGL /
+  torch_scatter stand-ins and runner glue (ahmedberatozer, licence "Other") -> write own before the final entry.
+
+## Simulation leak (Oct 18)
+Class-2 queries whose truth is NOT reachable without train.parquet still score MRR 0.87 on validation: a hidden
+training structure is the only candidate with no source flag. Training already filters these (--reach-pmid), but
+validation numbers must use the same filter. Class 1 was too easy (same-instrument spectra of the structure stay in
+the library). Test-like mode (tl:) fixes both: timsTOF queries only, class 1 keeps only other-instrument spectra.
+
 ## Compliance notes (public pipeline we forked)
 The fork mounts dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets, byte copies of:
 | component | author | licence | reproducible? |
