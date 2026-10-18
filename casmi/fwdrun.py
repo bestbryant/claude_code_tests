@@ -196,7 +196,7 @@ def main():
                     if f is None:
                         f = tp.featurize_tree({'root_canonical_smiles': smi, 'adduct': adduct, 'collision_energy': ce},
                                               include_inten_targs=False, include_frag_targs=False)
-                        if len(feat_cache) > 4096:
+                        if len(feat_cache) > 64:          # jobs are sorted by molecule: a small cache suffices
                             feat_cache.clear()
                         feat_cache[(smi, adduct)] = f
                     item = dict(f)
