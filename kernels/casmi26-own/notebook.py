@@ -3,7 +3,7 @@ candidate pool (train + COCONUT [+ PubChemLite]) -> library / analog / fragment 
 LambdaRank -> top 25 per molecule."""
 import glob, json, os, shutil, subprocess, sys
 import pandas as pd
-OWN_RANKER = 'ret_ranker_all'      # ranker variant shipped in bryantyu/casmi26-models
+OWN_RANKER = 'ret_ranker_v2'      # ranker variant shipped in bryantyu/casmi26-models
 tag = f'cp{sys.version_info.major}{sys.version_info.minor}'
 whl = [w for w in glob.glob('/kaggle/input/**/rdkit-2026.3.3-*.whl', recursive=True) if tag in w]
 subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-index', '--no-deps', whl[0]], check=True)

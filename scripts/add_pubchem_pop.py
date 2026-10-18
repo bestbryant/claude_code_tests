@@ -8,7 +8,11 @@ import numpy as np, pandas as pd
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.keyset import pack
 
-pop = pd.read_parquet(sys.argv[1]).set_index('key')
+_pop = pd.read_parquet(sys.argv[1])          # sorted by key (groupby output); searched with numpy, not a pandas index
+POP_KEY = _pop.key.values.astype(np.uint64)
+POP_VAL = np.log1p(_pop[['sid', 'pmid', 'patent', 'n_cids']].fillna(0).values.astype(np.float32))
+del _pop
+assert np.all(POP_KEY[:-1] <= POP_KEY[1:])
 pool_dir = sys.argv[2]
 
 
@@ -17,8 +21,9 @@ def lookup(keys):
     out = pd.DataFrame(0.0, index=range(len(keys)), columns=['pc_sid', 'pc_pmid', 'pc_patent', 'pc_ncid'])
     if ok.any():
         v = pack([k for k, o in zip(keys, ok) if o])
-        r = pop.reindex(v)
-        vals = np.log1p(r[['sid', 'pmid', 'patent', 'n_cids']].fillna(0).values.astype(float))
+        i = np.minimum(np.searchsorted(POP_KEY, v), len(POP_KEY) - 1)
+        hit = POP_KEY[i] == v
+        vals = np.where(hit[:, None], POP_VAL[i], 0.0)
         out.loc[np.where(ok)[0], :] = vals
     return out
 
