@@ -60,9 +60,23 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
   FP+analog+GLACIER+ICEBERG 0.870. enveda-180 is not in MassSpecGym, so no forward-model leakage.
 - GLACIER is ~6x faster than ICEBERG on CPU (8.6 vs 1.35 predictions/s/thread) -> usable as a ranker FEATURE:
   two-stage ranker (stage 1 = current ranker, top 30 -> GLACIER -> stage 2 with GLACIER features).
-- Compliance: ms-pred code (MIT) + MassSpecGym weights (allowed by host). The public package's LinSATNet stand-in is
-  replaceable by the original MIT LinSATNet 0.1.3 (identical scores, max diff 4e-4). Still third-party: the DGL /
-  torch_scatter stand-ins and runner glue (ahmedberatozer, licence "Other") -> write own before the final entry.
+- Compliance: ms-pred code (MIT) + MassSpecGym weights (allowed by host). LinSATNet stand-in replaced by the original
+  MIT LinSATNet 0.1.3 (max diff 4e-4); DGL / torch_scatter stand-ins replaced by our own fwdshim/ (scores identical,
+  max diff 0.0). Still third-party: the runner glue (ice_runner.py / gl_runner.py / fuse.py, ahmedberatozer, licence
+  "Other") -> own runner on ms-pred's official MIT predict_smis_joint.py (TreeProcessor + IntenDataset.collate_fn),
+  then recompute the GLACIER training features with it.
+- Stage-2 CV on validation (1107 queries, 76% with a covered positive spectrum): stage 1 0.823, stage 2 without
+  forward features 0.834, with GLACIER 0.844 (covered queries 0.840 -> 0.865).
+- The repository has no LICENSE file yet: the winning entry must be open source -> the owner should add one (MIT
+  fits the components used) before the final submission.
+
+## Validation sets (Oct 18)
+- Visible test.parquet is a placeholder copied from enveda-180 training rows (every molecule has a spectrum identical
+  to a training one); the hidden test replaces it at scoring time. It says nothing about the hidden molecules.
+- Test-like validation (tl:, 263 timsTOF val structures): ranker v2 0.860 (class 1 0.739 < pure library similarity
+  0.812 -> the ranker under-trusts cross-instrument library matches; class 2 0.938, PMID count alone 0.708).
+- Rare natural products (class 2, COCONUT, <= 5 PMIDs, 267 queries): ranker v2 0.702 vs no-prior 0.560 -> priors
+  still help on poorly documented truths.
 
 ## Simulation leak (Oct 18)
 Class-2 queries whose truth is NOT reachable without train.parquet still score MRR 0.87 on validation: a hidden

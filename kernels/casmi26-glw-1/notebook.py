@@ -4,7 +4,7 @@ first = lambda pat: sorted(glob.glob(f'/kaggle/input/**/{pat}', recursive=True),
 ICE = os.path.dirname(first('ice_runner.py')); GL = os.path.dirname(first('gl_runner.py'))
 sys.path.insert(0, ICE)
 import ice_runner
-SITE = '/kaggle/working/ice_site'
+SITE = '/tmp/ice_site'          # outside /kaggle/working: its thousands of files would bloat the output listing
 ice_runner.install_site(ICE, SITE, print)
 for f in sorted(glob.glob('/kaggle/input/**/val.jobs_1.json', recursive=True)):
     out = '/kaggle/working/' + os.path.basename(f).replace('.json', '.gl.json')
