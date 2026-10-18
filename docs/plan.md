@@ -68,8 +68,11 @@ weight reproducible from public code + permitted data. NC licences inherited onl
 => The forked 0.45 pipeline is at best uncertain for a prize. A prize-eligible final entry needs our own code and
 weights for every learned component (allowed third-party: MassSpecGym ICEBERG/GLACIER, DreaMS, FRIGID, PubChem counts).
 
-## Next
-1. LTR (LightGBM lambdarank) over novel candidates (rows dump running) -> better class-3 top-1.
-2. Overlay into the 0.45 pipeline, gated by library similarity; choose slots from probe/LB evidence.
-3. mmpdb (chunked) transform mining from COCONUT for wider derivation recall; COCONUT building blocks.
-4. Compliance rebuild.
+## Next (updated Oct 18)
+Public-lineage fork = 0.451 (bug-fix variants: q_npeaks 0.451, electron undo 0.430 -> keep fork as is).
+Own compliant pipeline v1 = 0.295 (priors worth +0.05 on LB). Gap to close, in order:
+1. PubChem documentation counts per connectivity key (own FTP build) as priors; documented-PubChem candidates (pool v3).
+2. Ranker: class-1 oversampling x2 (+0.016 cls1 on validation, cls2 unchanged).
+3. Stronger dual encoder (resumed CPU training; GPU quota shared and nearly used up this week).
+4. Forward-model re-ranking with MassSpecGym ICEBERG/GLACIER (own DGL-free runner on ms-pred MIT code).
+5. Novel-candidate overlay (LTR) where the main list is weak (expected <= +0.01).
