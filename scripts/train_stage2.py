@@ -17,10 +17,16 @@ PARAMS = dict(objective='lambdarank', metric='ndcg', ndcg_eval_at=[1, 5], learni
 
 
 def load(prefix):
+    """<prefix>.top.parquet + GLACIER scores from <prefix>.jobs_*.gl.json and any extra comma-separated globs in
+    $GL_GLOB (earlier runs of the same queries; later files fill pairs the earlier ones lack)."""
+    import os
     T = pd.read_parquet(prefix + '.top.parquet')
     sc = {}
-    for f in sorted(glob.glob(prefix + '.jobs_*.gl.json')):
-        sc.update(json.load(open(f)))
+    pats = [prefix + '.jobs_*.gl.json'] + [p for p in os.environ.get('GL_GLOB', '').split(',') if p]
+    for f in sorted({f for p in pats for f in glob.glob(p)}):
+        for q, d in json.load(open(f)).items():
+            cur = sc.setdefault(q, {})
+            cur.update({k: v for k, v in d.items() if v is not None or k not in cur})
     T = add_features(T, sc)
     print(prefix, 'queries', T.qid.nunique(), 'with GLACIER', T.groupby('qid').gl.apply(lambda v: v.notna().any()).mean().round(3))
     return T.sort_values(['qid', 's1_r']).reset_index(drop=True)

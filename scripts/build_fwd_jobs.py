@@ -4,6 +4,7 @@ python scripts/build_fwd_jobs.py <rows_fp.parquet> <ranker.txt | col:<score colu
 Writes <out_prefix>.top.parquet (qid, pid, key, smiles, formula, s1, s1_r + all row features) and
 <out_prefix>.jobs_<i>.json (runner items, mid = str(qid)). With --reach-pmid only class-1 queries and class-2
 queries whose truth is reachable without train.parquet are kept (the ranker-training filter).
+--have=<glob> skips (query, smiles) pairs already scored in earlier runner outputs (incremental re-runs).
 """
 import json, sys
 import numpy as np, pandas as pd, pyarrow.parquet as pq
@@ -46,6 +47,17 @@ for g in range(pf.metadata.num_row_groups):
 S = pd.concat(parts)
 TL = pd.DataFrame([dict(molecule_id=str(q.qid), **S.loc[i, cols].to_dict()) for q in Q.itertuples() for i in q.rows])
 cands = {str(q): list(g.smiles) for q, g in T.groupby('qid', sort=False)}
+have_pat = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--have=')), None)
+if have_pat:
+    import glob
+    have = {}
+    for f in glob.glob(have_pat):
+        for q, d in json.load(open(f)).items():
+            have.setdefault(q, set()).update(s for s, v in d.items() if v is not None)
+    n0 = sum(len(v) for v in cands.values())
+    cands = {q: [s for s in v if s not in have.get(q, ())] for q, v in cands.items()}
+    cands = {q: v for q, v in cands.items() if v}
+    print('incremental: candidates', n0, '->', sum(len(v) for v in cands.values()))
 items = [it for it in build_ice_input(TL, cands) if it['spectra']]
 print('items with a covered spectrum', len(items), 'of', len(cands), 'candidates', sum(len(it['cands']) for it in items))
 for i in range(n_sh):
