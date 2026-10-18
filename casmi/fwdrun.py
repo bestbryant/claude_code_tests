@@ -122,7 +122,21 @@ def spectrum_ce(sp):
     return round(sum(ce) / len(ce) / 5.0) * 5.0 if ce else 30.0     # stepped CE -> mean, 5 eV buckets
 
 
+def supervise(max_restarts=30):
+    """Run this module as a child process until it finishes cleanly: a native crash (segfault) on some molecule
+    loses only that batch (the child checkpoints its predictions and skips the batch it died in)."""
+    env = {**os.environ, 'FWDRUN_CHILD': '1'}
+    for attempt in range(max_restarts + 1):
+        r = subprocess.run([sys.executable, '-m', 'casmi.fwdrun'] + sys.argv[1:], env=env)
+        if r.returncode == 0:
+            return 0
+        print(f'fwdrun: child exited with {r.returncode}, restart {attempt + 1}', flush=True)
+    return 1
+
+
 def main():
+    import faulthandler
+    faulthandler.enable()          # a native crash (e.g. in torch sparse ops) still reports where it happened
     ap = argparse.ArgumentParser()
     ap.add_argument('inp'); ap.add_argument('out')
     ap.add_argument('--src', required=True); ap.add_argument('--ckpt', required=True)
@@ -131,6 +145,7 @@ def main():
     ap.add_argument('--threads', type=int, default=4); ap.add_argument('--budget', type=float, default=0.0)
     ap.add_argument('--bs', type=int, default=32)
     ap.add_argument('--dump-preds', default=None, help='pickle the predicted spectra here (for offline rescoring)')
+    ap.add_argument('--batch-timeout', type=int, default=300, help='seconds before a batch is abandoned')
     a = ap.parse_args()
     t0 = time.time()
     if a.wheels:
@@ -182,42 +197,71 @@ def main():
             for _, _, cond in qs:
                 jobs.setdefault((c,) + cond, None)
     keys = sorted(jobs, key=lambda k: (len(k[0]), k))
+    # crash resilience: finished predictions are checkpointed, the batch in progress is recorded; after a native
+    # crash (the caller restarts us) that batch is skipped. A batch running over --batch-timeout is skipped too.
+    import pickle, signal
+    ck, cur = a.out + '.ckpt.pkl', a.out + '.cur'
+    done_b, bad_b = set(), set()
+    if os.path.exists(ck):
+        saved = pickle.load(open(ck, 'rb'))
+        jobs.update({k: v for k, v in saved['jobs'].items() if k in jobs})
+        done_b, bad_b = saved['done'], saved['bad']
+    if os.path.exists(cur):
+        bad_b.add(int(open(cur).read()))
+        print('fwdrun: skipping batch', open(cur).read(), 'after a crash', flush=True)
+
+    def _alarm(signum, frame):
+        raise TimeoutError('batch timeout')
+    signal.signal(signal.SIGALRM, _alarm)
     print(f'fwdrun: {len(items)} molecules, {len(keys)} predictions, setup {time.time()-t0:.0f}s', flush=True)
     feat_cache = {}
+    n_new = 0
     with torch.inference_mode():
-        for b0 in range(0, len(keys), a.bs):
+        for bi, b0 in enumerate(range(0, len(keys), a.bs)):
+            if bi in done_b or bi in bad_b:
+                continue
             if a.budget and time.time() - t0 > a.budget:
                 print('fwdrun: budget reached', flush=True)
                 break
-            batch = []
-            for smi, adduct, ce, instr in keys[b0:b0 + a.bs]:
-                try:
-                    f = feat_cache.get((smi, adduct))
-                    if f is None:
-                        f = tp.featurize_tree({'root_canonical_smiles': smi, 'adduct': adduct, 'collision_energy': ce},
-                                              include_inten_targs=False, include_frag_targs=False)
-                        if len(feat_cache) > 64:          # jobs are sorted by molecule: a small cache suffices
-                            feat_cache.clear()
-                        feat_cache[(smi, adduct)] = f
-                    item = dict(f)
-                    item.update(name=smi, adduct=common.ion2onehot_pos[adduct], precursor=0.0, collision_energy=ce,
-                                instrument=common.instrument2onehot_pos.get(instr, common.instrument2onehot_pos.get('Orbitrap', 0)))
-                    batch.append(((smi, adduct, ce, instr), item))
-                except Exception as e:
-                    print('featurize fail', smi[:60], repr(e)[:120], flush=True)
-            if not batch:
-                continue
+            open(cur, 'w').write(str(bi))
+            signal.alarm(a.batch_timeout)
             try:
-                col = dataset.IntenDataset.collate_fn([x[1] for x in batch])
-                res = model.predict_inten_frag_batch_sparse(col, 100)
-                ms, its, cnt = res['masses'], res['intens'], res['counts']
-                for i, (k, _) in enumerate(batch):
-                    c = int(cnt[i])
-                    jobs[k] = pred_peaks(np.asarray(ms[i, :c], float), np.asarray(its[i, :c], float))
+                batch = []
+                for smi, adduct, ce, instr in keys[b0:b0 + a.bs]:
+                    try:
+                        f = feat_cache.get((smi, adduct))
+                        if f is None:
+                            f = tp.featurize_tree({'root_canonical_smiles': smi, 'adduct': adduct, 'collision_energy': ce},
+                                                  include_inten_targs=False, include_frag_targs=False)
+                            if len(feat_cache) > 64:          # jobs are sorted by molecule: a small cache suffices
+                                feat_cache.clear()
+                            feat_cache[(smi, adduct)] = f
+                        item = dict(f)
+                        item.update(name=smi, adduct=common.ion2onehot_pos[adduct], precursor=0.0, collision_energy=ce,
+                                    instrument=common.instrument2onehot_pos.get(instr, common.instrument2onehot_pos.get('Orbitrap', 0)))
+                        batch.append(((smi, adduct, ce, instr), item))
+                    except TimeoutError:
+                        raise
+                    except Exception as e:
+                        print('featurize fail', smi[:60], repr(e)[:120], flush=True)
+                if batch:
+                    col = dataset.IntenDataset.collate_fn([x[1] for x in batch])
+                    res = model.predict_inten_frag_batch_sparse(col, 100)
+                    ms, its, cnt = res['masses'], res['intens'], res['counts']
+                    for i, (k, _) in enumerate(batch):
+                        c = int(cnt[i])
+                        jobs[k] = pred_peaks(np.asarray(ms[i, :c], float), np.asarray(its[i, :c], float))
             except Exception as e:
-                print('batch fail', repr(e)[:200], flush=True)
-            if (b0 // a.bs) % 50 == 0:
-                print(f'fwdrun: {b0 + len(batch)}/{len(keys)} {time.time()-t0:.0f}s', flush=True)
+                print('batch fail', bi, repr(e)[:200], flush=True)
+                bad_b.add(bi)
+            finally:
+                signal.alarm(0)
+            done_b.add(bi); n_new += 1
+            os.remove(cur)
+            if n_new % 50 == 0:
+                pickle.dump(dict(jobs={k: v for k, v in jobs.items() if v is not None}, done=done_b, bad=bad_b),
+                            open(ck, 'wb'))
+                print(f'fwdrun: {b0 + a.bs}/{len(keys)} {time.time()-t0:.0f}s', flush=True)
     if a.dump_preds:
         import pickle
         pickle.dump(jobs, open(a.dump_preds, 'wb'))
@@ -236,8 +280,14 @@ def main():
                 v.append(float(entropy_sim(qmz, qit, p[0], p[1], 0.01)))
             out[it['mid']][s] = float(np.mean(v)) if v else None
     json.dump(out, open(a.out, 'w'))
+    for f in (a.out + '.ckpt.pkl',):
+        if os.path.exists(f):
+            os.remove(f)
     print(f'fwdrun: done {time.time()-t0:.0f}s, scored {sum(v is not None for d in out.values() for v in d.values())}', flush=True)
 
 
 if __name__ == '__main__':
-    main()
+    if os.environ.get('FWDRUN_CHILD'):
+        main()
+    else:
+        sys.exit(supervise())
