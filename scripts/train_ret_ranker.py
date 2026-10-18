@@ -13,13 +13,15 @@ from casmi.own import FP_FEATS
 tr_p, va_p, out = sys.argv[1:4]
 flags = set(a for a in sys.argv[4:] if a.startswith('--'))
 pool_dir = next((a for a in sys.argv[4:] if not a.startswith('--')), '/home/user/work/pool2')
+REACH_PMID = '--reach-pmid' in flags
 
 
 def load(p):
     D = pd.read_parquet(p).sort_values(['qid', 'pid']).reset_index(drop=True)
     D.loc[(D.cls == 2) & (D.label == 1), 'in_train'] = 0           # also for rows dumped before the in-code fix
     t = D[D.label == 1].set_index('qid')
-    reach = ((t.in_coco == 1) | (t.get('in_pcl', 0) == 1))
+    # reachable for a class-2 test molecule: in COCONUT, in PubChemLite, or (pool v3) PubChem-documented (PMID record)
+    reach = ((t.in_coco == 1) | (t.get('in_pcl', 0) == 1) | (t.get('pc_pmid', 0) > 0 if REACH_PMID else False))
     keep = (D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)
     return D[keep].reset_index(drop=True)
 
