@@ -16,13 +16,13 @@ PARAMS = dict(objective='lambdarank', metric='ndcg', ndcg_eval_at=[1, 5], learni
               verbose=-1, seed=0, num_threads=2)
 
 
-def load(prefix):
+def load(prefix, env='GL_GLOB'):
     """<prefix>.top.parquet + GLACIER scores from <prefix>.jobs_*.gl.json and any extra comma-separated globs in
     $GL_GLOB (earlier runs of the same queries; later files fill pairs the earlier ones lack)."""
     import os
     T = pd.read_parquet(prefix + '.top.parquet')
     sc = {}
-    pats = [prefix + '.jobs_*.gl.json'] + [p for p in os.environ.get('GL_GLOB', '').split(',') if p]
+    pats = [prefix + '.jobs_*.gl.json'] + [p for p in os.environ.get(env, '').split(',') if p]
     for f in sorted({f for p in pats for f in glob.glob(p)}):
         for q, d in json.load(open(f)).items():
             cur = sc.setdefault(q, {})
@@ -74,6 +74,6 @@ if __name__ == '__main__':
         m.save_model(sys.argv[4])
         open(sys.argv[4].replace('.txt', '_feats.txt'), 'w').write('\n'.join(feats))
         if len(sys.argv) > 5:
-            V = load(sys.argv[5])
+            V = load(sys.argv[5], 'GL_GLOB_VAL')       # query ids of the two sets overlap: separate score files
             V['s2'] = m.predict(V[feats].astype(np.float32))
             print('VAL stage-1', mrr(V, 's1'), 'stage-2', mrr(V, 's2'))
