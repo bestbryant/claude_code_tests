@@ -1,7 +1,8 @@
 """CLI: own pipeline predictions for every test molecule -> JSON {molecule_id: [[smiles, score, key14], ...]}.
 
-python -m casmi.run_own <test.parquet> <train.parquet> <res_dir> <out.json> [workdir] [procs]
-res_dir holds pool.parquet, pool_fp.npy, coconut_prior.parquet, fp_model.pt, ret_ranker.txt (+ feats.txt).
+python -m casmi.run_own <test.parquet> <train.parquet> <pool_dir> <model_dir> <out.json> [workdir] [procs]
+pool_dir holds pool.parquet, pool_fp.npy, coconut_prior.parquet; model_dir holds ret_ranker.txt, feats.txt and
+optionally fp_model.pt.
 """
 import json, os, sys, time
 os.environ.setdefault('NUMBA_NUM_THREADS', '1')
@@ -28,9 +29,9 @@ def _one(mid):
 
 def main(argv):
     global R, FPS, RK, FEATS, TEST
-    test_p, train_p, res, out = argv[:4]
-    work = argv[4] if len(argv) > 4 else '/kaggle/working/own'
-    procs = int(argv[5]) if len(argv) > 5 else 4
+    test_p, train_p, res, mdir, out = argv[:5]
+    work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
+    procs = int(argv[6]) if len(argv) > 6 else 4
     os.makedirs(work, exist_ok=True)
     t0 = time.time()
     build_analog_lib(train_p, f'{work}/analog_lib.npz', per_struct=3)
@@ -41,10 +42,10 @@ def main(argv):
     from .fpscore import FPScorer
     R = Retrieval(res, AnalogLib(f'{work}/analog_lib.npz'), f'{res}/coconut_prior.parquet',
                   lib_full=AnalogLib(f'{work}/lib10.npz'))
-    fpw = f'{res}/fp_model.pt'
+    fpw = f'{mdir}/fp_model.pt'
     FPS = FPScorer(fpw, np.load(f'{res}/pool_fp.npy', mmap_mode='r')) if os.path.exists(fpw) else None
-    RK = lgb.Booster(model_file=f'{res}/ret_ranker.txt')
-    FEATS = open(f'{res}/feats.txt').read().split()
+    RK = lgb.Booster(model_file=f'{mdir}/ret_ranker.txt')
+    FEATS = open(f'{mdir}/feats.txt').read().split()
     TEST = pd.read_parquet(test_p)
     TEST['molecule_id'] = TEST.molecule_id.astype(str)
     mids = list(dict.fromkeys(TEST.molecule_id))

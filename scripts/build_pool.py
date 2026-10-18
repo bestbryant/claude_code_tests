@@ -1,7 +1,8 @@
-"""Candidate pool = training structures U COCONUT (2026-10), one row per standard InChIKey14.
+"""Candidate pool = training structures U COCONUT (2026-10) U PubChemLite (2026-09-25), one row per standard InChIKey14.
 
-Writes <out>/pool.parquet (key, smiles, formula, mass, ha, in_train, in_coco) and <out>/pool_fp.npy (Morgan r2
-2048 bits, packed uint8). Usage: python scripts/build_pool.py <out_dir> [procs]
+Writes <out>/pool.parquet (key, smiles, formula, mass, ha, in_train, in_coco, in_pcl, pcl_pubmed, pcl_patent,
+pcl_anno, pcl_bio, pcl_food) and <out>/pool_fp.npy (Morgan r2 2048 bits, packed uint8).
+Usage: python scripts/build_pool.py <out_dir> [procs]
 """
 import os, sys
 from multiprocessing import Pool
@@ -34,8 +35,11 @@ if __name__ == '__main__':
     tr = tm.drop_duplicates('inchikey14')
     co = pd.read_parquet('/home/user/ext/coconut/coconut_2026_10.parquet').drop_duplicates('ik14')
     co = co[co.exact_molecular_weight.between(80, 1600)]
+    pcl = pd.read_parquet('/home/user/ext/pcl/pcl.parquet')
+    pcl = pcl[pcl.MonoisotopicMass.between(80, 1600)]
     src = pd.concat([pd.DataFrame(dict(smiles=tr.normalized_smiles.values, train=1)),
-                     pd.DataFrame(dict(smiles=co.canonical_smiles.values, train=0))], ignore_index=True)
+                     pd.DataFrame(dict(smiles=co.canonical_smiles.values, train=0)),
+                     pd.DataFrame(dict(smiles=pcl.SMILES.values, train=2, sidx=np.arange(len(pcl))))], ignore_index=True)
     with Pool(procs) as p:
         res = p.map(props, src.smiles.tolist(), chunksize=2000)
     ok = [r is not None for r in res]
@@ -47,13 +51,20 @@ if __name__ == '__main__':
     first = g.head(1).index.values
     flags = g.train.agg(['max', 'min'])
     P = df.loc[first].reset_index(drop=True)
-    P['in_train'] = P.key.map(flags['max']).astype(np.int8)
-    P['in_coco'] = P.key.map(lambda k: 1).astype(np.int8)
-    # in_coco: key has a COCONUT row
-    coco_keys = set(df.loc[df.train == 0, 'key'])
-    P['in_coco'] = P.key.isin(coco_keys).astype(np.int8)
+    P['in_train'] = P.key.isin(set(df.loc[df.train == 1, 'key'])).astype(np.int8)
+    P['in_coco'] = P.key.isin(set(df.loc[df.train == 0, 'key'])).astype(np.int8)
+    P['in_pcl'] = P.key.isin(set(df.loc[df.train == 2, 'key'])).astype(np.int8)
+    # PubChemLite annotation priors, keyed by the structure key recomputed from its SMILES
+    pk = df.loc[df.train == 2, 'key'].values
+    sidx = src.sidx.values[ok]
+    pv = pcl.iloc[sidx[df.train.values == 2].astype(np.int64)]
+    ann = pd.DataFrame(dict(key=pk, pcl_pubmed=pv.PubMed_Count.values, pcl_patent=pv.Patent_Count.values,
+                            pcl_anno=pv.AnnoTypeCount.values, pcl_bio=pv.BioPathway.values,
+                            pcl_food=pv.FoodRelated.values)).groupby('key').max()
+    for c in ann.columns:
+        P[c] = P.key.map(ann[c]).fillna(0).astype(np.float32)
     P = P.sort_values('mass').reset_index(drop=False).rename(columns={'index': 'src_row'})
     np.save(f'{out}/pool_fp.npy', fps[first][P.src_row.values])
     P.drop(columns=['src_row', 'train']).to_parquet(f'{out}/pool.parquet')
     print('pool', len(P), 'train', int(P.in_train.sum()), 'coconut', int(P.in_coco.sum()),
-          'both', int((P.in_train & P.in_coco).sum()))
+          'pcl', int(P.in_pcl.sum()), 'pcl only', int(((P.in_pcl == 1) & (P.in_coco == 0) & (P.in_train == 0)).sum()))

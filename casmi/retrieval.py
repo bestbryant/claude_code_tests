@@ -23,6 +23,7 @@ PRIOR_COLS = ['n_org', 'n_coll', 'n_doi', 'n_syn', 'has_cas', 'has_name', 'ann',
 FEATS = (['lib', 'lib_n', 'lib_r', 'an_best', 'an_tan_best', 'an_sum', 'an_top1_tan', 'an_r', 'frag', 'frag_n', 'frag_r',
           'in_train', 'in_coco', 'ha', 'ppm', 'n_cand', 'n_form', 'form_frac', 'lib_gap', 'an_gap', 'frag_gap']
          + PRIOR_COLS)
+PCL_COLS = ['in_pcl', 'pcl_pubmed', 'pcl_patent', 'pcl_anno', 'pcl_bio', 'pcl_food']
 
 
 def tanimoto_packed(a, B):
@@ -150,6 +151,10 @@ class Retrieval:
             df.loc[df.key.isin(hide), 'in_train'] = 0
         for c, name in enumerate(PRIOR_COLS):
             df[name] = self.prior[idx, c]
+        for c in PCL_COLS:           # PubChemLite membership and annotation priors (pool v2)
+            if c in self.P.columns:
+                v = self.P[c].values[idx].astype(float)
+                df[c] = np.log1p(v) if c in ('pcl_pubmed', 'pcl_patent') else v
         df['n_cand'] = n
         fc = df.formula.map(df.formula.value_counts())
         df['n_form'] = fc; df['form_frac'] = fc / n
