@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecule ID from Spectra</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  :root {
+    --ink: #1d1d1b;
+    --ink-2: #52514e;
+    --ink-3: #8a8983;
+    --rule: #d6d4cd;
+    --panel: #f6f5f2;
+    --blue: #2a78d6;
+    --blue-tint: #eef4fc;
+    --orange: #eb6834;
+    --orange-ink: #b8461a;
+    --orange-tint: #fdf0ea;
+    --violet: #6250d6;
+    --violet-tint: #f3f1fd;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 9.5pt; }
+  body {
+    margin: 0; background: #fff; color: var(--ink);
+    font-family: Inter, "DejaVu Sans", Arial, sans-serif;
+    line-height: 1.32;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  .sheet { width: 182mm; }
+  .page2 { break-before: page; }
+  header { border-bottom: 1.2pt solid var(--ink); padding-bottom: 2.2mm; margin-bottom: 3mm; }
+  h1 { font-size: 17pt; line-height: 1.1; margin: 0 0 1.2mm; letter-spacing: -0.01em; }
+  .sub { font-size: 10pt; color: var(--ink-2); margin: 0; }
+  .dateline { font-size: 8.6pt; color: var(--ink-2); margin-top: 1mm; }
+  h2 { font-size: 11.2pt; margin: 0 0 1.4mm; letter-spacing: -0.005em; }
+  h2 .num { color: var(--ink-3); margin-right: 1.2mm; }
+  h3 { font-size: 9.8pt; margin: 2.2mm 0 0.8mm; }
+  p { margin: 0 0 1.6mm; }
+  ul, ol { margin: 0 0 1.6mm; padding-left: 4.2mm; }
+  li { margin: 0 0 0.8mm; }
+  li::marker { color: var(--ink-3); }
+  b, strong { font-weight: 600; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 5.5mm; }
+  .span { grid-column: 1 / -1; }
+  figure { margin: 0 0 2.4mm; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 8.3pt; color: var(--ink-2); line-height: 1.28; margin-top: 1mm; }
+  figcaption b { color: var(--ink); }
+  table { border-collapse: collapse; width: 100%; font-size: 8.5pt; line-height: 1.25; margin-bottom: 1mm; }
+  th, td { text-align: left; vertical-align: top; padding: 0.9mm 1.2mm; border-bottom: 0.5pt solid var(--rule); }
+  th { font-weight: 600; border-bottom: 0.9pt solid var(--ink); }
+  td.n { white-space: nowrap; }
+  .tcap { font-size: 8.3pt; color: var(--ink-2); margin: 0 0 2.4mm; }
+  .gloss { background: var(--panel); border-radius: 2mm; padding: 2mm 2.6mm 1.4mm; font-size: 8.5pt; line-height: 1.27; }
+  .gloss h3 { margin: 0 0 1mm; font-size: 9pt; }
+  .gloss dl { margin: 0; }
+  .gloss dt { font-weight: 600; display: inline; }
+  .gloss dd { display: inline; margin: 0; }
+  .gloss dd::after { content: ""; display: block; margin-bottom: 0.7mm; }
+  .lesson { border: 1.2pt solid var(--orange); background: var(--orange-tint); border-radius: 2mm; padding: 2mm 2.6mm 1mm; margin: 0 0 2.4mm; }
+  .lesson h3 { margin: 0 0 0.8mm; color: var(--orange-ink); }
+  .track { font-weight: 600; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 8.6pt; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<!-- =========================== PAGE 1 =========================== -->
+<header>
+  <h1>Naming an unknown molecule from its mass spectra</h1>
+  <p class="sub">How the current public model for the Enveda CASMI 2026 Kaggle challenge works, and what our first strategy session taught us</p>
+  <div class="dateline">October 18, 2026 &nbsp;·&nbsp; Competition runs Sep 14 – Dec 14, 2026 &nbsp;·&nbsp; $50k, top 5 paid</div>
+</header>
+
+<div class="cols">
+  <section>
+    <h2><span class="num">1</span>The problem</h2>
+    <p>A tandem mass spectrometer weighs a charged molecule (the <b>precursor ion</b>), then breaks it apart by collisions with gas and weighs the pieces. Each <b>spectrum</b> is a list of peaks, (fragment m/z, intensity), where m/z is mass over charge. For each of ~400 hidden, natural-product-like test molecules we get 1–16 spectra (median 3), recorded on a Bruker timsTOF at 20/40/60 eV and with one of ten allowed adducts. We must return up to <b>25 ranked structures</b> (as SMILES).</p>
+    <ul>
+      <li><b>Score (MRR@25):</b> 1/rank of the first correct guess (rank 1 → 1, rank 4 → 0.25, not in top 25 → 0), averaged over molecules. “Correct” = same atom connectivity (first block of the tautomer-canonical InChIKey; stereo ignored).</li>
+      <li><b>A noisy scoreboard:</b> the public leaderboard uses 31% of the test (~124 molecules). One molecule moving from miss to rank 1 shifts it by ~0.008; its standard error is ~0.016.</li>
+      <li><b>Data and rules:</b> 2.54M training spectra of ~275,810 structures from 11 public libraries; a Kaggle notebook, no internet, ≤ 9 h. For prizes, all data must be public and free (no NIST) and every pretrained weight reproducible from public code.</li>
+      <li><b>Standing (Oct 17):</b> top score 0.495; best public notebooks ~0.44–0.45; 3,486 teams.</li>
+    </ul>
+  </section>
+
+  <section>
+    <table>
+      <thead><tr><th>Test class</th><th>What it means</th><th>Share*</th><th>How to solve</th></tr></thead>
+      <tbody>
+        <tr><td><b>1</b> Known spectra</td><td>public reference spectra exist</td><td class="n">16–28%</td><td>library search (MRR ~0.93)</td></tr>
+        <tr><td><b>2</b> Known structure</td><td>in PubChem or COCONUT, never measured publicly</td><td class="n">20–45%</td><td>retrieve; rank among same-mass candidates</td></tr>
+        <tr><td><b>3</b> Novel</td><td>not in PubChem</td><td class="n">39–52%</td><td>must be generated</td></tr>
+      </tbody>
+    </table>
+    <p class="tcap">*Community leaderboard-probe estimates; the true split is hidden.</p>
+    <div class="gloss">
+      <h3>Jargon in plain words</h3>
+      <dl>
+        <dt>Adduct</dt><dd> — the charged form that is measured, e.g. [M+H]<sup>+</sup> (molecule + proton) or [M+Na]<sup>+</sup>. With it, the precursor m/z gives the neutral mass M.</dd>
+        <dt>Fragment</dt><dd> — a piece left after bonds break; each peak is a fragment’s m/z.</dd>
+        <dt>Isomers</dt><dd> — different structures with the same formula, hence the same mass: the main source of confusion.</dd>
+        <dt>Fingerprint</dt><dd> — a bit vector, one bit per substructure (“has an ester?”). <i>Tanimoto</i> = share of on-bits two fingerprints have in common.</dd>
+        <dt>Analog</dt><dd> — a different molecule with a similar spectrum, often a small modification (e.g. +OH) of the unknown.</dd>
+        <dt>Forward model</dt><dd> — a network that predicts a candidate’s spectrum (structure → spectrum), used to check candidates.</dd>
+        <dt>ppm / ranker</dt><dd> — mass error in parts per million / a model (here gradient-boosted trees: LightGBM, LambdaRank) that learns to order candidates from features.</dd>
+      </dl>
+    </div>
+  </section>
+</div>
+
+<figure>
+<svg viewBox="0 0 700 246" role="img" aria-label="Pipeline of the current public model" font-family="Inter, DejaVu Sans, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0.5 L10,5 L0,9.5 z" fill="#5c5b57"/>
+    </marker>
+  </defs>
+  <style>
+    .t { font-size: 11px; fill: #1d1d1b; }
+    .b { font-weight: 600; }
+    .s { fill: #52514e; }
+    .w { fill: #ffffff; }
+    .m { text-anchor: middle; }
+    .ar { fill: none; stroke: #5c5b57; stroke-width: 1.2; }
+  </style>
+
+  <!-- Query -->
+  <rect x="1" y="44" width="92" height="150" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <text class="t b m" x="47" y="61">Query</text>
+  <line x1="12" y1="110" x2="82" y2="110" stroke="#8a8983" stroke-width="1"/>
+  <g stroke="#52514e" stroke-width="2.6" stroke-linecap="round">
+    <line x1="18" y1="110" x2="18" y2="90"/><line x1="26" y1="110" x2="26" y2="72"/>
+    <line x1="33" y1="110" x2="33" y2="98"/><line x1="42" y1="110" x2="42" y2="78"/>
+    <line x1="51" y1="110" x2="51" y2="94"/><line x1="60" y1="110" x2="60" y2="84"/>
+    <line x1="70" y1="110" x2="70" y2="101"/><line x1="77" y1="110" x2="77" y2="88"/>
+  </g>
+  <text class="t s m" x="47" y="124" style="font-size:10.5px">m/z →</text>
+  <text class="t m" x="47" y="142">1–16 spectra</text>
+  <text class="t m" x="47" y="156">+ precursor m/z</text>
+  <text class="t m" x="47" y="170">+ adduct</text>
+  <text class="t m" x="47" y="184">+ energy</text>
+
+  <path class="ar" d="M93,72 L106,72" marker-end="url(#ah)"/>
+
+  <!-- Neutral mass + window -->
+  <rect x="108" y="44" width="116" height="52" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <text class="t b" x="116" y="61">1 Neutral mass M</text>
+  <text class="t" x="116" y="76">from precursor m/z</text>
+  <text class="t" x="116" y="90">+ adduct; median</text>
+  <path class="ar" d="M166,96 L166,108" marker-end="url(#ah)"/>
+  <rect x="108" y="110" width="116" height="124" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <text class="t b" x="116" y="127">2 Mass window</text>
+  <text class="t" x="116" y="143">pool ≈ 711k:</text>
+  <text class="t" x="116" y="157">training + COCONUT</text>
+  <text class="t" x="116" y="171">keep ±10 ppm of M</text>
+  <text class="t" x="116" y="185">(30 ppm fallback)</text>
+  <text class="t b" x="116" y="203">→ tens–hundreds</text>
+  <text class="t" x="116" y="217">of candidates,</text>
+  <text class="t" x="116" y="231">mostly isomers</text>
+
+  <!-- fan out -->
+  <path class="ar" d="M224,150 C236,150 232,68 244,68" marker-end="url(#ah)"/>
+  <path class="ar" d="M224,166 C236,166 232,167 244,167" marker-end="url(#ah)"/>
+  <path class="ar" d="M224,182 C236,182 232,222 244,222" marker-end="url(#ah)"/>
+
+  <!-- Engine 1 -->
+  <rect x="246" y="2" width="258" height="132" rx="6" fill="#eef4fc" stroke="#2a78d6" stroke-width="1.2"/>
+  <text class="t b" x="255" y="19">3a Engine 1: evidence channels</text>
+  <g fill="#2a78d6">
+    <rect x="255" y="29" width="6" height="6" rx="1"/><rect x="255" y="43" width="6" height="6" rx="1"/>
+    <rect x="255" y="57" width="6" height="6" rx="1"/><rect x="255" y="71" width="6" height="6" rx="1"/>
+    <rect x="255" y="85" width="6" height="6" rx="1"/>
+  </g>
+  <text class="t" x="266" y="36"><tspan class="b">Library</tspan>: match to own reference spectra</text>
+  <text class="t" x="266" y="50"><tspan class="b">Analogs</tspan>: look-alike spectra vote</text>
+  <text class="t" x="266" y="64"><tspan class="b">FPNet</tspan>: predicted fingerprint bits</text>
+  <text class="t" x="266" y="78"><tspan class="b">Fragments</tspan>: peaks from 1–2 bond breaks</text>
+  <text class="t" x="266" y="92"><tspan class="b">Class-3 gen.</tspan>: edits of 6 nearest analogs</text>
+  <rect x="254" y="102" width="242" height="24" rx="4" fill="#ffffff" stroke="#2a78d6"/>
+  <text class="t m" x="375" y="118">4 LightGBM + 0.15 × popularity → top 60</text>
+
+  <!-- PubChem -->
+  <rect x="246" y="142" width="258" height="50" rx="6" fill="#fdf0ea" stroke="#eb6834" stroke-width="1.2"/>
+  <text class="t b" x="255" y="158">3b PubChem channel: ~105M structures</text>
+  <text class="t" x="255" y="172">fingerprint score + 0.25 × popularity</text>
+  <text class="t" x="255" y="186">→ slotted at ranks 2,4,6,8,10 or promoted</text>
+
+  <!-- Engine 2 -->
+  <rect x="246" y="200" width="258" height="44" rx="6" fill="#f6f5f2" stroke="#8a8983" stroke-width="1.2"/>
+  <text class="t b" x="255" y="216">3c Engine 2: own pool + ChEBI, LIPID MAPS</text>
+  <text class="t" x="255" y="231">2 boosted rankers (0.88 / 0.12) → top 40</text>
+
+  <!-- to fusion -->
+  <path class="ar" d="M504,68 C516,68 512,26 526,26" marker-end="url(#ah)"/>
+  <path class="ar" d="M504,167 C518,167 512,42 526,42" marker-end="url(#ah)"/>
+  <path class="ar" d="M504,222 C520,222 512,58 526,58" marker-end="url(#ah)"/>
+
+  <!-- Fusion -->
+  <rect x="528" y="2" width="171" height="70" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <text class="t b" x="537" y="19">4 Fusion</text>
+  <text class="t" x="537" y="35">reciprocal-rank fusion of the</text>
+  <text class="t" x="537" y="49">lists; duplicates merged by</text>
+  <text class="t" x="537" y="63">the metric key (InChIKey)</text>
+  <path class="ar" d="M613,72 L613,84" marker-end="url(#ah)"/>
+
+  <!-- Forward model -->
+  <rect x="528" y="86" width="171" height="100" rx="6" fill="#f3f1fd" stroke="#6250d6" stroke-width="1.2"/>
+  <text class="t b" x="537" y="103">5 Forward-model re-rank</text>
+  <text class="t" x="537" y="119">inside each formula group,</text>
+  <text class="t" x="537" y="133">ICEBERG / GLACIER predict</text>
+  <text class="t" x="537" y="147">each candidate’s spectrum;</text>
+  <text class="t" x="537" y="161">the best match to the</text>
+  <text class="t" x="537" y="175">measured spectrum wins</text>
+  <path class="ar" d="M613,186 L613,198" marker-end="url(#ah)"/>
+
+  <!-- Output -->
+  <rect x="528" y="200" width="171" height="44" rx="6" fill="#1d1d1b"/>
+  <text class="t b w m" x="613" y="217">Top-25 SMILES</text>
+  <text class="t w m" x="613" y="233">engine-2 top pick at rank 2</text>
+</svg>
+<figcaption><b>Figure 1. The current public model</b> (community “E006” lineage; the notebook we forked scores 0.450). Mass turns ~711k structures into a short list of mostly isomers; three engines score it with complementary evidence; fusion and forward models produce the final top 25.</figcaption>
+</figure>
+
+<div class="cols">
+  <section>
+    <h2><span class="num">2</span>How the current public model works</h2>
+    <p>The best public notebook (we forked dmitriigluzdov’s “From Spectra to Structures”) stacks many community contributions into one <b>retrieve-then-rank</b> pipeline (Fig. 1):</p>
+    <ol>
+      <li><b>Weigh and shortlist.</b> M is computed from each spectrum’s precursor m/z and adduct (median over spectra). Every pool structure within 10 ppm is a candidate. Mass alone cannot separate isomers, so the spectra must decide.</li>
+      <li><b>Engine 1 collects evidence per candidate:</b> <i>library</i> = spectral-entropy similarity to the candidate’s own reference spectra (solves class 1); <i>analog propagation</i> = training spectra that resemble the query after a mass shift vote for candidates structurally similar to them (Tanimoto); <i>FPNet</i>, a transformer over peaks + metadata, predicts the fingerprint and candidates with agreeing bits score high; <i>fragmentation</i> = share of peak intensity explained by breaking 1–2 bonds (MetFrag-lite) plus a learned fragment scorer. Four LightGBM boosters combine ~100 features; popularity (log PubChem substance + literature counts) is then added.</li>
+    </ol>
+  </section>
+  <section>
+    <ol start="3">
+      <li><b>PubChem channel:</b> fingerprint models screen ~105M PubChem structures in the window. Proposals are promoted to rank 1 when the fingerprint margin is large (&gt; 150) or the structure is well documented, and skipped when a strong library match exists (similarity ≥ 0.9).</li>
+      <li><b>Engine 2</b> builds an independent list; <b>fusion</b> rewards candidates ranked high by either list; <b>forward models</b> break ties among isomers by predicting each one’s spectrum.</li>
+    </ol>
+    <p><b>History:</b> ~0.34 (mid-Sep, 4-channel retrieval + ranker) → 0.40 (engine fusion) → 0.44 (E006 fusion + forward-model re-rank) → 0.45 (tuned PubChem promotion, deeper engine-2 trees).</p>
+    <p style="margin-bottom:0.8mm"><b>Weak spots:</b></p>
+    <ul>
+      <li>almost no class-3 hits, though class 3 may be the largest class;</li>
+      <li>many errors are the wrong same-formula isomer;</li>
+      <li>most refinements were accepted on the noisy 124-molecule board without cross-validation;</li>
+      <li>several bundled weights have uncertain licence or reproducibility (some CC-BY-NC-SA; one ranker-row file of unpublished construction): a prize risk.</li>
+    </ul>
+  </section>
+</div>
+
+<!-- =========================== PAGE 2 =========================== -->
+<div class="page2">
+<h2><span class="num">3</span>Our strategy: what we tried, what we learned</h2>
+<figure>
+<svg viewBox="0 0 700 116" role="img" aria-label="Strategy map, tracks A to E" font-family="Inter, DejaVu Sans, sans-serif">
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0.5 L10,5 L0,9.5 z" fill="#5c5b57"/>
+    </marker>
+  </defs>
+  <style>
+    .t { font-size: 11px; fill: #1d1d1b; }
+    .b { font-weight: 600; }
+    .w { fill: #ffffff; }
+    .m { text-anchor: middle; }
+  </style>
+  <!-- A -->
+  <rect x="1" y="1" width="130" height="114" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <circle cx="15" cy="16" r="8.5" fill="#1d1d1b"/><text class="t b w m" x="15" y="20">A</text>
+  <text class="t b" x="29" y="20">Get on the board</text>
+  <text class="t" x="9" y="40">Fork the 0.450 notebook</text>
+  <text class="t" x="9" y="54">unchanged, on its pinned</text>
+  <text class="t" x="9" y="68">Docker image (copies on</text>
+  <text class="t" x="9" y="82">a newer one lost ~0.04)</text>
+  <rect x="8" y="92" width="116" height="17" rx="8.5" fill="#ffffff" stroke="#c9c7c0"/>
+  <text class="t m" x="66" y="104">score pending</text>
+  <!-- B -->
+  <rect x="143" y="1" width="130" height="114" rx="6" fill="#fdf0ea" stroke="#eb6834" stroke-width="1.6"/>
+  <circle cx="157" cy="16" r="8.5" fill="#1d1d1b"/><text class="t b w m" x="157" y="20">B</text>
+  <text class="t b" x="171" y="20">Class-3 deep-dive</text>
+  <text class="t" x="151" y="40">PubChem-absent proxy,</text>
+  <text class="t" x="151" y="54">NovelEngine generators,</text>
+  <text class="t" x="151" y="68">site localisation,</text>
+  <text class="t" x="151" y="82">learned ranker</text>
+  <rect x="150" y="92" width="116" height="17" rx="8.5" fill="#ffffff" stroke="#eb6834"/>
+  <text class="t b m" x="208" y="104">probe: 0.010 public</text>
+  <!-- C -->
+  <rect x="285" y="1" width="130" height="114" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <circle cx="299" cy="16" r="8.5" fill="#1d1d1b"/><text class="t b w m" x="299" y="20">C</text>
+  <text class="t b" x="313" y="20">Bug hunt</text>
+  <text class="t" x="293" y="40">Code review of the</text>
+  <text class="t" x="293" y="54">public pipeline found</text>
+  <text class="t" x="293" y="68">2 train/serve</text>
+  <text class="t" x="293" y="82">mismatches</text>
+  <rect x="292" y="92" width="116" height="17" rx="8.5" fill="#ffffff" stroke="#c9c7c0"/>
+  <text class="t m" x="350" y="104">2 patches pending</text>
+  <!-- D -->
+  <rect x="427" y="1" width="130" height="114" rx="6" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <circle cx="441" cy="16" r="8.5" fill="#1d1d1b"/><text class="t b w m" x="441" y="20">D</text>
+  <text class="t b" x="455" y="20">Own pipeline</text>
+  <text class="t" x="435" y="40">Compliance-first: our</text>
+  <text class="t" x="435" y="54">code + weights, permitted</text>
+  <text class="t" x="435" y="68">data; dual encoder +</text>
+  <text class="t" x="435" y="82">LambdaRank</text>
+  <rect x="434" y="92" width="116" height="17" rx="8.5" fill="#ffffff" stroke="#c9c7c0"/>
+  <text class="t m" x="492" y="104">encoder MRR 0.51</text>
+  <!-- arrow -->
+  <path d="M559,58 L577,58" stroke="#5c5b57" stroke-width="1.4" fill="none" marker-end="url(#ah2)"/>
+  <!-- E -->
+  <rect x="580" y="1" width="119" height="114" rx="6" fill="#ffffff" stroke="#1d1d1b" stroke-width="1.2"/>
+  <circle cx="594" cy="16" r="8.5" fill="#1d1d1b"/><text class="t b w m" x="594" y="20">E</text>
+  <text class="t b" x="608" y="20">Decide</text>
+  <text class="t" x="588" y="40">Compare variants on</text>
+  <text class="t" x="588" y="54">board + validation;</text>
+  <text class="t" x="588" y="68">pick the 2 final</text>
+  <text class="t" x="588" y="82">submissions</text>
+  <rect x="587" y="92" width="105" height="17" rx="8.5" fill="#f6f5f2" stroke="#c9c7c0"/>
+  <text class="t m" x="639.5" y="104">target ≥ 0.45</text>
+</svg>
+<figcaption><b>Figure 2. Our five tracks (session of Oct 17–18).</b> A–D ran in parallel and feed the decision in E. Track B (orange) produced the main lesson.</figcaption>
+</figure>
+
+<div class="cols">
+  <section>
+    <p><span class="track">A — Get on the board.</span> We submitted the 0.450 notebook unchanged and kept its pinned Docker image: teams that re-ran copies on a newer image lost ~0.04. (Score pending.)</p>
+
+    <h3>B — Class 3: chasing the largest untapped share</h3>
+    <p>We cannot see the hidden novel molecules, so we built a stand-in. Matching training structures against all 106M PubChem connectivity keys left <b>16,917 real, measured molecules that are not in PubChem</b>: our class-3 proxy. Insight: 45% of them split at one amide or ester bond into two PubChem-known pieces (N-acyl amino acids, bile-acid conjugates, fatty-acid esters), i.e. “hypothesised” natural products built from known blocks. Our <b>NovelEngine</b> has two generators that only emit structures absent from PubChem, COCONUT and training:</p>
+    <ul>
+      <li><b>Analog derivatives:</b> find training spectra similar to the query by <i>modified cosine</i> (which also matches peaks shifted by the mass difference Δ), then apply edits (hydroxylation, methylation, glycosylation, chain extension, …) whose mass change equals Δ. From the top-20 analogs this reaches the answer for 24% of the proxy.</li>
+      <li><b>Conjugates:</b> join a known acid with a known amine or alcohol (amide/ester/glycoside) whose masses add up; rank by diagnostic fragment ions of each half.</li>
+    </ul>
+    <p><b>Site localisation</b> (our scoring idea, Fig. 3) decides where an edit sits. Scoring each candidate site by peak consistency raised derivative MRR on the proxy from 0.061 to 0.107; a learned LambdaRank ranker raised proxy MRR from 0.124 to 0.269.</p>
+
+<figure>
+<svg viewBox="0 0 340 254" role="img" aria-label="Site localisation illustration" font-family="Inter, DejaVu Sans, sans-serif">
+  <style>
+    .t { font-size: 11px; fill: #1d1d1b; }
+    .b { font-weight: 600; }
+    .s { fill: #52514e; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+  </style>
+  <!-- axis: x(m) = 30 + 1.5*(m-90) ; baseline y=96 -->
+  <text class="t b" x="2" y="12">parent (library analog)</text>
+  <text class="t b" x="2" y="186">query (unknown, +16 Da)</text>
+  <line x1="24" y1="96" x2="330" y2="96" stroke="#8a8983" stroke-width="1"/>
+  <text class="t s e" x="336" y="110" style="font-size:10.5px">m/z</text>
+  <!-- parent peaks (up) -->
+  <line x1="52.5" y1="96" x2="52.5" y2="44" stroke="#eb6834" stroke-width="5"/>
+  <line x1="120" y1="96" x2="120" y2="24" stroke="#2a78d6" stroke-width="5"/>
+  <line x1="277.5" y1="96" x2="277.5" y2="66" stroke="#8a8983" stroke-width="5"/>
+  <text class="t m" x="52.5" y="38">105</text>
+  <text class="t m" x="120" y="19">150</text>
+  <text class="t m" x="277.5" y="60">255</text>
+  <!-- query peaks (down) -->
+  <line x1="76.5" y1="96" x2="76.5" y2="146" stroke="#eb6834" stroke-width="5"/>
+  <line x1="120" y1="96" x2="120" y2="162" stroke="#2a78d6" stroke-width="5"/>
+  <line x1="301.5" y1="96" x2="301.5" y2="126" stroke="#8a8983" stroke-width="5"/>
+  <text class="t m" x="76.5" y="159">121</text>
+  <text class="t m" x="120" y="175">150</text>
+  <text class="t m" x="301.5" y="139">271</text>
+  <!-- links -->
+  <path d="M56,46 C70,60 72,120 74,144" fill="none" stroke="#eb6834" stroke-width="1.3" stroke-dasharray="3 2.5"/>
+  <text class="t b" x="12" y="136" style="fill:#b8461a">shifted</text>
+  <text class="t" x="12" y="149" style="fill:#b8461a">+16</text>
+  <text class="t b" x="128" y="66" style="fill:#1f5fae">unshifted</text>
+  <text class="t" x="128" y="79" style="fill:#1f5fae">same m/z</text>
+  <path d="M286,72 C296,80 298,110 300,124" fill="none" stroke="#8a8983" stroke-width="1.1" stroke-dasharray="3 2.5"/>
+  <text class="t s e" x="270" y="118" style="font-size:10.5px">precursor</text>
+
+  <!-- molecule -->
+  <g transform="translate(0,0)">
+    <rect x="12" y="196" width="88" height="40" rx="7" fill="#eef4fc" stroke="#2a78d6"/>
+    <rect x="108" y="196" width="36" height="40" rx="7" fill="#fdf0ea" stroke="#eb6834"/>
+    <g fill="none" stroke="#1d1d1b" stroke-width="1.5" stroke-linejoin="round">
+      <!-- flat-top hexagons r=13 at cy=216 -->
+      <polygon points="47,216 40.5,204.7 27.5,204.7 21,216 27.5,227.3 40.5,227.3"/>
+      <polygon points="91,216 84.5,204.7 71.5,204.7 65,216 71.5,227.3 84.5,227.3"/>
+      <polygon points="139,216 132.5,204.7 119.5,204.7 113,216 119.5,227.3 132.5,227.3"/>
+      <line x1="47" y1="216" x2="65" y2="216"/>
+      <line x1="91" y1="216" x2="113" y2="216"/>
+      <line x1="132.5" y1="204.7" x2="138" y2="196"/>
+    </g>
+    <text class="t b" x="139" y="194">OH</text>
+    <text class="t m s" x="34" y="220" style="font-size:10px">A</text>
+    <text class="t m s" x="78" y="220" style="font-size:10px">B</text>
+    <text class="t m s" x="126" y="220" style="font-size:10px">C</text>
+    <line x1="104" y1="194" x2="104" y2="240" stroke="#1d1d1b" stroke-width="1" stroke-dasharray="2.5 2"/>
+    <!-- site markers -->
+    <circle cx="27.5" cy="204.7" r="3" fill="#ffffff" stroke="#1d1d1b"/>
+    <circle cx="71.5" cy="227.3" r="3" fill="#ffffff" stroke="#1d1d1b"/>
+    <circle cx="132.5" cy="204.7" r="3" fill="#1d1d1b"/>
+    <text class="t m" x="56" y="250" style="fill:#1f5fae">fragment m/z 150</text>
+    <text class="t m" x="126" y="250" style="fill:#b8461a">105→121</text>
+  </g>
+  <text class="t b" x="168" y="206">Where is the +O?</text>
+  <text class="t" x="168" y="221">150 unshifted → A–B carry no</text>
+  <text class="t" x="168" y="234">edit: sites on A or B ✗</text>
+  <text class="t" x="168" y="248">121 = 105 + 16 → it is on C ✓</text>
+</svg>
+<figcaption><b>Figure 3. Site localisation (toy numbers).</b> Top: a library analog (“parent”, up) mirrored against the query (down), which is 16 Da heavier (+O). The parent peak at 150 reappears unshifted; the one at 105 reappears at 121. Bottom: so the fragment A–B is unmodified and the +O sits on ring C (filled dot) — candidate sites on A or B (open dots) are inconsistent.</figcaption>
+</figure>
+  </section>
+
+  <section>
+<figure>
+<svg viewBox="0 0 340 222" role="img" aria-label="Class-3 probe and proxy gains" font-family="Inter, DejaVu Sans, sans-serif">
+  <defs>
+    <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="5" stroke="#eb6834" stroke-width="1.4"/>
+    </pattern>
+  </defs>
+  <style>
+    .t { font-size: 11px; fill: #1d1d1b; }
+    .b { font-weight: 600; }
+    .s { fill: #52514e; }
+    .m { text-anchor: middle; }
+    .e { text-anchor: end; }
+    .g { stroke: #e4e2dc; stroke-width: 1; }
+  </style>
+  <!-- Panel a: x = 128 + v*1900 (0..0.1 -> 128..318) -->
+  <text class="t b" x="2" y="12">a  Class-3 probe, public leaderboard score</text>
+  <line class="g" x1="128" y1="20" x2="128" y2="94"/>
+  <line class="g" x1="223" y1="20" x2="223" y2="94"/>
+  <line class="g" x1="318" y1="20" x2="318" y2="94"/>
+  <text class="t s m" x="128" y="106">0</text>
+  <text class="t s m" x="223" y="106">0.05</text>
+  <text class="t s m" x="318" y="106">0.10</text>
+  <!-- forecast 0.045 -->
+  <text class="t e" x="122" y="35">Novel only: forecast</text>
+  <rect x="128" y="24" width="85.5" height="15" rx="2" fill="url(#hatch)" stroke="#eb6834" stroke-width="1"/>
+  <text class="t" x="218" y="35">~0.045</text>
+  <!-- actual 0.010 -->
+  <text class="t e" x="122" y="58">Novel only: actual</text>
+  <rect x="128" y="47" width="19" height="15" rx="2" fill="#eb6834"/>
+  <text class="t b" x="152" y="58">0.010</text>
+  <!-- known only 0.085 -->
+  <text class="t e" x="122" y="81">Known only: actual</text>
+  <rect x="128" y="70" width="161.5" height="15" rx="2" fill="#2a78d6"/>
+  <text class="t" x="294" y="81">0.085</text>
+  <!-- bracket -->
+  <path d="M262,31 L268,31 L268,55 L196,55" fill="none" stroke="#1d1d1b" stroke-width="0.9"/>
+  <text class="t b" x="272" y="47">4–5×</text>
+  <text class="t" x="272" y="59" style="font-size:10.5px">overstated</text>
+
+  <!-- Panel b: x = 128 + v*633 (0..0.3 -> 128..318) -->
+  <text class="t b" x="2" y="132">b  Gains on the offline class-3 proxy (MRR)</text>
+  <line class="g" x1="128" y1="140" x2="128" y2="196"/>
+  <line class="g" x1="191.3" y1="140" x2="191.3" y2="196"/>
+  <line class="g" x1="254.6" y1="140" x2="254.6" y2="196"/>
+  <line class="g" x1="318" y1="140" x2="318" y2="196"/>
+  <text class="t s m" x="128" y="208">0</text>
+  <text class="t s m" x="191.3" y="208">0.1</text>
+  <text class="t s m" x="254.6" y="208">0.2</text>
+  <text class="t s m" x="318" y="208">0.3</text>
+  <!-- site loc 0.061 -> 0.107 : x 166.6 -> 195.7 -->
+  <text class="t e" x="122" y="158">Site localisation</text>
+  <line x1="166.6" y1="154" x2="195.7" y2="154" stroke="#8a8983" stroke-width="2"/>
+  <circle cx="166.6" cy="154" r="4.5" fill="#ffffff" stroke="#52514e" stroke-width="1.5"/>
+  <circle cx="195.7" cy="154" r="4.5" fill="#2a78d6" stroke="#ffffff" stroke-width="1"/>
+  <text class="t s e" x="160" y="145" style="font-size:10.5px">0.061</text>
+  <text class="t b" x="203" y="158">0.107</text>
+  <!-- ranker 0.124 -> 0.269 : x 206.5 -> 298.3 -->
+  <text class="t e" x="122" y="184">Learned ranker</text>
+  <line x1="206.5" y1="180" x2="298.3" y2="180" stroke="#8a8983" stroke-width="2"/>
+  <circle cx="206.5" cy="180" r="4.5" fill="#ffffff" stroke="#52514e" stroke-width="1.5"/>
+  <circle cx="298.3" cy="180" r="4.5" fill="#2a78d6" stroke="#ffffff" stroke-width="1"/>
+  <text class="t s e" x="200" y="171" style="font-size:10.5px">0.124</text>
+  <text class="t b" x="292" y="171">0.269</text>
+  <!-- legend -->
+  <circle cx="134" cy="218" r="4" fill="#ffffff" stroke="#52514e" stroke-width="1.5"/>
+  <text class="t s" x="142" y="221" style="font-size:10.5px">before</text>
+  <circle cx="188" cy="218" r="4" fill="#2a78d6"/>
+  <text class="t s" x="196" y="221" style="font-size:10.5px">after</text>
+</svg>
+<figcaption><b>Figure 4. Proxy versus reality.</b> (a) Submitting only novel candidates scored 0.010, against ~0.045 forecast from the proxy; the same engine’s known-only list scored 0.085. (b) The proxy gains behind the forecast. Note the scales differ: (a) is the public test, (b) the proxy only.</figcaption>
+</figure>
+
+    <div class="lesson">
+      <h3>The lesson we put centre stage</h3>
+      <p>The proxy overstated class-3 reach ~4–5×, so class 3 is worth at most ~0.01 as an add-on, about one molecule moved to rank 1. The known-only probe (0.085) shows the engine works; the novel part barely pays. <b>A proxy is a hypothesis about the test: validate it against the leaderboard early, before investing in it.</b> And since the board itself is noisy (±0.016), we also need offline validation that mimics the test (track D).</p>
+    </div>
+
+    <p><span class="track">C — Bug hunt.</span> A subagent code review found two <b>train/serve mismatches</b> (a feature computed differently in training and at prediction time): (1) the “number of peaks” ranker feature uses raw test peaks (median 230) but was trained on cleaned peaks (median 52); (2) hidden-test positive-mode m/z values carry an electron-mass correction (−0.000548 Da) that the enveda-180 training spectra lack. This shifts mass-error features by ~1.6 ppm at the median mass, large next to the ~2.5 ppm typical gap between competing formulas. Two patched variants are submitted (scores pending).</p>
+
+    <p><span class="track">D — Compliance-first own pipeline.</span> For prize eligibility every model must be ours and reproducible. Pool: 726,198 structures (training + COCONUT Oct-2026). Channels: library entropy similarity, analog propagation, fragment explanation, COCONUT documentation priors (organisms, literature, synonyms) and our own <b>dual encoder</b>: peaks binned at 1 Da + neutral losses + adduct/energy/instrument → MLP → embedding, and 2,215 fingerprint bits → MLP → embedding, trained to put the true structure closer than up to 64 same-mass “hard negatives” (contrastive loss) while also predicting fingerprint bits. After one CPU epoch it ranks held-out structures among same-mass candidates with <b>MRR 0.51 (top-1 36%)</b>; longer runs are in progress. A LambdaRank ranker learns from simulated queries on 8,000 training structures (class 1: hide only the query spectra; class 2: hide all spectra of the structure), validated on 1,500 disjoint ones (250 enveda-np-examples, 750 natural products, 500 others), using the <i>measured</i> mass (the true one would leak the answer) plus the electron correction.</p>
+
+    <p><span class="track">E — Next.</span> Compare variants on the board; finish the own pipeline (target ≥ 0.45, fully compliant); add the class-3 engine only where the main list is weak; pick the two finals by validation + board. If hosts enforce the rules, strong compliant entries may outrank non-reproducible ones.</p>
+  </section>
+</div>
+</div>
+
+</div>
+</body>
+</html>
