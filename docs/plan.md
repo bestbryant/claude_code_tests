@@ -36,7 +36,10 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 ## Submissions
 | date | kernel | what | public |
 |---|---|---|---|
-| 10-17 | casmi26-s2s-fork v1 | unchanged fork of dmitriigluzdov s2s (E006 lineage, v51 = 0.450), image pinned | pending |
+| 10-17 | casmi26-s2s-fork v1 | unchanged fork of dmitriigluzdov s2s (E006 lineage, v51 = 0.450), image pinned | 0.451 |
+| 10-17 | casmi26-known-probe | engine candidates that ARE known, site+analog ranking | 0.085 |
+| 10-17 | casmi26-s2s-np | fork + q_npeaks on cleaned peaks | pending |
+| 10-17 | casmi26-s2s-np-eu | fork + q_npeaks + electron undo on rerun | pending |
 | 10-17 | casmi26-novel-probe v2 | ONLY novel candidates (class-3 reach probe) | 0.010 |
 
 ## Lesson from the class-3 probe (Oct 17)
