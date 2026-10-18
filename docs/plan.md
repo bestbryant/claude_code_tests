@@ -127,6 +127,11 @@ ICEBERG adds nothing on top -> dropped. Pipeline under construction:
    scripts/train_stage2.py -> kernel casmi26-own-s2 (datasets casmi26-pool2, casmi26-glacier).
 2. Test-like stage 1: FP v3 (0.1 Da bins, test-like keys held out) -> test-like training dump (tl_keys.txt, pool v2)
    -> stage-1 ranker trained on ret2 + test-like rows (fixes class-1 under-trust of cross-instrument library hits).
-3. LB probes queued for Oct 19 (5/day): own-ice (pool v3 + ICEBERG fusion vs 0.295), stage 2, source probes
+3. Oct 19 submissions (all kernels already run and checked):
+   scripts/safe_submit.sh casmi26-own-s2 2 "OWN v4: pool v2, stage 1 v2c, stage 2 with own GLACIER runner"
+   scripts/safe_submit.sh casmi26-own-v2c 1 "OWN v4 stage 1 only: ranker v2c (artifact-free), pool v2"
+   kaggle competitions submit enveda-CASMI26-molecule-id-mass-spectra -k bryantyu/casmi26-srcprobe -v 1 \
+     -f submission_train.csv -m "PROBE: lists restricted to training structures"   (same for _coco, _pubchem)
+   Earlier plan for these slots: own-ice (pool v3 + ICEBERG fusion vs 0.295), stage 2, source probes
    (submission_train / _coco / _pubchem from casmi26-srcprobe v1: which candidate sources hold the answers).
 4. Novel-candidate overlay (expected <= +0.01) and a stronger FP model on GPU (quota refresh Oct 24) after that.
