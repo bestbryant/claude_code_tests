@@ -14,6 +14,7 @@ tr_p, va_p, out = sys.argv[1:4]
 flags = set(a for a in sys.argv[4:] if a.startswith('--'))
 pool_dir = next((a for a in sys.argv[4:] if not a.startswith('--')), '/home/user/work/pool2')
 REACH_PMID = '--reach-pmid' in flags
+DROP_ARTIFACT = '--drop-artifact' in flags
 
 
 def load(p):
@@ -23,6 +24,8 @@ def load(p):
     # reachable for a class-2 test molecule: in COCONUT, in PubChemLite, or (pool v3) PubChem-documented (PMID record)
     reach = ((t.in_coco == 1) | (t.get('in_pcl', 0) == 1) | (t.get('pc_pmid', 0) > 0 if REACH_PMID else False))
     keep = (D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)
+    if DROP_ARTIFACT:   # class-1 queries whose truth kept no library spectrum behave like class 2 with in_train = 1
+        keep &= ~D.qid.isin(t.index[(t.cls == 1) & (t.lib_n == 0)])
     return D[keep].reset_index(drop=True)
 
 
