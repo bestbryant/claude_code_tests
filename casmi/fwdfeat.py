@@ -17,42 +17,30 @@ def top_k(D, score, k):
     return D[D.s1_r <= k].copy()
 
 
-def _z(v):
-    ok = np.isfinite(v)
-    out = np.full(len(v), np.nan)
-    if ok.sum() >= 2:
-        sd = v[ok].std(ddof=1)
-        out[ok] = (v[ok] - v[ok].mean()) / sd if sd > 0 else 0.0
-    return out
+def _gz(g, col):
+    """Within-group z-score over non-missing values (sample std; < 2 values or std 0 -> NaN / 0)."""
+    m = g[col].transform('mean'); sd = g[col].transform('std'); n = g[col].transform('count')
+    z = (g.obj[col] - m) / sd
+    return z.where(n >= 2).where(~((sd == 0) & (n >= 2)), 0.0)
 
 
 def add_features(T, scores, col='gl'):
     """T: top-k rows (qid, smiles, formula, s1, s1_r). scores: {str(qid): {smiles: score | None}}.
     Adds the FWD_FEATS columns (NaN where the query has no covered spectrum)."""
     T = T.copy()
-    T[col] = [scores.get(str(q), {}).get(s) for q, s in zip(T.qid, T.smiles)]
-    T[col] = pd.to_numeric(T[col], errors='coerce')
-    for c in FWD_FEATS[1:7]:
-        T[c] = np.nan
-    parts = []
-    for q, g in T.groupby('qid', sort=False):
-        v = g[col].values.astype(float)
-        g = g.copy()
-        g['gl_z'] = _z(v)
-        g['gl_r'] = pd.Series(-v).rank(method='min').values          # NaN stays NaN
-        fz = np.full(len(g), np.nan); fr = np.full(len(g), np.nan); fgap = np.full(len(g), np.nan)
-        n_f = np.zeros(len(g))
-        for f, idx in g.groupby('formula').indices.items():
-            n_f[idx] = len(idx)
-            if len(idx) < 2:
-                continue
-            w = v[idx]
-            fz[idx] = _z(w)
-            fr[idx] = pd.Series(-w).rank(method='min').values
-            for j, i in enumerate(idx):
-                others = np.delete(w, j)
-                if np.isfinite(w[j]) and np.isfinite(others).any():
-                    fgap[i] = w[j] - np.nanmax(others)
-        g['gl_fz'], g['gl_fr'], g['gl_fgap'], g['n_fgrp'] = fz, fr, fgap, n_f
-        parts.append(g)
-    return pd.concat(parts) if parts else T
+    T[col] = pd.to_numeric(pd.Series([scores.get(str(q), {}).get(s) for q, s in zip(T.qid, T.smiles)],
+                                     index=T.index, dtype=object), errors='coerce')
+    gq = T.groupby('qid', sort=False)
+    T['gl_z'] = _gz(gq, col)
+    T['gl_r'] = gq[col].rank(ascending=False, method='min')
+    gf = T.groupby(['qid', 'formula'], sort=False)
+    T['n_fgrp'] = gf[col].transform('size').astype(float)
+    T['gl_fz'] = _gz(gf, col).where(T.n_fgrp >= 2)
+    T['gl_fr'] = gf[col].rank(ascending=False, method='min').where(T.n_fgrp >= 2)
+    # gap to the best OTHER member of the formula group
+    first = gf[col].transform('max')
+    second = gf[col].transform(lambda v: v.nlargest(2).iloc[-1] if v.count() >= 2 else np.nan)
+    is_top = T[col] == first
+    other_best = np.where(is_top, second, first)
+    T['gl_fgap'] = (T[col] - other_best).where((T.n_fgrp >= 2) & T[col].notna())
+    return T

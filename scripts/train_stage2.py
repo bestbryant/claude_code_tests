@@ -13,7 +13,7 @@ from casmi.fwdfeat import FWD_FEATS, add_features
 
 PARAMS = dict(objective='lambdarank', metric='ndcg', ndcg_eval_at=[1, 5], learning_rate=0.05, num_leaves=31,
               min_data_in_leaf=20, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambdarank_truncation_level=30,
-              verbose=-1, seed=0)
+              verbose=-1, seed=0, num_threads=2)
 
 
 def load(prefix):
