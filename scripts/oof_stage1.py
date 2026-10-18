@@ -12,7 +12,7 @@ rows, feats_p, out = sys.argv[1:4]
 D = pd.read_parquet(rows).sort_values(['qid', 'pid']).reset_index(drop=True)
 D.loc[(D.cls == 2) & (D.label == 1), 'in_train'] = 0
 t = D[D.label == 1].set_index('qid')
-reach = (t.in_coco == 1) | (t.get('in_pcl', 0) == 1)
+reach = (t.in_coco == 1) | (t.get('in_pcl', 0) == 1) | (t.get('in_bio', 0) == 1)
 if '--reach-pmid' in sys.argv:
     reach |= t.get('pc_pmid', 0) > 0
 keep = (D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)
