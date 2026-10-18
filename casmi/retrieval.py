@@ -62,7 +62,7 @@ class Retrieval:
         if f is None:
             m = Chem.MolFromSmiles(self.P.smiles.values[i])
             f = fragments(m) if m is not None and m.GetNumHeavyAtoms() <= 80 else []
-            if len(self._frag_cache) > 200000:
+            if len(self._frag_cache) > 20000:
                 self._frag_cache.clear()
             self._frag_cache[i] = f
         return f

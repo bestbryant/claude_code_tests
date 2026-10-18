@@ -13,8 +13,9 @@ from casmi.spectra import Store
 rows, wpath, out = sys.argv[1:4]
 torch.set_num_threads(1)
 D = pd.read_parquet(rows)
-P = pd.read_parquet('/home/user/work/pool/pool.parquet')
-sc = FPScorer(wpath, np.load('/home/user/work/pool/pool_fp.npy', mmap_mode='r'))
+POOL = sys.argv[4] if len(sys.argv) > 4 else '/home/user/work/pool2'
+P = pd.read_parquet(f'{POOL}/pool.parquet')
+sc = FPScorer(wpath, np.load(f'{POOL}/pool_fp.npy', mmap_mode='r'))
 st = Store('/home/user/work/train_store'); meta = st.meta
 parts = []
 t0 = time.time()

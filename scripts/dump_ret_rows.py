@@ -18,7 +18,8 @@ which, n, out = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 seed = int(sys.argv[4]) if len(sys.argv) > 4 else 0
 procs = int(sys.argv[5]) if len(sys.argv) > 5 else 4
 p1 = float(sys.argv[6]) if len(sys.argv) > 6 else 0.3
-R = Retrieval('/home/user/work/pool', AnalogLib(), '/home/user/ext/coconut/coconut_prior.parquet',
+POOL_DIR = os.environ.get('CASMI_POOL', '/home/user/work/pool2')
+R = Retrieval(POOL_DIR, AnalogLib(), '/home/user/ext/coconut/coconut_prior.parquet',
               lib_full=AnalogLib('/home/user/work/lib10.npz'))
 st = Store('/home/user/work/train_store'); meta = st.meta
 TEST_ADD = ['[M+H]+', '[M-H]-', '[M+Na]+', '[M+NH4]+', '[M-H2O+H]+', '[M+CH2O2-H]-', '[M+K]+', '[M+Cl]-',
@@ -82,14 +83,24 @@ def one(args):
 
 
 if __name__ == '__main__':
-    t0 = time.time(); res = []
-    with Pool(procs) as pool_:
-        for i, df in enumerate(pool_.imap_unordered(one, list(enumerate(keys)), chunksize=2)):
-            if df is not None:
-                res.append(df)
-            if i % 100 == 0:
-                print(i, f'{time.time()-t0:.0f}s', flush=True)
-    D = pd.concat(res, ignore_index=True)
+    # results are written in chunks so a lost worker or a restart never loses finished work
+    t0 = time.time(); part_dir = out + '.parts'; os.makedirs(part_dir, exist_ok=True)
+    CH = 250
+    jobs = list(enumerate(keys))
+    for c0 in range(0, len(jobs), CH):
+        pf = f'{part_dir}/part_{c0:06d}.parquet'
+        if os.path.exists(pf):
+            continue
+        res = []
+        with Pool(procs, maxtasksperchild=50) as pool_:
+            for df in pool_.imap_unordered(one, jobs[c0:c0 + CH], chunksize=1):
+                if df is not None:
+                    res.append(df)
+        if res:
+            pd.concat(res, ignore_index=True).to_parquet(pf)
+        print(c0 + CH, f'{time.time()-t0:.0f}s', flush=True)
+    parts = sorted(os.listdir(part_dir))
+    D = pd.concat([pd.read_parquet(f'{part_dir}/{p}') for p in parts], ignore_index=True)
     D.to_parquet(out)
     q = D.groupby('qid').label.max()
     print('FINAL queries', D.qid.nunique(), 'rows', len(D), 'truth in window', q.mean().round(3), f'{time.time()-t0:.0f}s')
