@@ -79,6 +79,8 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
   source in simulation): stage-1 v4c validation cls1 0.827 / cls2 0.926 (v2c 0.806 / 0.862), stage 2 0.893
   (stage 1 0.891). in_bio is the 3rd most important feature -- likely inflated (training structures have public
   spectra, hence are well known and over-represented in ChEBI); only the LB can tell (kernel casmi26-own-s2v4).
+- Analog library with 10 spectra per structure instead of 3: best analog Tanimoto to the truth 0.585 -> 0.599
+  (>= 0.7: 37.7% -> 40.3%, 300 validation queries) for 3x search cost -> not adopted for now.
 - Ranker v2c = v2 recipe without the artifact class-1 queries: validation 0.815 -> 0.842, test-like 0.851 -> 0.860.
 - The repository has no LICENSE file yet: the winning entry must be open source -> the owner should add one (MIT
   fits the components used) before the final submission.
