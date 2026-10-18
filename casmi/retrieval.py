@@ -144,6 +144,10 @@ class Retrieval:
                                frag=frag, frag_n=frag_n, in_train=self.P.in_train.values[idx],
                                in_coco=self.P.in_coco.values[idx], ha=self.P.ha.values[idx],
                                ppm=(self.mass[idx] - M) / M * 1e6, formula=self.P.formula.values[idx]))
+        if hide:
+            # a hidden structure stands in for a test molecule without public spectra: it must not look like a
+            # training structure (class-2 answers are never in train.parquet)
+            df.loc[df.key.isin(hide), 'in_train'] = 0
         for c, name in enumerate(PRIOR_COLS):
             df[name] = self.prior[idx, c]
         df['n_cand'] = n
