@@ -78,6 +78,14 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
 - Rare natural products (class 2, COCONUT, <= 5 PMIDs, 267 queries): ranker v2 0.702 vs no-prior 0.560 -> priors
   still help on poorly documented truths.
 
+- Stage-1 v3 (FP v3 features, + 2483 test-like training queries): standard validation cls1 0.819 / cls2 0.840
+  (v2 0.820 / 0.829); test-like validation cls1 0.706 / cls2 0.934 (v2 0.743 / 0.944) -> not adopted. Class-1
+  failures: a COCONUT-only candidate without library spectra outranks the training structure whose cross-instrument
+  library similarity is moderate (median 0.59); the learned class prior (most answers are not training structures)
+  drives it. Whether that prior is right for the hidden test is what the train-source LB probe measures.
+- Original simulation artifact: 27% of class-1 validation queries leave the truth without any library spectrum
+  (all its library spectra were the hidden query spectra) -> effectively class 2 with in_train = 1.
+
 ## Simulation leak (Oct 18)
 Class-2 queries whose truth is NOT reachable without train.parquet still score MRR 0.87 on validation: a hidden
 training structure is the only candidate with no source flag. Training already filters these (--reach-pmid), but
