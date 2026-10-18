@@ -7,7 +7,9 @@ spectra) and stage 2 re-ranks those K with the features below added to the stage
 import numpy as np
 import pandas as pd
 
-FWD_FEATS = ['gl', 'gl_fz', 'gl_fr', 'gl_fgap', 'gl_z', 'gl_r', 'n_fgrp', 's1', 's1_r']
+# the stage-1 score enters only within-query (z-score, rank): training uses out-of-fold stage-1 models, inference the
+# full model, and LambdaRank scores of different models are not on a common scale
+FWD_FEATS = ['gl', 'gl_fz', 'gl_fr', 'gl_fgap', 'gl_z', 'gl_r', 'n_fgrp', 's1_z', 's1_r']
 
 
 def top_k(D, score, k):
@@ -31,6 +33,7 @@ def add_features(T, scores, col='gl'):
     T[col] = pd.to_numeric(pd.Series([scores.get(str(q), {}).get(s) for q, s in zip(T.qid, T.smiles)],
                                      index=T.index, dtype=object), errors='coerce')
     gq = T.groupby('qid', sort=False)
+    T['s1_z'] = _gz(gq, 's1')
     T['gl_z'] = _gz(gq, col)
     T['gl_r'] = gq[col].rank(ascending=False, method='min')
     gf = T.groupby(['qid', 'formula'], sort=False)
