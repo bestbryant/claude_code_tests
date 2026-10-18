@@ -70,6 +70,11 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
 - Own-runner stage 2 (pool v2, stage 1 = ranker v2 with out-of-fold scores, 4/6 training shards, full validation
   of 1093 queries, 76% with a covered spectrum): stage 1 0.825 -> stage 2 without GLACIER 0.827 -> with GLACIER
   0.840 (cls1 +0.005, cls2 +0.021); covered queries 0.842 -> 0.861.
+- Stage 2 on v2c (shipped as stage2_v2): validation 0.842 -> 0.850 (covered 0.850 -> 0.861); boosting from the
+  stage-1 margin instead: 0.851 (noise level, and it reintroduces the score-scale mismatch) -> not used.
+- GLACIER for novel candidates (class 3): on 178 reachable enveda-only absent-from-PubChem proxy queries (not in
+  MassSpecGym) novel-LTR MRR 0.624 -> LTR + 2 x GLACIER (z-scores) 0.725. Reach (15.8% of those queries) is the
+  bottleneck, so the LB effect would be small (novel-only probe 0.010 today).
 - Ranker v2c = v2 recipe without the artifact class-1 queries: validation 0.815 -> 0.842, test-like 0.851 -> 0.860.
 - The repository has no LICENSE file yet: the winning entry must be open source -> the owner should add one (MIT
   fits the components used) before the final submission.
