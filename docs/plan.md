@@ -101,11 +101,15 @@ weight reproducible from public code + permitted data. NC licences inherited onl
 => The forked 0.45 pipeline is at best uncertain for a prize. A prize-eligible final entry needs our own code and
 weights for every learned component (allowed third-party: MassSpecGym ICEBERG/GLACIER, DreaMS, FRIGID, PubChem counts).
 
-## Next (updated Oct 18)
-Public-lineage fork = 0.451 (bug-fix variants: q_npeaks 0.451, electron undo 0.430 -> keep fork as is).
-Own compliant pipeline v1 = 0.295 (priors worth +0.05 on LB). Gap to close, in order:
-1. PubChem documentation counts per connectivity key (own FTP build) as priors; documented-PubChem candidates (pool v3).
-2. Ranker: class-1 oversampling x2 (+0.016 cls1 on validation, cls2 unchanged).
-3. Stronger dual encoder (resumed CPU training; GPU quota shared and nearly used up this week).
-4. Forward-model re-ranking with MassSpecGym ICEBERG/GLACIER (own DGL-free runner on ms-pred MIT code).
-5. Novel-candidate overlay (LTR) where the main list is weak (expected <= +0.01).
+## Next (updated Oct 18, midday)
+Own runner for GLACIER (casmi/fwdrun.py: official ms-pred source + original MassSpecGym checkpoint + fwdshim):
+isomer top-1 inside the truth's formula group 0.838 (public runner 0.743, ICEBERG 0.714, own FP encoder 0.568);
+ICEBERG adds nothing on top -> dropped. Pipeline under construction:
+1. Stage 1 = ranker v2 on pool v2 (LB 0.315). Stage-2 training rows = pool-v2 training queries with OUT-OF-FOLD
+   stage-1 scores (scripts/oof_stage1.py) -> top 30 -> GLACIER on Kaggle CPU workers (casmi26-glw-*) ->
+   scripts/train_stage2.py -> kernel casmi26-own-s2 (datasets casmi26-pool2, casmi26-glacier).
+2. Test-like stage 1: FP v3 (0.1 Da bins, test-like keys held out) -> test-like training dump (tl_keys.txt, pool v2)
+   -> stage-1 ranker trained on ret2 + test-like rows (fixes class-1 under-trust of cross-instrument library hits).
+3. LB probes queued for Oct 19 (5/day): own-ice (pool v3 + ICEBERG fusion vs 0.295), stage 2, source probes
+   (submission_train / _coco / _pubchem from casmi26-srcprobe v1: which candidate sources hold the answers).
+4. Novel-candidate overlay (expected <= +0.01) and a stronger FP model on GPU (quota refresh Oct 24) after that.
