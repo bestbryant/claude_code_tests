@@ -22,7 +22,8 @@ def load(p):
     D.loc[(D.cls == 2) & (D.label == 1), 'in_train'] = 0           # also for rows dumped before the in-code fix
     t = D[D.label == 1].set_index('qid')
     # reachable for a class-2 test molecule: in COCONUT, in PubChemLite, or (pool v3) PubChem-documented (PMID record)
-    reach = ((t.in_coco == 1) | (t.get('in_pcl', 0) == 1) | (t.get('pc_pmid', 0) > 0 if REACH_PMID else False))
+    reach = ((t.in_coco == 1) | (t.get('in_pcl', 0) == 1) | (t.get('in_bio', 0) == 1)
+             | (t.get('pc_pmid', 0) > 0 if REACH_PMID else False))
     keep = (D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)
     if DROP_ARTIFACT:   # class-1 queries whose truth kept no library spectrum behave like class 2 with in_train = 1
         keep &= ~D.qid.isin(t.index[(t.cls == 1) & (t.lib_n == 0)])
@@ -33,7 +34,7 @@ TR, VA = load(tr_p), load(va_p)
 # class-1 queries twice: the simulation is 30% class 1 while the test mix is closer to 45:55 (better on validation)
 c1 = TR[TR.cls == 1]
 TR = pd.concat([TR, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
-feats = [f for f in FEATS + PCL_COLS + PC_COLS + FP_FEATS if f in TR.columns and f in VA.columns]
+feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + FP_FEATS if f in TR.columns and f in VA.columns]
 if '--no-prior' in flags:
     feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS[1:] + PC_COLS + ['in_coco']]
 if '--no-membership' in flags:

@@ -49,7 +49,7 @@ if TL:
 
 def reachable(k):
     row = P.loc[k]
-    return bool(row.in_coco == 1 or row.get('in_pcl', 0) == 1 or row.get('pc_pmid', 0) > 0)
+    return bool(row.in_coco == 1 or row.get('in_pcl', 0) == 1 or row.get('in_bio', 0) == 1 or row.get('pc_pmid', 0) > 0)
 rng = np.random.default_rng(seed)
 keys = list(rng.choice(keys, size=min(n, len(keys)), replace=False))
 
