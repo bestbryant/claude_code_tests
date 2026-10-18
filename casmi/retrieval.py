@@ -24,6 +24,7 @@ FEATS = (['lib', 'lib_n', 'lib_r', 'an_best', 'an_tan_best', 'an_sum', 'an_top1_
           'in_train', 'in_coco', 'ha', 'ppm', 'n_cand', 'n_form', 'form_frac', 'lib_gap', 'an_gap', 'frag_gap']
          + PRIOR_COLS)
 PCL_COLS = ['in_pcl', 'pcl_pubmed', 'pcl_patent', 'pcl_anno', 'pcl_bio', 'pcl_food']
+PC_COLS = ['pc_sid', 'pc_pmid', 'pc_patent', 'pc_ncid']      # PubChem documentation counts (log1p)
 
 
 def tanimoto_packed(a, B):
@@ -151,6 +152,9 @@ class Retrieval:
             df.loc[df.key.isin(hide), 'in_train'] = 0
         for c, name in enumerate(PRIOR_COLS):
             df[name] = self.prior[idx, c]
+        for c in PC_COLS:            # PubChem documentation counts per connectivity key (stored as log1p)
+            if c in self.P.columns:
+                df[c] = self.P[c].values[idx].astype(float)
         for c in PCL_COLS:           # PubChemLite membership and annotation priors (pool v2)
             if c in self.P.columns:
                 v = self.P[c].values[idx].astype(float)
