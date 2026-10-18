@@ -75,6 +75,10 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
 - GLACIER for novel candidates (class 3): on 178 reachable enveda-only absent-from-PubChem proxy queries (not in
   MassSpecGym) novel-LTR MRR 0.624 -> LTR + 2 x GLACIER (z-scores) 0.725. Reach (15.8% of those queries) is the
   bottleneck, so the LB effect would be small (novel-only probe 0.010 today).
+- Pool v4 = pool v2 + 52k ChEBI / LIPID MAPS structures (CC BY 4.0), membership flag in_bio (also a reachable
+  source in simulation): stage-1 v4c validation cls1 0.827 / cls2 0.926 (v2c 0.806 / 0.862), stage 2 0.893
+  (stage 1 0.891). in_bio is the 3rd most important feature -- likely inflated (training structures have public
+  spectra, hence are well known and over-represented in ChEBI); only the LB can tell (kernel casmi26-own-s2v4).
 - Ranker v2c = v2 recipe without the artifact class-1 queries: validation 0.815 -> 0.842, test-like 0.851 -> 0.860.
 - The repository has no LICENSE file yet: the winning entry must be open source -> the owner should add one (MIT
   fits the components used) before the final submission.
@@ -132,6 +136,8 @@ ICEBERG adds nothing on top -> dropped. Pipeline under construction:
    scripts/safe_submit.sh casmi26-own-v2c 1 "OWN v4 stage 1 only: ranker v2c (artifact-free), pool v2"
    kaggle competitions submit enveda-CASMI26-molecule-id-mass-spectra -k bryantyu/casmi26-srcprobe -v 1 \
      -f submission_train.csv -m "PROBE: lists restricted to training structures"   (same for _coco, _pubchem)
+   Pool-v4 alternative: scripts/safe_submit.sh casmi26-own-s2v4 1 "OWN v4 + ChEBI/LIPID MAPS pool (in_bio)"
+   (5 slots for 6 candidates: s2, v2c, s2v4, probe_train, probe_coco now; probe_pubchem the day after)
    Earlier plan for these slots: own-ice (pool v3 + ICEBERG fusion vs 0.295), stage 2, source probes
    (submission_train / _coco / _pubchem from casmi26-srcprobe v1: which candidate sources hold the answers).
 4. Novel-candidate overlay (expected <= +0.01) and a stronger FP model on GPU (quota refresh Oct 24) after that.
