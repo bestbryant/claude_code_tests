@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from rdkit import Chem, RDLogger
 from rdkit.Chem import MACCSkeys
 
-from .fpmodel import SparseDualEncoder, sparse_spec, sparse_bits, N_BITS
+from .fpmodel import SparseDualEncoder, sparse_spec, sparse_bits, N_BITS, NB_FRAG, NB_NL
 
 RDLogger.DisableLog('rdApp.*')
 ADD = ['[M+H]+', '[M-H]-', '[M+Na]+', '[M+NH4]+', '[M-H2O+H]+', '[M+CH2O2-H]-', '[M+K]+', '[M+Cl]-', '[M-H2O-H]-',
@@ -25,8 +25,10 @@ def top_peaks(mz, it, prec, k=64):
 
 class FPScorer:
     def __init__(self, weights, pool_fp=None, device='cpu'):
-        self.m = SparseDualEncoder()
-        self.m.load_state_dict(torch.load(weights, map_location=device))
+        sd = torch.load(weights, map_location=device)
+        self.fine = sd['peaks.weight'].shape[0] > NB_FRAG + NB_NL          # 0.1 Da bins present
+        self.m = SparseDualEncoder(d=sd['peaks.weight'].shape[1], emb=sd['spec_emb.weight'].shape[0], fine=self.fine)
+        self.m.load_state_dict(sd)
         self.m.eval()
         self.pool_fp = pool_fp          # packed Morgan 2048 per pool row (MACCS added on the fly)
         self._mac = {}
@@ -57,7 +59,7 @@ class FPScorer:
         idx = np.arange(len(spectra))
         ids, bo, wts, meta = sparse_spec(np.concatenate(mzs), np.concatenate(its), np.array(offs), idx,
                                          np.array(prec, np.float32), np.array(ce, np.float32), np.array(add, np.int8),
-                                         np.array(inst, np.int8), np.array(pol, np.int8))
+                                         np.array(inst, np.int8), np.array(pol, np.int8), fine=self.fine)
         with torch.no_grad():
             e, logits = self.m.encode_spec(torch.from_numpy(ids), torch.from_numpy(bo), torch.from_numpy(wts),
                                            torch.from_numpy(meta))

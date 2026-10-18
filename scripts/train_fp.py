@@ -4,7 +4,7 @@ Usage: python scripts/train_fp.py <data_dir> <out.pt> [epochs] [steps_per_epoch]
 Validation: for held-out structures (split 1), mean spectrum embedding of up to 3 spectra vs the truth and its
 window negatives -> MRR and top-1 (class-2-like retrieval among same-mass candidates).
 """
-import sys, time
+import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
 sys.path.insert(0, '/home/user/claude_code_tests'); sys.path.insert(0, '/kaggle/working/pkg')
 from casmi.fpmodel import SparseDualEncoder, sparse_spec, sparse_bits, unpack_bits
@@ -23,10 +23,15 @@ negs = np.load(f'{data}/negs.npy'); negfp = np.load(f'{data}/negfp.npy')
 mz, it, off = S['mz'], S['it'], S['off']
 prec, ce, add_id, inst_id, pol, sidx, split = S['prec'], S['ce'], S['add_id'], S['inst_id'], S['pol'], S['sidx'], S['split']
 sfp = T['fp']
+if os.environ.get('FP_EXCLUDE'):        # extra held-out structures (e.g. the test-like ranker keys): never trained on
+    ex = set(open(os.environ['FP_EXCLUDE']).read().split())
+    split = split.copy(); split[(split == 0) & np.isin(sidx, np.where(np.isin(T['key'], list(ex)))[0])] = 2
 tr = np.where(split == 0)[0]
+print('train spectra', len(tr), 'val', int((split == 1).sum()), 'held out', int((split == 2).sum()), flush=True)
 w = np.where(inst_id[tr] == 1, 2.0, 1.0); w /= w.sum()          # timsTOF spectra sampled twice as often
-model = SparseDualEncoder().to(dev)
-import os
+FINE = os.environ.get('FP_FINE') == '1'          # add 0.1 Da peak / neutral-loss bins
+D_MODEL = int(os.environ.get('FP_D', '768'))
+model = SparseDualEncoder(d=D_MODEL, fine=FINE).to(dev)
 if os.environ.get('FP_INIT'):          # resume from a checkpoint
     model.load_state_dict(torch.load(os.environ['FP_INIT'], map_location=dev))
 opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-4)
@@ -36,7 +41,7 @@ T_ = lambda a: torch.from_numpy(a).to(dev)
 
 
 def spec_inputs(idx):
-    ids, bo, wts, meta = sparse_spec(mz, it, off, idx, prec, ce, add_id, inst_id, pol)
+    ids, bo, wts, meta = sparse_spec(mz, it, off, idx, prec, ce, add_id, inst_id, pol, fine=FINE)
     return T_(ids), T_(bo), T_(wts), T_(meta)
 
 
@@ -52,18 +57,22 @@ def validate(max_structs=1500):
     for i in vi:
         by.setdefault(sidx[i], []).append(i)
     keys = list(by)[:max_structs]
-    rr = []
+    rr, rt = [], []          # all instruments / timsTOF-only queries (the hidden test is timsTOF)
     with torch.no_grad():
         for s in keys:
-            ii = np.array(by[s][:3])
-            e, _ = model.encode_spec(*spec_inputs(ii))
-            e = F.normalize(e.mean(0, keepdim=True), dim=-1)
             ng = negs[s][negs[s] >= 0]
             m = model.encode_mol(*mol_inputs(np.concatenate([sfp[s:s + 1], negfp[ng]], 0)))
-            sc = (e @ m.T).squeeze(0).cpu().numpy()
-            rr.append(1.0 / (1 + (sc[1:] > sc[0]).sum()))
+            ti = [i for i in by[s] if inst_id[i] == 1][:3]
+            for ii, acc in ((by[s][:3], rr), (ti, rt)):
+                if not ii:
+                    continue
+                e, _ = model.encode_spec(*spec_inputs(np.array(ii)))
+                e = F.normalize(e.mean(0, keepdim=True), dim=-1)
+                sc = (e @ m.T).squeeze(0).cpu().numpy()
+                acc.append(1.0 / (1 + (sc[1:] > sc[0]).sum()))
     model.train()
-    rr = np.array(rr)
+    rr, rt = np.array(rr), np.array(rt)
+    print(f'  val timsTOF-only MRR {rt.mean():.4f} top1 {(rt == 1).mean():.4f} (n={len(rt)})', flush=True)
     return rr.mean(), (rr == 1).mean(), len(rr)
 
 

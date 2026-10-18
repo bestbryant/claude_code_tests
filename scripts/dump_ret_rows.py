@@ -1,8 +1,12 @@
 """Simulated retrieval queries -> candidate feature rows for ranker training / validation.
 
-Usage: python scripts/dump_ret_rows.py <set: np|npx|any|keys:<file>> <n> <out.parquet> [seed] [procs] [p_class1]
+Usage: python scripts/dump_ret_rows.py <set: np|npx|any|keys:<file>|tl:<file>> <n> <out.parquet> [seed] [procs] [p_class1]
 Each held-out structure: 1-5 spectra (test adducts, timsTOF preferred) as the query. Class 1 hides only those
 spectra; class 2 hides every spectrum of the structure (it stays in the candidate pool).
+tl ("test-like"): the hidden test is timsTOF, so queries are timsTOF spectra only. Class 1 hides every timsTOF spectrum
+of the structure and keeps its other-instrument library spectra (a test molecule with public spectra measured
+elsewhere); class 2 hides all spectra and is used only when the truth is reachable without train.parquet (COCONUT,
+PubChemLite or a PubChem PMID record), as for a test molecule without public spectra.
 """
 import os, sys, time
 os.environ['NUMBA_NUM_THREADS'] = '1'
@@ -28,8 +32,9 @@ mm = meta[meta.adduct.isin(TEST_ADD)]
 grp = mm.groupby('inchikey14').groups
 tims = set(mm.index[mm.instrument_type.fillna('').str.contains('tims', case=False)])
 P = R.P.set_index('key')
-if which.startswith('keys:'):
-    keys = sorted(set(open(which[5:]).read().split()))
+TL = which.startswith('tl:')
+if which.startswith('keys:') or TL:
+    keys = sorted(set(open(which.split(':', 1)[1]).read().split()))
 elif which == 'npx':
     keys = sorted(set(meta.inchikey14[meta.ingest_lib == 'enveda-np-examples']))
 elif which == 'np':
@@ -38,6 +43,13 @@ else:
     keys = sorted(set(P.index[P.in_train == 1]))
 excl = set(open('/home/user/work/val_keys.txt').read().split()) if os.path.exists('/home/user/work/val_keys.txt') and 'train' in out else set()
 keys = [k for k in keys if k in grp and k in P.index and 120 < P.loc[k, 'mass'] < 1300 and k not in excl]
+if TL:
+    keys = [k for k in keys if any(i in tims for i in grp[k])]
+
+
+def reachable(k):
+    row = P.loc[k]
+    return bool(row.in_coco == 1 or row.get('in_pcl', 0) == 1 or row.get('pc_pmid', 0) > 0)
 rng = np.random.default_rng(seed)
 keys = list(rng.choice(keys, size=min(n, len(keys)), replace=False))
 
@@ -47,7 +59,12 @@ def one(args):
     r = np.random.default_rng(seed * 7919 + qi)
     idx = list(grp[k])
     t_idx = [i for i in idx if i in tims]
-    pool_idx = t_idx if t_idx and r.random() < 0.8 else idx
+    if TL:
+        ok1, ok2 = len(t_idx) < len(idx), reachable(k)
+        if not (ok1 or ok2):
+            return None
+        cls = (1 if r.random() < p1 else 2) if ok1 and ok2 else (1 if ok1 else 2)
+    pool_idx = t_idx if TL or (t_idx and r.random() < 0.8) else idx
     r.shuffle(pool_idx)
     q_rows = pool_idx[:int(r.integers(1, 6))]
     Q, nms = [], []
@@ -62,13 +79,14 @@ def one(args):
             nms.append(neutral_mass(prec, row.adduct))
     if not Q:
         return None
-    cls = 1 if r.random() < p1 else 2
+    if not TL:
+        cls = 1 if r.random() < p1 else 2
     M = float(np.nanmedian(nms))     # measured mass, as at inference (not the exact truth mass)
     if not np.isfinite(M):
         return None
     try:
         if cls == 1:
-            df = R.features(Q, M, hide_rows=set(int(i) for i in q_rows))
+            df = R.features(Q, M, hide_rows=set(int(i) for i in (t_idx if TL else q_rows)))
         else:
             df = R.features(Q, M, hide_keys={k})
     except Exception as e:

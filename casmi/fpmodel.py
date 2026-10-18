@@ -10,6 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 NB_FRAG, NB_NL, N_ADD, N_INST = 1500, 500, 15, 6
+NB_FINE_FRAG, NB_FINE_NL = 15000, 5000          # optional 0.1 Da bins (exact-mass information) on top of the 1 Da bins
+NB_FINE = NB_FINE_FRAG + NB_FINE_NL
 N_META = N_ADD + 2 + 1 + N_INST + 1
 D_IN = NB_FRAG + NB_NL + N_META
 N_BITS = 2215
@@ -72,8 +74,9 @@ def unpack_bits(packed):
     return np.unpackbits(packed, axis=-1)[..., :N_BITS].astype(np.float32)
 
 
-def sparse_spec(mz_flat, it_flat, off, idx, prec, ce, add_id, inst_id, pol):
-    """EmbeddingBag inputs for spectra `idx`: (bin ids, bag offsets, weights) + dense metadata (n, N_META)."""
+def sparse_spec(mz_flat, it_flat, off, idx, prec, ce, add_id, inst_id, pol, fine=False):
+    """EmbeddingBag inputs for spectra `idx`: (bin ids, bag offsets, weights) + dense metadata (n, N_META).
+    fine=True adds every peak and neutral loss once more in 0.1 Da bins (ids after the 1 Da bins)."""
     n = len(idx)
     starts, ends = off[idx], off[idx + 1]
     lens = ends - starts
@@ -84,9 +87,16 @@ def sparse_spec(mz_flat, it_flat, off, idx, prec, ce, add_id, inst_id, pol):
     nl = prec[idx][rows] - mz
     fb = np.clip(np.round(mz).astype(np.int64), 0, NB_FRAG - 1)
     ok = (nl > 0.5) & (nl < NB_NL - 0.5)
-    ids = np.concatenate([fb, NB_FRAG + np.round(nl[ok]).astype(np.int64)])
-    wts = np.concatenate([it, it[ok]])
-    rr = np.concatenate([rows, rows[ok]])
+    ids = [fb, NB_FRAG + np.round(nl[ok]).astype(np.int64)]
+    wts = [it, it[ok]]
+    rr = [rows, rows[ok]]
+    if fine:
+        base = NB_FRAG + NB_NL
+        ids += [base + np.clip(np.round(mz * 10).astype(np.int64), 0, NB_FINE_FRAG - 1),
+                base + NB_FINE_FRAG + np.clip(np.round(nl[ok] * 10).astype(np.int64), 0, NB_FINE_NL - 1)]
+        wts += [it, it[ok]]
+        rr += [rows, rows[ok]]
+    ids, wts, rr = np.concatenate(ids), np.concatenate(wts), np.concatenate(rr)
     o = np.argsort(rr, kind='stable')
     ids, wts, rr = ids[o], wts[o], rr[o]
     nrm = np.sqrt(np.bincount(rr, weights=wts ** 2, minlength=n)) + 1e-6
@@ -121,9 +131,10 @@ def sparse_bits(packed):
 
 
 class SparseDualEncoder(nn.Module):
-    def __init__(self, d=768, emb=256, drop=0.1):
+    def __init__(self, d=768, emb=256, drop=0.1, fine=False):
         super().__init__()
-        self.peaks = nn.EmbeddingBag(NB_FRAG + NB_NL, d, mode='sum')
+        self.fine = fine
+        self.peaks = nn.EmbeddingBag(NB_FRAG + NB_NL + (NB_FINE if fine else 0), d, mode='sum')
         self.meta = nn.Linear(N_META, d)
         self.spec = nn.Sequential(nn.GELU(), nn.Dropout(drop), nn.Linear(d, d), nn.GELU(), nn.Dropout(drop),
                                   nn.Linear(d, d), nn.GELU())
