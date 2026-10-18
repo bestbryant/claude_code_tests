@@ -258,7 +258,7 @@ def main():
                 signal.alarm(0)
             done_b.add(bi); n_new += 1
             os.remove(cur)
-            if n_new % 50 == 0:
+            if n_new % 200 == 0:          # each checkpoint rewrites all predictions so far: keep them rare
                 pickle.dump(dict(jobs={k: v for k, v in jobs.items() if v is not None}, done=done_b, bad=bad_b),
                             open(ck, 'wb'))
                 print(f'fwdrun: {b0 + a.bs}/{len(keys)} {time.time()-t0:.0f}s', flush=True)
