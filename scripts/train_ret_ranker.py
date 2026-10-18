@@ -28,6 +28,8 @@ TR, VA = load(tr_p), load(va_p)
 feats = [f for f in FEATS + PCL_COLS + FP_FEATS if f in TR.columns and f in VA.columns]
 if '--no-prior' in flags:
     feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS[1:] + ['in_coco']]
+if '--no-membership' in flags:
+    feats = [f for f in feats if f not in ('in_train', 'lib_n')]
 if '--no-fp' in flags:
     feats = [f for f in feats if f not in FP_FEATS]
 m = pd.read_parquet('/home/user/data/train_meta.parquet', columns=['inchikey14', 'ingest_lib'])

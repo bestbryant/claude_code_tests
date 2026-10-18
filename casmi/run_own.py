@@ -44,8 +44,9 @@ def main(argv):
                   lib_full=AnalogLib(f'{work}/lib10.npz'))
     fpw = f'{mdir}/fp_model.pt'
     FPS = FPScorer(fpw, np.load(f'{res}/pool_fp.npy', mmap_mode='r')) if os.path.exists(fpw) else None
-    RK = lgb.Booster(model_file=f'{mdir}/ret_ranker.txt')
-    FEATS = open(f'{mdir}/feats.txt').read().split()
+    rk = os.environ.get('OWN_RANKER', 'ret_ranker')        # which ranker variant in the models dataset
+    RK = lgb.Booster(model_file=f'{mdir}/{rk}.txt')
+    FEATS = open(f'{mdir}/{rk}_feats.txt').read().split()
     TEST = pd.read_parquet(test_p)
     TEST['molecule_id'] = TEST.molecule_id.astype(str)
     mids = list(dict.fromkeys(TEST.molecule_id))

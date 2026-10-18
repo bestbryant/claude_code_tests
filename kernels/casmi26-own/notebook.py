@@ -3,6 +3,7 @@ candidate pool (train + COCONUT [+ PubChemLite]) -> library / analog / fragment 
 LambdaRank -> top 25 per molecule."""
 import glob, json, os, shutil, subprocess, sys
 import pandas as pd
+OWN_RANKER = 'ret_ranker_all'      # ranker variant shipped in bryantyu/casmi26-models
 tag = f'cp{sys.version_info.major}{sys.version_info.minor}'
 whl = [w for w in glob.glob('/kaggle/input/**/rdkit-2026.3.3-*.whl', recursive=True) if tag in w]
 subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-index', '--no-deps', whl[0]], check=True)
@@ -13,7 +14,7 @@ POOL = os.path.dirname(first('pool.parquet'))
 MODELS = os.path.dirname(first('ret_ranker.txt'))
 r = subprocess.run([sys.executable, '-m', 'casmi.run_own', f'{COMP}/test.parquet', f'{COMP}/train.parquet', POOL, MODELS,
                     '/kaggle/working/own_lists.json', '/kaggle/working/own', '4'], capture_output=True, text=True,
-                   cwd='/kaggle/working/pkg', env={**os.environ, 'PYTHONPATH': '/kaggle/working/pkg', 'NUMBA_NUM_THREADS': '1'})
+                   cwd='/kaggle/working/pkg', env={**os.environ, 'PYTHONPATH': '/kaggle/working/pkg', 'NUMBA_NUM_THREADS': '1', 'OWN_RANKER': OWN_RANKER})
 print(r.stdout[-3000:]); print(r.stderr[-3000:])
 L = json.load(open('/kaggle/working/own_lists.json'))
 sub = pd.read_csv(f'{COMP}/sample_submission.csv')
