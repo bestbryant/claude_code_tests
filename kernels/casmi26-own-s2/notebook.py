@@ -4,8 +4,8 @@ LambdaRank (stage 1) -> top 30 -> GLACIER predicted-spectrum similarity (own run
 -> stage-2 LambdaRank with forward-model features -> top 25 per molecule."""
 import glob, json, os, shutil, subprocess, sys
 import pandas as pd
-OWN_RANKER = 'ret_ranker_v2'      # stage-1 ranker shipped in bryantyu/casmi26-models
-OWN_STAGE2 = 'stage2_v1'         # stage-2 ranker (GLACIER features)
+OWN_RANKER = 'ret_ranker_v2c'     # stage-1 ranker shipped in bryantyu/casmi26-models
+OWN_STAGE2 = 'stage2_v2'         # stage-2 ranker (GLACIER features)
 tag = f'cp{sys.version_info.major}{sys.version_info.minor}'
 whl = [w for w in glob.glob('/kaggle/input/**/rdkit-2026.3.3-*.whl', recursive=True) if tag in w]
 subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-index', '--no-deps', whl[0]], check=True)

@@ -67,6 +67,10 @@ as an overlay. Pivot: use the same machinery (analog derivation + site localisat
   then recompute the GLACIER training features with it.
 - Stage-2 CV on validation (1107 queries, 76% with a covered positive spectrum): stage 1 0.823, stage 2 without
   forward features 0.834, with GLACIER 0.844 (covered queries 0.840 -> 0.865).
+- Own-runner stage 2 (pool v2, stage 1 = ranker v2 with out-of-fold scores, 4/6 training shards, full validation
+  of 1093 queries, 76% with a covered spectrum): stage 1 0.825 -> stage 2 without GLACIER 0.827 -> with GLACIER
+  0.840 (cls1 +0.005, cls2 +0.021); covered queries 0.842 -> 0.861.
+- Ranker v2c = v2 recipe without the artifact class-1 queries: validation 0.815 -> 0.842, test-like 0.851 -> 0.860.
 - The repository has no LICENSE file yet: the winning entry must be open source -> the owner should add one (MIT
   fits the components used) before the final submission.
 
