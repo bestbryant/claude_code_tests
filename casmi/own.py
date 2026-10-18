@@ -40,6 +40,34 @@ def query_from_rows(g):
     return Q, raw, M
 
 
+def stage1(R, fps, ranker, feats, g, k=30):
+    """One molecule: stage-1 top-k candidate frame (all features, s1 = ranker score, s1_r = rank), one row per
+    metric identity (key14), or None."""
+    Q, raw, M = query_from_rows(g)
+    if not Q or not np.isfinite(M):
+        return None
+    df = R.features(Q, M)
+    if len(df) == 0:
+        return None
+    if fps is not None:
+        cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
+        fp_feats(df, cos, bern)
+    df['s1'] = ranker.predict(df[feats].astype(float).values)
+    df = df.sort_values('s1', ascending=False)
+    keep, seen = [], set()
+    for i, s in zip(df.index, df.smiles.values):
+        kk = key14(s)
+        if kk is None or kk in seen:
+            continue
+        seen.add(kk); keep.append((i, kk))
+        if len(keep) >= k:
+            break
+    out = df.loc[[i for i, _ in keep]].copy()
+    out['key14'] = [kk for _, kk in keep]
+    out['s1_r'] = np.arange(1, len(out) + 1)
+    return out
+
+
 def predict(R, fps, ranker, feats, g, n=25):
     """One molecule: ranked list of (smiles, score, key14)."""
     Q, raw, M = query_from_rows(g)

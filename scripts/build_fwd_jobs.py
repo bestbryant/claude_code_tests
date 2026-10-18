@@ -1,6 +1,6 @@
 """Forward-model jobs for simulated queries: stage-1 top-k candidates + the query spectra, in runner input format.
 
-python scripts/build_fwd_jobs.py <rows_fp.parquet> <ranker.txt> <pool_dir> <k> <out_prefix> [n_shards] [--reach-pmid]
+python scripts/build_fwd_jobs.py <rows_fp.parquet> <ranker.txt | col:<score column>> <pool_dir> <k> <out_prefix> [n_shards] [--reach-pmid]
 Writes <out_prefix>.top.parquet (qid, pid, key, smiles, formula, s1, s1_r + all row features) and
 <out_prefix>.jobs_<i>.json (runner items, mid = str(qid)). With --reach-pmid only class-1 queries and class-2
 queries whose truth is reachable without train.parquet are kept (the ranker-training filter).
@@ -19,8 +19,11 @@ if '--reach-pmid' in sys.argv:
     t = D[D.label == 1].set_index('qid')
     reach = (t.in_coco == 1) | (t.in_pcl == 1) | (t.pc_pmid > 0)
     D = D[(D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)]
-feats = open(rk_p.replace('.txt', '_feats.txt')).read().split()
-D['s_stage1'] = lgb.Booster(model_file=rk_p).predict(D[feats].astype(np.float32))
+if rk_p.startswith('col:'):            # precomputed stage-1 score column (e.g. out-of-fold scores)
+    D['s_stage1'] = D[rk_p[4:]]
+else:
+    feats = open(rk_p.replace('.txt', '_feats.txt')).read().split()
+    D['s_stage1'] = lgb.Booster(model_file=rk_p).predict(D[feats].astype(np.float32))
 T = top_k(D, 's_stage1', k)
 P = pd.read_parquet(f'{pool_dir}/pool.parquet', columns=['smiles', 'formula'])
 T['smiles'] = P.smiles.values[T.pid.values]; T['formula'] = P.formula.values[T.pid.values]

@@ -10,10 +10,10 @@
   "enable_internet": false,
   "dataset_sources": [
     "bryantyu/casmi26-code",
-    "bryantyu/casmi26-pool",
+    "bryantyu/casmi26-pool2",
     "bryantyu/casmi26-models",
     "metric/rdkit-2026-3-3-wheel",
-    "bryantyu/casmi26-fwd"
+    "bryantyu/casmi26-glacier"
   ],
   "competition_sources": [
     "enveda-CASMI26-molecule-id-mass-spectra"

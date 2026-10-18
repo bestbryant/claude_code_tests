@@ -9,7 +9,8 @@
   "enable_tpu": false,
   "enable_internet": false,
   "dataset_sources": [
-    "bryantyu/casmi26-fwd",
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-glacier",
     "bryantyu/casmi26-gl-jobs"
   ],
   "competition_sources": [],
