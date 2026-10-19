@@ -76,6 +76,17 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   | 1 | 0.880 | 0.840 | 0.902 | 0.709 |
   Weighting stage 2 alone does nothing (it inherits the prior through s1_z / s1_r). Weighted class-2 recall@30 of
   stage 1 is 0.976 (top-1 0.54): the loss on undocumented truths is ordering, not reach.
+- Full pipeline v5w (scripts/pipeline_v5w.sh: weighted stage 1, weighted OOF, incremental GLACIER, weighted stage 2),
+  validation (979 queries; weighted = doc-shift weights of pool v4 / pool v5 tables):
+  | model | all | cls1 | cls2 | cls2 weighted |
+  |---|---|---|---|---|
+  | stage2_v4 (LB 0.330) | 0.893 | 0.832 | 0.926 | 0.677 / 0.675 |
+  | stage2_v5w | 0.893 | 0.852 | 0.914 | 0.769 / 0.768 |
+  Kernel casmi26-own-s2v5w (models in bryantyu/casmi26-models).
+- LOTUS occurrences (pool v5, scripts/add_lotus.py: land-plant / fungal / bacterial organisms, families, genera; CC BY
+  4.0) do not help in simulation (stage 1 cls2 weighted 0.665 without / 0.652 with doc weights vs 0.677 / 0.711 without
+  LOTUS): simulated truths are not plant-biased, so the ranker can only learn them as more documentation. Parked;
+  needs a plant-targeted query weighting or an LB test.
 - Counter-evidence to keep in mind: removing the priors entirely cost 0.07 on the LB (0.315 -> 0.245), so the test's
   answers are documented relative to their isomers; full correction may overshoot -> LB A/B (casmi26-own-s2v5w).
 - Forum (Aryan Awasthi, Oct 14): popularity puts the answer first for 67% of enveda-np-examples structures (all have

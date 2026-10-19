@@ -9,8 +9,10 @@ class-2 queries towards the undocumented population; alpha tempers them (0 = off
 
 python -m casmi.docw <pool_dir> <out.parquet>        builds the weight table (key, p, w)
 """
+import os
 import numpy as np
 import pandas as pd
+from .retrieval import LT_COLS, PRIOR_COLS
 
 DOC = ['pc_sid', 'pc_pmid', 'pc_patent', 'pc_ncid', 'in_pcl', 'in_bio', 'in_coco', 'pcl_pubmed', 'pcl_patent',
        'pcl_anno', 'pcl_bio', 'pcl_food', 'mass']
@@ -20,9 +22,16 @@ def build(pool_dir, out):
     import lightgbm as lgb
     P = pd.read_parquet(f'{pool_dir}/pool.parquet').drop_duplicates('key')
     R = P[(P.in_coco == 1) | (P.in_pcl == 1) | (P.in_bio == 1)]
+    doc = DOC + [c for c in LT_COLS if c in R.columns]          # LOTUS occurrences are documentation too (pool v5)
+    if os.path.exists(f'{pool_dir}/coconut_prior.parquet') and LT_COLS[0] in R.columns:   # COCONUT records (pool v5)
+        pr = pd.read_parquet(f'{pool_dir}/coconut_prior.parquet').drop_duplicates('ik14').set_index('ik14')
+        cols = [c for c in PRIOR_COLS if c != 'npl']
+        R = R.join(pr[cols], on='key')
+        R[cols] = R[cols].fillna(0).astype(float)
+        doc += cols
     m = lgb.train(dict(objective='binary', learning_rate=0.1, num_leaves=31, verbose=-1, num_threads=4, seed=0),
-                  lgb.Dataset(R[DOC].astype(float), R.in_train), 200)
-    R = R.assign(p=m.predict(R[DOC].astype(float)))
+                  lgb.Dataset(R[doc].astype(float), R.in_train), 200)
+    R = R.assign(p=m.predict(R[doc].astype(float)))
     pi = R.in_train.mean()
     R['w'] = (1 - R.p) / R.p * pi / (1 - pi)
     R[['key', 'p', 'w']].to_parquet(out)

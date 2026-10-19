@@ -25,6 +25,8 @@ FEATS = (['lib', 'lib_n', 'lib_r', 'an_best', 'an_tan_best', 'an_sum', 'an_top1_
          + PRIOR_COLS)
 PCL_COLS = ['in_pcl', 'pcl_pubmed', 'pcl_patent', 'pcl_anno', 'pcl_bio', 'pcl_food']
 PC_COLS = ['pc_sid', 'pc_pmid', 'pc_patent', 'pc_ncid']      # PubChem documentation counts (log1p)
+LT_COLS = ['lt_n_org', 'lt_n_ref', 'lt_n_plant', 'lt_n_pfam', 'lt_n_pgen', 'lt_n_fungi', 'lt_n_bact',
+           'lt_plant_frac']                                  # LOTUS occurrences (pool v5, scripts/add_lotus.py)
 
 
 def tanimoto_packed(a, B):
@@ -157,6 +159,9 @@ class Retrieval:
                 df[c] = self.P[c].values[idx].astype(float)
         if 'in_bio' in self.P.columns:   # ChEBI / LIPID MAPS membership (pool v4)
             df['in_bio'] = self.P.in_bio.values[idx].astype(float)
+        for c in LT_COLS:            # LOTUS occurrence counts (pool v5)
+            if c in self.P.columns:
+                df[c] = self.P[c].values[idx].astype(float)
         for c in PCL_COLS:           # PubChemLite membership and annotation priors (pool v2)
             if c in self.P.columns:
                 v = self.P[c].values[idx].astype(float)
