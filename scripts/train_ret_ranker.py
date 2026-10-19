@@ -10,6 +10,7 @@ import numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.retrieval import FEATS, PRIOR_COLS, PCL_COLS, PC_COLS, LT_COLS
 from casmi.own import FP_FEATS, FREL_FEATS
+from casmi.dreams_feats import DR_FEATS
 
 tr_p, va_p, out = sys.argv[1:4]
 flags = set(a for a in sys.argv[4:] if a.startswith('--'))
@@ -35,7 +36,7 @@ TR, VA = load(tr_p), load(va_p)
 # class-1 queries twice: the simulation is 30% class 1 while the test mix is closer to 45:55 (better on validation)
 c1 = TR[TR.cls == 1]
 TR = pd.concat([TR, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
-feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + LT_COLS + FP_FEATS + FREL_FEATS
+feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + LT_COLS + FP_FEATS + FREL_FEATS + DR_FEATS
          if f in TR.columns and f in VA.columns]
 if '--no-prior' in flags:
     feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS[1:] + PC_COLS + LT_COLS + ['in_coco']]
@@ -59,6 +60,8 @@ def mrr(df, col):
 params = dict(objective='lambdarank', metric='map', eval_at=[25], learning_rate=0.05, num_leaves=31,
               min_data_in_leaf=100, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
               lambdarank_truncation_level=25, verbose=-1, num_threads=2)
+import json
+params.update(json.loads(os.environ.get('RANKER_PARAMS', '{}')))      # e.g. '{"num_leaves": 63, "min_data_in_leaf": 50}'
 g = TR.groupby('qid', sort=False).size().values
 wts = None
 if os.environ.get('DOC_W'):        # documentation-shift weights for class-2 queries (casmi/docw.py)
