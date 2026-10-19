@@ -28,6 +28,9 @@ class DreamsLib:
         self.pol = np.array([lib_pol[r] for r in self.row], np.int8)
         self.by_pol = {p: np.where(self.pol == p)[0] for p in (0, 1)}
         self.E_pol = {p: np.ascontiguousarray(self.E[ix]) for p, ix in self.by_pol.items()}   # no per-query copies
+        self.pos = np.empty(len(self.row), np.int64)          # library index -> row within its polarity matrix
+        for p, ix in self.by_pol.items():
+            self.pos[ix] = np.arange(len(ix))
         del self.E
         self.self_idx = {}
         for i, k in enumerate(self.key):
@@ -58,15 +61,20 @@ def dreams_features(DL, q_embs, q_pols, cand_keys, cand_fp, key_fp, tanimoto, hi
     n = len(cand_keys)
     agg, self_best = {}, np.zeros(n)
     hide_keys, hide_rows = set(hide_keys), set(hide_rows)
-    pos = {k: i for i, k in enumerate(cand_keys)}
     for e, p in zip(q_embs, q_pols):
         for j, s in DL.neighbours(e, int(p), hide_keys, hide_rows):
             k = DL.key[j]
             if k not in agg or s > agg[k]:
                 agg[k] = s
-            c = pos.get(k)
-            if c is not None and s > self_best[c]:
-                self_best[c] = s
+        # direct match: cosine to each candidate's own (visible, same-polarity) library representative
+        for c, k in enumerate(cand_keys):
+            if k in hide_keys:
+                continue
+            for j in DL.self_idx.get(k, ()):
+                if DL.pol[j] == p and int(DL.row[j]) not in hide_rows:
+                    s = float(DL.E_pol[int(p)][DL.pos[j]] @ e)
+                    if s > self_best[c]:
+                        self_best[c] = s
     an = sorted(agg.items(), key=lambda x: -x[1])[:n_analog]
     best = np.zeros(n); tan_best = np.zeros(n); tot = np.zeros(n); top1 = np.zeros(n)
     for r, (k, s) in enumerate(an):
