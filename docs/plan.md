@@ -139,7 +139,12 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   Fixed with substitute representatives (scripts/add_dreams_feats.py); simulated enveda-180 positive queries are now
   embedded electron-mass corrected like the hidden test. Corrected CV: + dr_* 0.8868 / cls1 0.8590 / cls2 0.9008 /
   cls2w 0.6845 vs base 0.8870 / 0.8605 / 0.9003 / 0.6734: the class-1 "gain" was the leak; what remains is +0.011
-  on weighted class 2. Shipped anyway in v8d (with the 63-leaf trees) for one LB test.
+  on weighted class 2.
+- Full pipelines (single validation split, stage 2): a0.5 0.902 / cls1 0.840 / cls2 0.935 / weighted 0.758 / 0.765;
+  v8d (dr_* + 63 leaves) 0.902 / 0.851 / 0.930 / 0.721 / 0.682 (stage 2 adds nothing over its stage 1, 0.903);
+  v8e (dr_* + 31 leaves) 0.902 / 0.852 / 0.929 / 0.729 / 0.696. Net: DreaMS is about neutral after the leak fix
+  (class 1 up, class 2 slightly down, weighted within noise). Main entry stays alpha 0.5; v8e (kernel
+  casmi26-own-s2v8e) is an optional LB test, not a default.
 
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
