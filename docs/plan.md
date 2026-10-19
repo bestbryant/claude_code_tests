@@ -126,6 +126,13 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   (class 2: truth structure, class 1: query spectra). (2) Frozen-embedding dual encoder / fingerprint head trained on
   split-0 structures only (scripts/train_dreams_fp.py), compared with the binned model's fp_cos.
 - Inference wiring done (casmi/run_own.py, DREAMS_DIR; active only for rankers whose features include dr_*).
+- Results (library 360,144 embeddings, 5 Kaggle shards at 6.3 spectra/s): alone the DreaMS features are weaker than
+  the modified-cosine / library ones (validation truth MRR by single feature: dr_best cls2 0.366 vs an_best 0.464;
+  dr_self cls1 0.526 vs lib 0.834; corr(an_best, dr_best) 0.83). DreaMS fingerprint head (frozen embeddings, 347k
+  split-0 spectra): FP-only MRR 0.443 / top-1 0.296 vs binned fp_cos 0.495 / 0.355 -> not used.
+  Stage-1 5-fold CV (alpha 0.5): base 0.887 / cls1 0.861 / cls2 0.900 / cls2w 0.673; + dr_* 0.892 / 0.867 / 0.904 /
+  0.693 (gain on every column); dr_* replacing an_* 0.878 / cls2w 0.638 (complementary, not a substitute).
+  -> pipeline_v8d.sh (dr_* + alpha 0.5 + 63-leaf trees), kernel casmi26-own-s2v8d.
 
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
