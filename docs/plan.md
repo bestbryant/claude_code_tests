@@ -97,6 +97,10 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   alpha 0.5 keeps most of the weighted gain at no unweighted cost -> second LB candidate (pipeline_v5w.sh 0.5,
   kernel casmi26-own-s2v5w_a05). Formula-relative features are noise-level (sign flips with alpha) -> not used.
   The single validation split (979 queries, weighted ESS ~80) is too noisy for these comparisons (se ~0.05).
+  Ablations at alpha 0.5 (same CV): + LOTUS columns 0.886 / cls2w 0.675 (no effect); - in_bio 0.823 / cls2 0.813 /
+  cls2w 0.667 (ChEBI/LMSD membership is a large shortcut in simulation, 61% of simulated class-2 truths vs ~0-3% of
+  structures without spectra, but neutral under the test-like weights); - PubChemLite annotations 0.885 / 0.680.
+  timsTOF-query upweighting (x3): slightly worse. Learning curve: 25% of the queries as good as 100%.
 - LOTUS occurrences (pool v5, scripts/add_lotus.py: land-plant / fungal / bacterial organisms, families, genera; CC BY
   4.0) do not help in simulation (stage 1 cls2 weighted 0.665 without / 0.652 with doc weights vs 0.677 / 0.711 without
   LOTUS): simulated truths are not plant-biased, so the ranker can only learn them as more documentation. Parked;
