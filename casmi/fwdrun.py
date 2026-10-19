@@ -122,6 +122,28 @@ def spectrum_ce(sp):
     return round(sum(ce) / len(ce) / 5.0) * 5.0 if ce else 30.0     # stepped CE -> mean, 5 eV buckets
 
 
+def build_items(rows, cands_by_mid, covered_only=True):
+    """Runner input items from spectrum rows (molecule_id, ms2_mzs, ms2_normalized_intensities, precursor_mz, adduct,
+    ionization_mode, instrument_type, collision_energy_ev) and {mid: [smiles]}, in the order of cands_by_mid.
+    covered_only drops spectra the runner skips anyway (anything but positive [M+H]+ / [M+Na]+)."""
+    by = {}
+    for r in rows.itertuples(index=False):
+        by.setdefault(str(r.molecule_id), []).append(r)
+    items = []
+    for mid, cands in cands_by_mid.items():
+        spectra = []
+        for r in by.get(str(mid), []):
+            if covered_only and not (r.ionization_mode == 'positive' and r.adduct in COVERED):
+                continue
+            ce = r.collision_energy_ev
+            txt = lambda v: v if isinstance(v, str) else None          # missing metadata (NaN) -> null
+            spectra.append(dict(mz=[float(x) for x in r.ms2_mzs], it=[float(x) for x in r.ms2_normalized_intensities],
+                                prec=float(r.precursor_mz), adduct=txt(r.adduct), mode=txt(r.ionization_mode),
+                                instrument=txt(r.instrument_type), ce_ev=[float(x) for x in ce] if ce is not None else []))
+        items.append(dict(mid=str(mid), spectra=spectra, cands=[str(c) for c in cands]))
+    return items
+
+
 def supervise(max_restarts=30):
     """Run this module as a child process until it finishes cleanly: a native crash (segfault) on some molecule
     loses only that batch (the child checkpoints its predictions and skips the batch it died in)."""

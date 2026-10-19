@@ -9,9 +9,9 @@ queries whose truth is reachable without train.parquet are kept (the ranker-trai
 import json, sys
 import numpy as np, pandas as pd, pyarrow.parquet as pq
 import lightgbm as lgb
-sys.path.insert(0, '/home/user/claude_code_tests'); sys.path.insert(0, '/home/user/ext/ice_local')
+sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.fwdfeat import top_k
-from fuse import build_ice_input
+from casmi.fwdrun import build_items
 
 rows_p, rk_p, pool_dir, k, out = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
 n_sh = int(sys.argv[6]) if len(sys.argv) > 6 and not sys.argv[6].startswith('--') else 1
@@ -58,7 +58,7 @@ if have_pat:
     cands = {q: [s for s in v if s not in have.get(q, ())] for q, v in cands.items()}
     cands = {q: v for q, v in cands.items() if v}
     print('incremental: candidates', n0, '->', sum(len(v) for v in cands.values()))
-items = [it for it in build_ice_input(TL, cands) if it['spectra']]
+items = [it for it in build_items(TL, cands) if it['spectra']]
 print('items with a covered spectrum', len(items), 'of', len(cands), 'candidates', sum(len(it['cands']) for it in items))
 for i in range(n_sh):
     json.dump(items[i::n_sh], open(f'{out}.jobs_{i}.json', 'w'))

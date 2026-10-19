@@ -8,8 +8,8 @@ W=/home/user/work; R=/home/user/claude_code_tests
 export DOC_W=$W/pool4/doc_w.parquet DOC_ALPHA=$A
 cd $R
 [ -f $DOC_W ] || python3 -m casmi.docw $W/pool4 $DOC_W
-python3 scripts/train_ret_ranker.py $W/ret4_train_fp.parquet $W/ret4_val_fp.parquet $W/own_models/ret_ranker_$T.txt $W/pool4 --drop-artifact
-python3 scripts/oof_stage1.py $W/ret4_train_fp.parquet $W/own_models/ret_ranker_${T}_feats.txt $W/ret_${T}_train_oof.parquet --drop-artifact
+[ -f $W/own_models/ret_ranker_$T.txt ] || python3 scripts/train_ret_ranker.py $W/ret4_train_fp.parquet $W/ret4_val_fp.parquet $W/own_models/ret_ranker_$T.txt $W/pool4 --drop-artifact
+[ -f $W/ret_${T}_train_oof.parquet ] || python3 scripts/oof_stage1.py $W/ret4_train_fp.parquet $W/own_models/ret_ranker_${T}_feats.txt $W/ret_${T}_train_oof.parquet --drop-artifact
 cd $W; mkdir -p fwd_$T
 python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof pool4 30 fwd_$T/train 1 "--have=$W/fwd[234]/train.jobs_*.gl.json"
 python3 $R/scripts/build_fwd_jobs.py ret4_val_reach_c.parquet own_models/ret_ranker_$T.txt pool4 30 fwd_$T/val 1 "--have=$W/fwd[234]/val.jobs_*.gl.json"
