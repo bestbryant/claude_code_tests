@@ -109,6 +109,18 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 - enveda-np-examples (250 structures, timsTOF): common plant metabolites (alkaloids, phenylpropanoids, terpenoids;
   Arabidopsis, Ginkgo, tea, Capsicum ...), in_bio 96%, PMID 99% -> class-1-like, solved by priors (val cls2 0.98).
 
+## DreaMS channel (Oct 19, in progress)
+- DreaMS (Bushuiev et al., Nat. Biotechnol. 2025; MIT weights on Hugging Face; explicitly allowed by the hosts) as a
+  second spectral representation. TorchScript embedder (casmi/dreams_emb.py, preprocessing as the reference
+  SpectrumPreprocessor) runs at ~8 spectra/s on 4 CPU threads -> library = one representative per (structure,
+  polarity) of the analog library (360k spectra: 251k positive, 109k negative), embedded on 5 Kaggle CPU shards
+  (kernels/casmi26-dreams-emb-*); simulated query spectra (23.7k) embedded locally (scripts/embed_query_rows.py).
+- Uses: (1) DreaMS-neighbour analog channel (casmi/dreams_feats.py: dr_best / dr_tan_best / dr_sum / dr_top1_tan /
+  dr_r / dr_gap, plus dr_self = direct DreaMS library match, instrument-robust); hiding as in the simulation
+  (class 2: truth structure, class 1: query spectra). (2) Frozen-embedding dual encoder / fingerprint head trained on
+  split-0 structures only (scripts/train_dreams_fp.py), compared with the binned model's fp_cos.
+- Inference wiring done (casmi/run_own.py, DREAMS_DIR; active only for rankers whose features include dr_*).
+
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
 to training structures / COCONUT-not-train / everything else (keys from bryantyu/casmi26-srckeys). Compared with our
