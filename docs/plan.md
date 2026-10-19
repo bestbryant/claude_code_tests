@@ -83,6 +83,18 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   | stage2_v4 (LB 0.330) | 0.893 | 0.832 | 0.926 | 0.677 / 0.675 |
   | stage2_v5w | 0.893 | 0.852 | 0.914 | 0.769 / 0.768 |
   Kernel casmi26-own-s2v5w (models in bryantyu/casmi26-models).
+- 5-fold CV over all 5,856 simulated queries (train + val, stage 1 only; weighted cls2 ESS 442, se ~0.018):
+  | config | all | cls1 | cls2 | cls2 weighted |
+  |---|---|---|---|---|
+  | v4c (alpha 0) | 0.888 | 0.862 | 0.901 | 0.648 |
+  | alpha 0.5 | 0.887 | 0.861 | 0.900 | 0.673 |
+  | v5w (alpha 1) | 0.867 | 0.863 | 0.869 | 0.678 |
+  | v4c + formula-rel | 0.888 | 0.862 | 0.901 | 0.656 |
+  | v7w (alpha 1 + formula-rel) | 0.872 | 0.863 | 0.876 | 0.680 |
+  | alpha 0.5 + formula-rel | 0.884 | 0.862 | 0.895 | 0.660 |
+  alpha 0.5 keeps most of the weighted gain at no unweighted cost -> second LB candidate (pipeline_v5w.sh 0.5,
+  kernel casmi26-own-s2v5w_a05). Formula-relative features are noise-level (sign flips with alpha) -> not used.
+  The single validation split (979 queries, weighted ESS ~80) is too noisy for these comparisons (se ~0.05).
 - LOTUS occurrences (pool v5, scripts/add_lotus.py: land-plant / fungal / bacterial organisms, families, genera; CC BY
   4.0) do not help in simulation (stage 1 cls2 weighted 0.665 without / 0.652 with doc weights vs 0.677 / 0.711 without
   LOTUS): simulated truths are not plant-biased, so the ranker can only learn them as more documentation. Parked;
