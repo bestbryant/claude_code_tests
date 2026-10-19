@@ -61,6 +61,34 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   full list buries them under synthetic / PubChem isomers. Levers: source-aware ordering (bio / NP prior in the
   ranker, already partly via in_bio) and better isomer ranking inside COCONUT formula groups.
 
+## Documentation shift of the class-2 simulation (Oct 19)
+- A simulated class-2 truth is a training structure, i.e. it HAS public spectra. Such structures are far better
+  documented than reachable structures without spectra (COCONUT: PMID share 67% vs 22%; ChEBI/LMSD membership: 22k
+  of 98k ChEBI/LMSD structures are training structures, only 1.6k are COCONUT-not-train). A LightGBM classifier on
+  documentation / membership columns separates the two populations with AUC 0.93. Hidden class-2 answers have no
+  public spectra by definition, so the ranker over-trusts documentation (in_bio, pc_*, pcl_*).
+- casmi/docw.py: importance weights p(no spectra | doc) / p(spectra | doc) for class-2 queries (DOC_W, DOC_ALPHA in
+  train_ret_ranker.py / oof_stage1.py / train_stage2.py). Stage 1 on pool v4, validation (979 queries):
+  | alpha | all | cls1 | cls2 | cls2 doc-shift weighted |
+  |---|---|---|---|---|
+  | 0 (v4c recipe) | 0.891 | 0.827 | 0.926 | 0.668 |
+  | 0.5 | 0.890 | 0.830 | 0.921 | 0.685 |
+  | 1 | 0.880 | 0.840 | 0.902 | 0.709 |
+  Weighting stage 2 alone does nothing (it inherits the prior through s1_z / s1_r). Weighted class-2 recall@30 of
+  stage 1 is 0.976 (top-1 0.54): the loss on undocumented truths is ordering, not reach.
+- Counter-evidence to keep in mind: removing the priors entirely cost 0.07 on the LB (0.315 -> 0.245), so the test's
+  answers are documented relative to their isomers; full correction may overshoot -> LB A/B (casmi26-own-s2v5w).
+- Forum (Aryan Awasthi, Oct 14): popularity puts the answer first for 67% of enveda-np-examples structures (all have
+  public spectra elsewhere) but ~0% of enveda-180 structures without public spectra; fragment explained-intensity gap
+  was their top ranker feature. DancingLumberjack: PubChem as an extra candidate source moved their LB +0.002.
+- enveda-np-examples (250 structures, timsTOF): common plant metabolites (alkaloids, phenylpropanoids, terpenoids;
+  Arabidopsis, Ginkgo, tea, Capsicum ...), in_bio 96%, PMID 99% -> class-1-like, solved by priors (val cls2 0.98).
+
+## Source-decomposition probes of the public lineage (Oct 19)
+kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
+to training structures / COCONUT-not-train / everything else (keys from bryantyu/casmi26-srckeys). Compared with our
+probes (pool v3 lists: train 0.146, coco 0.191, pubchem pending; full 0.295) they locate the 0.12 gap by source.
+
 ## Lesson from the class-3 probe (Oct 17)
 The novel-only list scored 0.010 public, against ~0.045 expected from the PubChem-absent proxy (MRR 0.10 x ~45% class 3).
 The proxy overstates reach ~4-5x: absent training molecules (reverse-metabolomics conjugates, synthetic analogs) are
