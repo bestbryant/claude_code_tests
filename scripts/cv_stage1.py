@@ -5,6 +5,7 @@ sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.docw import query_weights
 from casmi.own import FREL_FEATS
 from casmi.retrieval import LT_COLS
+from casmi.dreams_feats import DR_FEATS
 W = '/home/user/work'
 base = open(f'{W}/own_models/ret_ranker_v5w_feats.txt').read().split()
 def load(p, off):
@@ -29,6 +30,9 @@ D['fold'] = D.qid.map(fold)
 params = dict(objective='lambdarank', metric='map', eval_at=[25], learning_rate=0.05, num_leaves=31,
               min_data_in_leaf=100, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
               lambdarank_truncation_level=25, verbose=-1, num_threads=4)
+import json as _json
+params.update(_json.loads(os.environ.get('CV_PARAMS', '{}')))          # e.g. '{"num_leaves": 63}'
+ROUNDS = int(os.environ.get('CV_ROUNDS', '500'))
 def rr(Dx, col):
     o = Dx.sort_values(['qid', col], ascending=[True, False]); o['r'] = o.groupby('qid').cumcount() + 1
     r = o[(o.label == 1) & (o.r <= 25)].groupby('qid').r.min().reindex(Dx.qid.unique())
@@ -37,7 +41,9 @@ configs = {'v4c': (base, 0.0), 'v5w': (base, 1.0), 'v4c+frel': (base + FREL_FEAT
            'a0.5': (base, 0.5), 'a0.5+frel': (base + FREL_FEATS, 0.5),
            'a0.5+lotus': (base + LT_COLS, 0.5), 'a0.5-bio': ([f for f in base if f != 'in_bio'], 0.5),
            'a0.5-pclanno': ([f for f in base if f not in ('pcl_anno', 'pcl_bio', 'pcl_food')], 0.5),
-           'a1+lotus': (base + LT_COLS, 1.0)}
+           'a1+lotus': (base + LT_COLS, 1.0),
+           'a0.5+dr': (base + DR_FEATS, 0.5), 'a0+dr': (base + DR_FEATS, 0.0),
+           'a0.5+dr-an': ([f for f in base if not f.startswith('an_')] + DR_FEATS, 0.5)}
 sel = sys.argv[1:] or list(configs)
 for name in sel:
     feats, alpha = configs[name]
@@ -46,7 +52,7 @@ for name in sel:
         tr = D[D.fold != k]; c1 = tr[tr.cls == 1]
         T = pd.concat([tr, c1.assign(qid=c1.qid + 1_000_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
         w = query_weights(T, f'{W}/pool4/doc_w.parquet', alpha) if alpha > 0 else None
-        m = lgb.train(params, lgb.Dataset(T[feats].astype(float).values, T.label.values, weight=w, group=T.groupby('qid', sort=False).size().values), 500)
+        m = lgb.train(params, lgb.Dataset(T[feats].astype(float).values, T.label.values, weight=w, group=T.groupby('qid', sort=False).size().values), ROUNDS)
         te = D.fold == k
         D.loc[te, 'p'] = m.predict(D.loc[te, feats].astype(float).values)
     r = rr(D, 'p').reindex(q.index)

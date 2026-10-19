@@ -101,6 +101,8 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   cls2w 0.667 (ChEBI/LMSD membership is a large shortcut in simulation, 61% of simulated class-2 truths vs ~0-3% of
   structures without spectra, but neutral under the test-like weights); - PubChemLite annotations 0.885 / 0.680.
   timsTOF-query upweighting (x3): slightly worse. Learning curve: 25% of the queries as good as 100%.
+  LightGBM (alpha 0.5): num_leaves 63 / min_data_in_leaf 50 0.889 / cls2w 0.678 (base 31 / 100: 0.887 / 0.673);
+  lr 0.03 x 900 rounds 0.888 / 0.675; num_leaves 15 / 200 0.879 / 0.674 -> 63 / 50 from the next stage-1 version.
 - LOTUS occurrences (pool v5, scripts/add_lotus.py: land-plant / fungal / bacterial organisms, families, genera; CC BY
   4.0) do not help in simulation (stage 1 cls2 weighted 0.665 without / 0.652 with doc weights vs 0.677 / 0.711 without
   LOTUS): simulated truths are not plant-biased, so the ranker can only learn them as more documentation. Parked;
