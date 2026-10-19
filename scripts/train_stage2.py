@@ -4,8 +4,9 @@ python scripts/train_stage2.py cv <prefix> <stage1_feats.txt>              5-fol
 python scripts/train_stage2.py fit <train_prefix> <stage1_feats.txt> <out.txt> [<val_prefix>]
 <prefix>.top.parquet from build_fwd_jobs.py and <prefix>.jobs_*.gl.json from the GLACIER workers.
 MRR counts the truth's rank inside the top-k list (0 when the truth is outside it); class-1 queries weigh x2 in fit.
+DOC_W / DOC_ALPHA: documentation-shift weights for class-2 queries, as in train_ret_ranker.py.
 """
-import glob, json, sys
+import glob, json, os, sys
 import numpy as np, pandas as pd
 import lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
@@ -44,7 +45,11 @@ def mrr(T, col):
 def fit(T, feats, rounds=400):
     c1 = T[T.cls == 1]           # class-1 queries twice (as for the stage-1 ranker)
     T = pd.concat([T, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 's1_r'])
-    ds = lgb.Dataset(T[feats].astype(np.float32), T.label, group=T.groupby('qid', sort=True).size().values)
+    wts = None
+    if os.environ.get('DOC_W'):        # documentation-shift weights for class-2 queries (casmi/docw.py)
+        from casmi.docw import query_weights
+        wts = query_weights(T, os.environ['DOC_W'], float(os.environ.get('DOC_ALPHA', '1')))
+    ds = lgb.Dataset(T[feats].astype(np.float32), T.label, weight=wts, group=T.groupby('qid', sort=True).size().values)
     return lgb.train(PARAMS, ds, rounds)
 
 

@@ -3,8 +3,9 @@
 Class-2 queries are kept only when the truth is reachable through a non-training source (COCONUT or PubChemLite),
 because a class-2 answer is by definition not a training structure.
 Usage: python scripts/train_ret_ranker.py <train_rows> <val_rows> <model_out.txt> [--no-prior] [--no-fp] [pool_dir]
+DOC_W=<weights.parquet> [DOC_ALPHA=a]: documentation-shift weights for class-2 queries (casmi/docw.py).
 """
-import sys
+import os, sys
 import numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.retrieval import FEATS, PRIOR_COLS, PCL_COLS, PC_COLS
@@ -58,7 +59,12 @@ params = dict(objective='lambdarank', metric='map', eval_at=[25], learning_rate=
               min_data_in_leaf=100, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
               lambdarank_truncation_level=25, verbose=-1, num_threads=2)
 g = TR.groupby('qid', sort=False).size().values
-model = lgb.train(params, lgb.Dataset(TR[feats].astype(float).values, TR.label.values, group=g), num_boost_round=500)
+wts = None
+if os.environ.get('DOC_W'):        # documentation-shift weights for class-2 queries (casmi/docw.py)
+    from casmi.docw import query_weights
+    wts = query_weights(TR, os.environ['DOC_W'], float(os.environ.get('DOC_ALPHA', '1')))
+model = lgb.train(params, lgb.Dataset(TR[feats].astype(float).values, TR.label.values, weight=wts, group=g),
+                  num_boost_round=500)
 VA['pred'] = model.predict(VA[feats].astype(float).values)
 model.save_model(out)
 open(out.replace('.txt', '_feats.txt'), 'w').write('\n'.join(feats))

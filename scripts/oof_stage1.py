@@ -4,10 +4,12 @@ stage-1 ranker, so stage 2 sees stage-1 scores of the quality it will meet on un
 python scripts/oof_stage1.py <train_rows_fp.parquet> <stage1_feats.txt> <out.parquet> [--reach-pmid] [--drop-artifact]
 --drop-artifact removes class-1 queries whose truth kept no library spectrum (all of them were the hidden query
 spectra): they behave like class 2 with in_train = 1, which never happens at test time.
+DOC_W / DOC_ALPHA: as in train_ret_ranker.py.
 """
-import sys
+import os, sys
 import numpy as np, pandas as pd, lightgbm as lgb
 
+sys.path.insert(0, '/home/user/claude_code_tests')
 rows, feats_p, out = sys.argv[1:4]
 D = pd.read_parquet(rows).sort_values(['qid', 'pid']).reset_index(drop=True)
 D.loc[(D.cls == 2) & (D.label == 1), 'in_train'] = 0
@@ -30,7 +32,11 @@ for k in (0, 1):
     tr = D[D.fold != k]
     c1 = tr[tr.cls == 1]
     tr = pd.concat([tr, c1.assign(qid=c1.qid + 10_000_000)]).sort_values(['qid', 'pid'])
-    m = lgb.train(params, lgb.Dataset(tr[feats].astype(float).values, tr.label.values,
+    wts = None
+    if os.environ.get('DOC_W'):        # same documentation-shift weights as the stage-1 ranker
+        from casmi.docw import query_weights
+        wts = query_weights(tr, os.environ['DOC_W'], float(os.environ.get('DOC_ALPHA', '1')))
+    m = lgb.train(params, lgb.Dataset(tr[feats].astype(float).values, tr.label.values, weight=wts,
                                       group=tr.groupby('qid', sort=False).size().values), num_boost_round=500)
     te = D.fold == k
     D.loc[te, 's1_oof'] = m.predict(D.loc[te, feats].astype(float).values)
