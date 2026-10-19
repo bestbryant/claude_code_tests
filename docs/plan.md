@@ -148,6 +148,9 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 - Stage-2 5-fold CV on the 4,877 training queries (out-of-fold stage-1 scores; train_stage2.py cv now also prints the
   weighted class-2 MRR, se ~0.02): alpha 0.5 stage 1 0.8807 / w 0.660 -> stage 2 0.8861 / w 0.677;
   v8e stage 1 0.8818 / w 0.669 -> stage 2 0.8868 / w 0.682. DreaMS = +0.001 / +0.005, i.e. noise-level positive.
+- casmi26-own-s2v8e v1 ran on Kaggle in 56 min (DreaMS library 360,144 loaded, 1,213 test spectra embedded in ~4 min,
+  no per-molecule failures, 400/400 lists, top-1 equal to s2v5w-a05 on 98.2% of the placeholder test) -> ready for an
+  LB slot on Oct 21.
 
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
