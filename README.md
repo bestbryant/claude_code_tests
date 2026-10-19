@@ -8,7 +8,7 @@ tautomer-canonical InChIKey first block). Working notes, results and the submiss
 Every learned component is trained here from `train.parquet` and permitted public data, or is a weight the
 competition explicitly allows (MassSpecGym-trained GLACIER from ms-pred). Competition data are never committed.
 
-## Pipeline (kernel `kernels/casmi26-own-s2`)
+## Pipeline (kernels `kernels/casmi26-own-s2v4`, `-s2v5w`, `-s2v5w-a05`)
 
 1. **Candidate pool** (`scripts/build_pool.py`): training structures + COCONUT + PubChemLite, with documentation
    priors (COCONUT organism/DOI counts, PubChemLite annotations, PubChem SID / PMID / patent counts built from the
@@ -27,6 +27,16 @@ competition explicitly allows (MassSpecGym-trained GLACIER from ms-pred). Compet
    features (within-formula z-score / rank / gap), trained on out-of-fold stage-1 scores (`scripts/oof_stage1.py`)
    with GLACIER computed on Kaggle CPU workers (`scripts/build_fwd_jobs.py`, `scripts/make_gl_workers.py`).
 
+**Documentation-shift weighting** (`casmi/docw.py`): a simulated class-2 truth is a training structure, i.e. it has
+public spectra and is far better documented than the reachable structures without spectra that hidden class-2
+answers come from. Class-2 training queries are importance-weighted towards that population (`DOC_W`, `DOC_ALPHA`
+in the training scripts; `scripts/pipeline_v5w.sh`), so the rankers rely less on documentation priors.
+
+**DreaMS channel** (in progress; `casmi/dreams_emb.py`, `casmi/dreams_feats.py`): DreaMS embeddings (MIT weights)
+of one library spectrum per structure and polarity, computed on Kaggle CPU shards (`kernels/casmi26-dreams-emb-*`);
+embedding neighbours give a second analog channel and a frozen-embedding fingerprint head
+(`scripts/train_dreams_fp.py`).
+
 Also here: the novel-structure engine for molecules absent from PubChem (`casmi/novel.py`: analogue derivation with
 modification-site localisation, conjugate assembly from hydrolysis building blocks) and LB probe kernels.
 
@@ -41,5 +51,5 @@ modification-site localisation, conjugate assembly from hydrolysis building bloc
 
 ## Third-party components
 
-ms-pred (MIT), GLACIER MassSpecGym weights (ms-pred authors), RDKit (BSD-3), LightGBM (MIT), PyTorch (BSD),
-LinSATNet (MIT), PubChem / COCONUT / PubChemLite data under their terms. See `docs/plan.md` for the compliance notes.
+ms-pred (MIT), GLACIER MassSpecGym weights (ms-pred authors), DreaMS (MIT), RDKit (BSD-3), LightGBM (MIT), PyTorch (BSD),
+LinSATNet (MIT), PubChem / COCONUT / PubChemLite / ChEBI / LIPID MAPS / LOTUS data under their terms. See `docs/plan.md` for the compliance notes.
