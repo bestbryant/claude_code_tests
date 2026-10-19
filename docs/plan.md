@@ -46,6 +46,20 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-18 | casmi26-own-noprior v2 | same without documentation priors | 0.245 |
 | 10-17 | casmi26-s2s-np-eu | fork + q_npeaks + electron undo on rerun | 0.430 (-0.021: do NOT undo the correction) |
 | 10-17 | casmi26-novel-probe v2 | ONLY novel candidates (class-3 reach probe) | 0.010 |
+| 10-19 | casmi26-own-v2c v1 | OWN stage 1 only: ranker v2c (artifact-free), pool v2 | 0.307 |
+| 10-19 | casmi26-own-s2 v2 | OWN v4: pool v2, stage 1 v2c, stage 2 with own GLACIER runner | 0.317 (+0.010 GLACIER) |
+| 10-19 | casmi26-own-s2v4 v1 | pool v4 (+52k ChEBI/LIPID MAPS, in_bio flag), stage 1 v4c, stage 2 GLACIER | **0.330** (best compliant) |
+| 10-19 | casmi26-probe-train v1 | pool-v3/ranker-v2 lists restricted to training-structure candidates | 0.146 |
+| 10-19 | casmi26-probe-coco v1 | same, restricted to COCONUT candidates | 0.191 |
+
+## Lessons from the Oct 19 submissions
+- GLACIER stage 2 adds +0.010 over its stage 1 (0.307 -> 0.317); ChEBI/LMSD membership (pool v4, in_bio) adds
+  another +0.013 (0.330). Both are inside the ~+-0.03 public-LB noise (124 molecules), but agree with local CV.
+- Source probes (pool v3 lists, full list 0.295): train-only 0.146 + COCONUT-only 0.191 = 0.337 > 0.295 even before
+  the PubChem part. Restricting a list to one source promotes its truths, so the sum is not additive, but the
+  COCONUT-only list alone scores 65% of the full list: natural products are a large share of the answers and the
+  full list buries them under synthetic / PubChem isomers. Levers: source-aware ordering (bio / NP prior in the
+  ranker, already partly via in_bio) and better isomer ranking inside COCONUT formula groups.
 
 ## Lesson from the class-3 probe (Oct 17)
 The novel-only list scored 0.010 public, against ~0.045 expected from the PubChem-absent proxy (MRR 0.10 x ~45% class 3).
