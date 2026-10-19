@@ -9,7 +9,7 @@ import os, sys
 import numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.retrieval import FEATS, PRIOR_COLS, PCL_COLS, PC_COLS, LT_COLS
-from casmi.own import FP_FEATS
+from casmi.own import FP_FEATS, FREL_FEATS
 
 tr_p, va_p, out = sys.argv[1:4]
 flags = set(a for a in sys.argv[4:] if a.startswith('--'))
@@ -35,7 +35,8 @@ TR, VA = load(tr_p), load(va_p)
 # class-1 queries twice: the simulation is 30% class 1 while the test mix is closer to 45:55 (better on validation)
 c1 = TR[TR.cls == 1]
 TR = pd.concat([TR, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
-feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + LT_COLS + FP_FEATS if f in TR.columns and f in VA.columns]
+feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + LT_COLS + FP_FEATS + FREL_FEATS
+         if f in TR.columns and f in VA.columns]
 if '--no-prior' in flags:
     feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS[1:] + PC_COLS + LT_COLS + ['in_coco']]
 if '--no-membership' in flags:

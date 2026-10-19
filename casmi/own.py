@@ -22,6 +22,24 @@ def fp_feats(df, cos, bern):
     return df
 
 
+FREL_SRC = ['fp_cos', 'fp_bern', 'an_tan_best', 'an_best', 'frag', 'lib']
+FREL_FEATS = [f'{c}_{s}' for c in FREL_SRC for s in ('fz', 'fr', 'fgap')]
+
+
+def formula_rel(df):
+    """Within-formula relative evidence (isomers are the main confusion): z-score, rank and gap to the best of the
+    same-formula candidates of each query ('qid' column if present, else one query), NaN / 0 for singletons."""
+    keys = (['qid'] if 'qid' in df.columns else []) + ['formula']
+    g = df.groupby(keys, sort=False)
+    n = g[FREL_SRC[0]].transform('size')
+    for c in FREL_SRC:
+        m = g[c].transform('mean'); sd = g[c].transform('std')
+        df[c + '_fz'] = ((df[c] - m) / sd).where(n >= 2).fillna(0).where(sd > 0, 0)
+        df[c + '_fr'] = g[c].rank(ascending=False, method='min').where(n >= 2)
+        df[c + '_fgap'] = (df[c] - g[c].transform('max')).where(n >= 2)
+    return df
+
+
 def query_from_rows(g):
     """Test rows of one molecule -> (cleaned query spectra for retrieval, raw spectra for the FP model, M)."""
     Q, raw, nms = [], [], []
@@ -52,6 +70,8 @@ def stage1(R, fps, ranker, feats, g, k=30):
     if fps is not None:
         cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
         fp_feats(df, cos, bern)
+    if FREL_FEATS[0] in feats:
+        formula_rel(df)
     df['s1'] = ranker.predict(df[feats].astype(float).values)
     df = df.sort_values('s1', ascending=False)
     keep, seen = [], set()
@@ -79,6 +99,8 @@ def predict(R, fps, ranker, feats, g, n=25):
     if fps is not None:
         cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
         fp_feats(df, cos, bern)
+    if FREL_FEATS[0] in feats:
+        formula_rel(df)
     df['z'] = ranker.predict(df[feats].astype(float).values)
     df = df.sort_values('z', ascending=False)
     out, seen = [], set()
