@@ -82,7 +82,9 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   |---|---|---|---|---|
   | stage2_v4 (LB 0.330) | 0.893 | 0.832 | 0.926 | 0.677 / 0.675 |
   | stage2_v5w | 0.893 | 0.852 | 0.914 | 0.769 / 0.768 |
-  Kernel casmi26-own-s2v5w (models in bryantyu/casmi26-models).
+  | stage2_v5w_a0.5 | 0.902 | 0.840 | 0.935 | 0.758 / 0.765 |
+  Kernels casmi26-own-s2v5w (alpha 1) and casmi26-own-s2v5w-a05 (alpha 0.5; best on every validation column but
+  the weighted one, where it is within noise of alpha 1) -> both submitted Oct 20 against s2v4 (0.330).
 - 5-fold CV over all 5,856 simulated queries (train + val, stage 1 only; weighted cls2 ESS 442, se ~0.018):
   | config | all | cls1 | cls2 | cls2 weighted |
   |---|---|---|---|---|
