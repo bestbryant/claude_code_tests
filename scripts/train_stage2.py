@@ -42,6 +42,21 @@ def mrr(T, col):
     return round(rr.mean(), 4), {int(c): round(rr[cls == c].mean(), 4) for c in sorted(cls.unique())}
 
 
+def wmrr(T, col, path=os.environ.get('EVAL_W', '/home/user/work/pool4/doc_w.parquet')):
+    """Class-2 MRR under the documentation-shift weights (casmi/docw.py) and its bootstrap standard error."""
+    if not os.path.exists(path):
+        return None
+    o = T.sort_values(['qid', col], ascending=[True, False])
+    o['r'] = o.groupby('qid').cumcount() + 1
+    t = T.drop_duplicates('qid').set_index('qid')        # every class-2 query (truth outside the top k counts 0)
+    t = t[t.cls == 2]
+    r = (1 / o[o.label == 1].groupby('qid').r.min()).reindex(t.index).fillna(0).values
+    w = t.truth.map(pd.read_parquet(path).set_index('key').w).fillna(1).clip(0.02, 20).values
+    rng = np.random.default_rng(1)
+    bs = [np.average(r[i], weights=w[i]) for i in (rng.integers(0, len(r), len(r)) for _ in range(200))]
+    return 'cls2-weighted %.4f (se %.4f)' % (np.average(r, weights=w), np.std(bs))
+
+
 def fit(T, feats, rounds=400):
     c1 = T[T.cls == 1]           # class-1 queries twice (as for the stage-1 ranker)
     T = pd.concat([T, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 's1_r'])
@@ -67,9 +82,9 @@ if __name__ == '__main__':
             T.loc[te.index, 's2'] = fit(tr, feats).predict(te[feats].astype(np.float32))
             base = s1_feats + ['s1', 's1_r']
             T.loc[te.index, 's2_nofwd'] = fit(tr, base).predict(te[base].astype(np.float32))
-        print('stage-1            ', mrr(T, 's1'))
-        print('stage-2 without fwd', mrr(T, 's2_nofwd'))
-        print('stage-2 with GLACIER', mrr(T, 's2'))
+        print('stage-1            ', mrr(T, 's1'), wmrr(T, 's1'))
+        print('stage-2 without fwd', mrr(T, 's2_nofwd'), wmrr(T, 's2_nofwd'))
+        print('stage-2 with GLACIER', mrr(T, 's2'), wmrr(T, 's2'))
         g = T.groupby('qid').gl.apply(lambda v: v.notna().any())
         Tg = T[T.qid.isin(g.index[g])]
         print('  covered queries: stage-1', mrr(Tg, 's1'), 'stage-2', mrr(Tg, 's2'))

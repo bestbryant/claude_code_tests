@@ -145,6 +145,9 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   v8e (dr_* + 31 leaves) 0.902 / 0.852 / 0.929 / 0.729 / 0.696. Net: DreaMS is about neutral after the leak fix
   (class 1 up, class 2 slightly down, weighted within noise). Main entry stays alpha 0.5; v8e (kernel
   casmi26-own-s2v8e) is an optional LB test, not a default.
+- Stage-2 5-fold CV on the 4,877 training queries (out-of-fold stage-1 scores; train_stage2.py cv now also prints the
+  weighted class-2 MRR, se ~0.02): alpha 0.5 stage 1 0.8807 / w 0.660 -> stage 2 0.8861 / w 0.677;
+  v8e stage 1 0.8818 / w 0.669 -> stage 2 0.8868 / w 0.682. DreaMS = +0.001 / +0.005, i.e. noise-level positive.
 
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
