@@ -35,18 +35,21 @@ assert 'efix' in np.load(cache).files, 'query embeddings predate the electron-ma
 # class-1 substitutes: when every same-polarity DreaMS representative of the truth is one of the hidden query spectra,
 # the truth would vanish from the DreaMS library, which never happens for a real class-1 molecule (its representative
 # is always visible). Use the truth's next visible spectrum of that polarity from the 10-per-structure library instead.
-L10 = np.load('/home/user/work/lib10.npz', allow_pickle=True)
-l10_n = np.diff(L10['off'])
+z10 = np.load('/home/user/work/lib10.npz', allow_pickle=True)
+l10_key, l10_pol, l10_row, l10_n = z10['key'], z10['pol'].astype(int), z10['row'].astype(int), np.diff(z10['off'])
+need_keys = set(Q.truth[Q.cls == 1])
 l10 = {}
 for j in np.argsort(-l10_n, kind='stable'):
-    l10.setdefault((L10['key'][j], int(L10['pol'][j])), []).append(int(L10['row'][j]))
+    k = l10_key[j]
+    if k in need_keys:
+        l10.setdefault((k, l10_pol[j]), []).append(l10_row[j])
 backup = {}                       # qid -> [(key, pol, train row)]
 for q in Q[Q.cls == 1].itertuples():
     hr = set(q.rows)
     for p in sorted({int(mpol[r]) for r in q.rows}):
         reps = [j for j in DL.self_idx.get(q.truth, ()) if DL.pol[j] == p]
-        if reps and not all(int(DL.row[j]) in hr for j in reps):
-            continue
+        if not reps or not all(int(DL.row[j]) in hr for j in reps):
+            continue          # visible representative, or none at all (then the test library has none either)
         alt = [r for r in l10.get((q.truth, p), []) if r not in hr]
         if alt:
             backup.setdefault(q.qid, []).append((q.truth, p, alt[0]))
