@@ -17,7 +17,7 @@ D = pd.read_parquet(rows_p)
 meta = pd.read_parquet('/home/user/data/train_meta.parquet', columns=['inchikey14', 'ionization_mode'])
 mkey, mpol = meta.inchikey14.values, (meta.ionization_mode.values != 'positive').astype(np.int8)
 srows = np.concatenate([np.load(p)['row'] for p in shards])
-DL = DreamsLib(shards, {int(r): mkey[r] for r in srows}, {int(r): mpol[r] for r in srows}, None)
+DL = DreamsLib(shards, {int(r): mkey[r] for r in srows}, {int(r): mpol[r] for r in srows})
 print('library', len(DL.row), flush=True)
 
 Q = D.drop_duplicates('qid')[['qid', 'cls', 'truth', 'q_rows']].copy()

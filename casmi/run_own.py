@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = RK = FEATS = TEST = None
+R = FPS = RK = FEATS = TEST = DREAMS = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -25,7 +25,7 @@ STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER feature
 def _one(mid):
     try:
         if STAGE2:
-            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30)
+            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30, dreams=DREAMS)
         return mid, [list(x) for x in predict(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid])]
     except Exception as e:
         print('own fail', mid, repr(e), flush=True)
@@ -74,7 +74,7 @@ def stage2(frames, mdir, work):
 
 
 def main(argv):
-    global R, FPS, RK, FEATS, TEST
+    global R, FPS, RK, FEATS, TEST, DREAMS
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -96,6 +96,21 @@ def main(argv):
     TEST = pd.read_parquet(test_p)
     TEST['molecule_id'] = TEST.molecule_id.astype(str)
     mids = list(dict.fromkeys(TEST.molecule_id))
+    if os.environ.get('DREAMS_DIR') and 'dr_best' in FEATS:     # DreaMS analog channel (casmi/dreams_feats.py)
+        import glob as _glob, pyarrow.parquet as _pq
+        from .dreams_emb import DreamsEmbedder
+        from .dreams_feats import DreamsLib
+        d = os.environ['DREAMS_DIR']
+        shards = sorted(_glob.glob(f'{d}/**/dreams_lib_*.npz', recursive=True))
+        meta = _pq.read_table(train_p, columns=['inchikey14', 'ionization_mode']).to_pandas()
+        rows = np.concatenate([np.load(p)['row'] for p in shards])
+        DL = DreamsLib(shards, dict(zip(rows.tolist(), meta.inchikey14.values[rows])),
+                       dict(zip(rows.tolist(), (meta.ionization_mode.values[rows] != 'positive').astype(np.int8))))
+        em = DreamsEmbedder(_glob.glob(f'{d}/**/DreaMS_embedding_model_torchscript.pt', recursive=True)[0], procs)
+        E = em.embed(list(zip(TEST.ms2_mzs, TEST.ms2_normalized_intensities, TEST.precursor_mz)))
+        DREAMS = (DL, dict(zip(TEST.index.tolist(), E)))
+        torch.set_num_threads(1)
+        print('DreaMS: library', len(DL.row), 'test spectra embedded', len(E), f'{time.time()-t0:.0f}s', flush=True)
     with Pool(procs) as pool:
         res_ = dict(pool.imap_unordered(_one, mids, chunksize=2))
     if STAGE2:

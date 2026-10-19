@@ -40,6 +40,25 @@ def formula_rel(df):
     return df
 
 
+def add_dreams(df, R, dreams, g):
+    """DreaMS analog-channel columns for one test molecule's candidate frame (in place); nothing is hidden."""
+    from .dreams_feats import dreams_features
+    from .retrieval import tanimoto_packed
+    DL, emb = dreams
+    idx = [i for i in g.index if i in emb]
+    if not idx:
+        for c in ('dr_best', 'dr_tan_best', 'dr_sum', 'dr_top1_tan', 'dr_self', 'dr_r', 'dr_gap'):
+            df[c] = 0.0 if c != 'dr_r' else 1.0
+        return df
+    qe = np.stack([emb[i] for i in idx]).astype(np.float32)
+    qp = np.array([0 if m == 'positive' else 1 for m in g.loc[idx, 'ionization_mode']], np.int8)
+    key_fp = lambda k: np.asarray(R.fp[R.key_idx[k]]) if k in R.key_idx else None
+    f = dreams_features(DL, qe, qp, df.key.values, np.asarray(R.fp[df.pid.values]), key_fp, tanimoto_packed)
+    for c, v in f.items():
+        df[c] = v
+    return df
+
+
 def query_from_rows(g):
     """Test rows of one molecule -> (cleaned query spectra for retrieval, raw spectra for the FP model, M)."""
     Q, raw, nms = [], [], []
@@ -58,9 +77,10 @@ def query_from_rows(g):
     return Q, raw, M
 
 
-def stage1(R, fps, ranker, feats, g, k=30):
+def stage1(R, fps, ranker, feats, g, k=30, dreams=None):
     """One molecule: stage-1 top-k candidate frame (all features, s1 = ranker score, s1_r = rank), one row per
-    metric identity (key14), or None."""
+    metric identity (key14), or None. dreams = (DreamsLib, {test row index: embedding}) adds the DreaMS analog
+    channel (casmi/dreams_feats.py)."""
     Q, raw, M = query_from_rows(g)
     if not Q or not np.isfinite(M):
         return None
@@ -70,6 +90,8 @@ def stage1(R, fps, ranker, feats, g, k=30):
     if fps is not None:
         cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
         fp_feats(df, cos, bern)
+    if dreams is not None:
+        add_dreams(df, R, dreams, g)
     if FREL_FEATS[0] in feats:
         formula_rel(df)
     df['s1'] = ranker.predict(df[feats].astype(float).values)

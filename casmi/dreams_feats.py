@@ -15,7 +15,7 @@ DR_FEATS = ['dr_best', 'dr_tan_best', 'dr_sum', 'dr_top1_tan', 'dr_self', 'dr_r'
 
 
 class DreamsLib:
-    def __init__(self, shard_paths, lib_key, lib_pol, lib_row_index):
+    def __init__(self, shard_paths, lib_key, lib_pol):
         """shard_paths: npz files (row, emb) from the embedding jobs; lib_key / lib_pol: per train.parquet row
         lookups (dict row -> key, dict row -> pol) for the representatives."""
         rows, embs = [], []
