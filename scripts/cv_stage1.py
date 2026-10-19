@@ -4,6 +4,7 @@ import sys, numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.docw import query_weights
 from casmi.own import FREL_FEATS
+from casmi.retrieval import LT_COLS
 W = '/home/user/work'
 base = open(f'{W}/own_models/ret_ranker_v5w_feats.txt').read().split()
 def load(p, off):
@@ -15,7 +16,9 @@ def load(p, off):
     keep = (D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)
     keep &= ~D.qid.isin(t.index[(t.cls == 1) & (t.lib_n == 0)])
     return D[keep].reset_index(drop=True)
-D = pd.concat([load(f'{W}/ret7_train_fp.parquet', 0), load(f'{W}/ret7_val_fp.parquet', 100_000_000)], ignore_index=True)
+import os
+ROWS = os.environ.get('CV_ROWS', 'ret7')       # ret7: + formula-relative features; ret5: + LOTUS columns
+D = pd.concat([load(f'{W}/{ROWS}_train_fp.parquet', 0), load(f'{W}/{ROWS}_val_fp.parquet', 100_000_000)], ignore_index=True)
 q = D.drop_duplicates('qid').set_index('qid')
 t = D[D.label == 1].drop_duplicates('qid').set_index('qid')
 RW = pd.read_parquet(f'{W}/pool4/doc_w.parquet').set_index('key').w
@@ -31,7 +34,10 @@ def rr(Dx, col):
     r = o[(o.label == 1) & (o.r <= 25)].groupby('qid').r.min().reindex(Dx.qid.unique())
     return (1 / r).fillna(0)
 configs = {'v4c': (base, 0.0), 'v5w': (base, 1.0), 'v4c+frel': (base + FREL_FEATS, 0.0), 'v7w': (base + FREL_FEATS, 1.0),
-           'a0.5': (base, 0.5), 'a0.5+frel': (base + FREL_FEATS, 0.5)}
+           'a0.5': (base, 0.5), 'a0.5+frel': (base + FREL_FEATS, 0.5),
+           'a0.5+lotus': (base + LT_COLS, 0.5), 'a0.5-bio': ([f for f in base if f != 'in_bio'], 0.5),
+           'a0.5-pclanno': ([f for f in base if f not in ('pcl_anno', 'pcl_bio', 'pcl_food')], 0.5),
+           'a1+lotus': (base + LT_COLS, 1.0)}
 sel = sys.argv[1:] or list(configs)
 for name in sel:
     feats, alpha = configs[name]
@@ -52,4 +58,4 @@ for name in sel:
         i = rng.integers(0, len(c2), len(c2)); bs.append(np.average(r[c2].values[i], weights=qw[c2].values[i]))
     print(f'{name:10s} all {r.mean():.4f} cls1 {r[q.cls == 1].mean():.4f} cls2 {r[c2].mean():.4f} cls2w {wm:.4f} (se {np.std(bs):.4f})', flush=True)
     D[f'p_{name}'] = D.p
-D[['qid', 'pid', 'label', 'cls'] + [f'p_{n}' for n in sel]].to_parquet('cv5_preds.parquet')
+D[['qid', 'pid', 'label', 'cls'] + [f'p_{n}' for n in sel]].to_parquet(f'/home/user/work/cv_{ROWS}_preds.parquet')

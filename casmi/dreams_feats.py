@@ -27,6 +27,8 @@ class DreamsLib:
         self.key = np.array([lib_key[r] for r in self.row])
         self.pol = np.array([lib_pol[r] for r in self.row], np.int8)
         self.by_pol = {p: np.where(self.pol == p)[0] for p in (0, 1)}
+        self.E_pol = {p: np.ascontiguousarray(self.E[ix]) for p, ix in self.by_pol.items()}   # no per-query copies
+        del self.E
         self.self_idx = {}
         for i, k in enumerate(self.key):
             self.self_idx.setdefault(k, []).append(i)
@@ -34,7 +36,7 @@ class DreamsLib:
     def neighbours(self, e, pol, hide_keys=(), hide_rows=(), top=60):
         """Library indices and cosines of the best `top` representatives of one embedded query spectrum."""
         cand = self.by_pol[pol]
-        s = self.E[cand] @ e
+        s = self.E_pol[pol] @ e
         o = np.argpartition(-s, min(top + 50, len(s) - 1))[:top + 50]
         o = o[np.argsort(-s[o])]
         out = []
