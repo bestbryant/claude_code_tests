@@ -5,7 +5,8 @@
 set -euo pipefail
 SLUG=$1; VER=$2; MSG=$3
 D=$(mktemp -d)
-kaggle kernels output "bryantyu/$SLUG" -p "$D" > /dev/null 2>&1
+# only the submission and the log: some kernels also leave large library files in /kaggle/working
+kaggle kernels output "bryantyu/$SLUG" -p "$D" --file-pattern '(submission\.csv|\.log)$' --page-size 200 > /dev/null 2>&1
 python3 - "$D" <<'EOF'
 import glob, sys
 import pandas as pd
