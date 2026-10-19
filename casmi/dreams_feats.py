@@ -54,18 +54,29 @@ class DreamsLib:
 
 
 def dreams_features(DL, q_embs, q_pols, cand_keys, cand_fp, key_fp, tanimoto, hide_keys=(), hide_rows=(),
-                    n_analog=20, pw=3.0):
+                    n_analog=20, pw=3.0, extra=()):
     """q_embs: (n_spec, d) L2-normalised query embeddings with polarities q_pols; cand_keys / cand_fp: candidate
     keys and packed fingerprints; key_fp(key) -> packed fingerprint or None; tanimoto(fp, C) -> (n,) similarities.
-    Returns dict of DR_FEATS arrays (n candidates)."""
+    extra: [(key, pol, embedding)] library entries added for this query only (simulation: a substitute spectrum for
+    a class-1 truth whose representative is one of the hidden query spectra; at test time the representative of a
+    structure with public spectra is always visible). Returns dict of DR_FEATS arrays (n candidates)."""
     n = len(cand_keys)
     agg, self_best = {}, np.zeros(n)
     hide_keys, hide_rows = set(hide_keys), set(hide_rows)
+    cpos = {k: i for i, k in enumerate(cand_keys)}
     for e, p in zip(q_embs, q_pols):
         for j, s in DL.neighbours(e, int(p), hide_keys, hide_rows):
             k = DL.key[j]
             if k not in agg or s > agg[k]:
                 agg[k] = s
+        for k, xp, xe in extra:
+            if int(xp) == int(p) and k not in hide_keys:
+                s = float(xe @ e)
+                if k not in agg or s > agg[k]:
+                    agg[k] = s
+                c = cpos.get(k)
+                if c is not None and s > self_best[c]:
+                    self_best[c] = s
         # direct match: cosine to each candidate's own (visible, same-polarity) library representative
         for c, k in enumerate(cand_keys):
             if k in hide_keys:

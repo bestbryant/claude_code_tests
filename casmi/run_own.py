@@ -102,6 +102,9 @@ def main(argv):
         from .dreams_feats import DreamsLib
         d = os.environ['DREAMS_DIR']
         shards = sorted(_glob.glob(f'{d}/**/dreams_lib_*.npz', recursive=True))
+        lr = _glob.glob(f'{d}/**/lib_rows.npy', recursive=True)
+        n_lib = sum(len(np.load(p, mmap_mode='r')['row']) for p in shards) if shards else 0
+        assert shards and (not lr or n_lib == len(np.load(lr[0]))), ('DreaMS library incomplete', shards, n_lib)
         meta = _pq.read_table(train_p, columns=['inchikey14', 'ionization_mode']).to_pandas()
         rows = np.concatenate([np.load(p)['row'] for p in shards])
         DL = DreamsLib(shards, dict(zip(rows.tolist(), meta.inchikey14.values[rows])),
