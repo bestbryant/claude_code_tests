@@ -133,6 +133,13 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   Stage-1 5-fold CV (alpha 0.5): base 0.887 / cls1 0.861 / cls2 0.900 / cls2w 0.673; + dr_* 0.892 / 0.867 / 0.904 /
   0.693 (gain on every column); dr_* replacing an_* 0.878 / cls2w 0.638 (complementary, not a substitute).
   -> pipeline_v8d.sh (dr_* + alpha 0.5 + 63-leaf trees), kernel casmi26-own-s2v8d.
+- Review workflow (4 lenses x 2 adversarial verifiers) found a simulation leak: the library keeps ONE representative
+  per (structure, polarity), and class-1 hiding of the query spectra removed it for ~1/3 of class-1 truths, so
+  "lib_n > 0 and dr_self == 0" marked the answer (36% precision vs 1.4% base rate) -- impossible at test time.
+  Fixed with substitute representatives (scripts/add_dreams_feats.py); simulated enveda-180 positive queries are now
+  embedded electron-mass corrected like the hidden test. Corrected CV: + dr_* 0.8868 / cls1 0.8590 / cls2 0.9008 /
+  cls2w 0.6845 vs base 0.8870 / 0.8605 / 0.9003 / 0.6734: the class-1 "gain" was the leak; what remains is +0.011
+  on weighted class 2. Shipped anyway in v8d (with the 63-leaf trees) for one LB test.
 
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
