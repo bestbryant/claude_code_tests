@@ -25,15 +25,17 @@ def fp_feats(df, cos, bern, prefix='fp'):
 
 FREL_SRC = ['fp_cos', 'fp_bern', 'an_tan_best', 'an_best', 'frag', 'lib']
 FREL_FEATS = [f'{c}_{s}' for c in FREL_SRC for s in ('fz', 'fr', 'fgap')]
+PF_FREL_SRC = ['pf_cos', 'pf_bern']
+PF_FREL = [f'{c}_{s}' for c in PF_FREL_SRC for s in ('fz', 'fr', 'fgap')]
 
 
-def formula_rel(df):
+def formula_rel(df, src=FREL_SRC):
     """Within-formula relative evidence (isomers are the main confusion): z-score, rank and gap to the best of the
     same-formula candidates of each query ('qid' column if present, else one query), NaN / 0 for singletons."""
     keys = (['qid'] if 'qid' in df.columns else []) + ['formula']
     g = df.groupby(keys, sort=False)
-    n = g[FREL_SRC[0]].transform('size')
-    for c in FREL_SRC:
+    n = g[src[0]].transform('size')
+    for c in src:
         m = g[c].transform('mean'); sd = g[c].transform('std')
         df[c + '_fz'] = ((df[c] - m) / sd).where(n >= 2).fillna(0).where(sd > 0, 0)
         df[c + '_fr'] = g[c].rank(ascending=False, method='min').where(n >= 2)
@@ -98,6 +100,8 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None):
         add_dreams(df, R, dreams, g)
     if FREL_FEATS[0] in feats:
         formula_rel(df)
+    if PF_FREL[0] in feats:
+        formula_rel(df, PF_FREL_SRC)
     df['s1'] = ranker.predict(df[feats].astype(float).values)
     df = df.sort_values('s1', ascending=False)
     keep, seen = [], set()
@@ -130,6 +134,8 @@ def predict(R, fps, ranker, feats, g, n=25, pfs=None):
         fp_feats(df, cos, fz, 'pf')
     if FREL_FEATS[0] in feats:
         formula_rel(df)
+    if PF_FREL[0] in feats:
+        formula_rel(df, PF_FREL_SRC)
     df['z'] = ranker.predict(df[feats].astype(float).values)
     df = df.sort_values('z', ascending=False)
     out, seen = [], set()

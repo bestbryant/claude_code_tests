@@ -3,7 +3,7 @@ weighted class-2 MRR and its bootstrap standard error. python scripts/cv_stage1.
 import sys, numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.docw import query_weights
-from casmi.own import FREL_FEATS, FP_FEATS, PF_FEATS
+from casmi.own import FREL_FEATS, FP_FEATS, PF_FEATS, PF_FREL, PF_FREL_SRC, formula_rel
 from casmi.retrieval import LT_COLS
 from casmi.dreams_feats import DR_FEATS
 W = '/home/user/work'
@@ -20,6 +20,10 @@ def load(p, off):
 import os
 ROWS = os.environ.get('CV_ROWS', 'ret7')       # ret7: + formula-relative features; ret5: + LOTUS columns
 D = pd.concat([load(f'{W}/{ROWS}_train_fp.parquet', 0), load(f'{W}/{ROWS}_val_fp.parquet', 100_000_000)], ignore_index=True)
+if 'pf_cos' in D.columns and PF_FREL[0] not in D.columns:          # within-formula PeakFormer columns
+    if 'formula' not in D.columns:
+        D['formula'] = pd.read_parquet(f'{W}/pool4/pool.parquet', columns=['formula']).formula.to_numpy(dtype=object)[D.pid.values]
+    formula_rel(D, PF_FREL_SRC)
 q = D.drop_duplicates('qid').set_index('qid')
 t = D[D.label == 1].drop_duplicates('qid').set_index('qid')
 RW = pd.read_parquet(f'{W}/pool4/doc_w.parquet').set_index('key').w
@@ -44,7 +48,7 @@ configs = {'v4c': (base, 0.0), 'v5w': (base, 1.0), 'v4c+frel': (base + FREL_FEAT
            'a1+lotus': (base + LT_COLS, 1.0),
            'a0.5+dr': (base + DR_FEATS, 0.5), 'a0+dr': (base + DR_FEATS, 0.0),
            'a0.5+dr-an': ([f for f in base if not f.startswith('an_')] + DR_FEATS, 0.5),
-           'a0.5+pf': (base + PF_FEATS, 0.5), 'a0.5+pf-fp': ([f for f in base if f not in FP_FEATS] + PF_FEATS, 0.5)}
+           'a0.5+pf': (base + PF_FEATS, 0.5), 'a0.5+pf+frel': (base + PF_FEATS + PF_FREL, 0.5), 'a0.5+pf-fp': ([f for f in base if f not in FP_FEATS] + PF_FEATS, 0.5)}
 sel = sys.argv[1:] or list(configs)
 for name in sel:
     feats, alpha = configs[name]

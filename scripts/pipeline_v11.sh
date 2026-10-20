@@ -17,10 +17,15 @@ for s in train val; do
   wait
   python3 -c "
 import sys, pandas as pd
-pd.concat([pd.read_parquet(f'$out.part{i}') for i in range(3)], ignore_index=True).to_parquet('$out')"
+sys.path.insert(0, '$R')
+from casmi.own import formula_rel, PF_FREL_SRC
+D = pd.concat([pd.read_parquet(f'$out.part{i}') for i in range(3)], ignore_index=True)
+D['formula'] = pd.read_parquet('$W/pool4/pool.parquet', columns=['formula']).formula.to_numpy(dtype=object)[D.pid.values]
+formula_rel(D, PF_FREL_SRC)
+D.drop(columns='formula').to_parquet('$out')"
   rm -f $out.part?
 done
 python3 scripts/eval_pf.py $W/ret10pf_val_fp.parquet
-CV_ROWS=ret10pf python3 scripts/cv_stage1.py a0.5 a0.5+pf a0.5+pf-fp
+CV_ROWS=ret10pf python3 scripts/cv_stage1.py a0.5 a0.5+pf a0.5+pf+frel a0.5+pf-fp
 [ "${GATE:-0}" = "1" ] || exit 0
 T=$T ROWS=ret10pf bash scripts/pipeline_v8d.sh
