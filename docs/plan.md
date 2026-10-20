@@ -212,6 +212,10 @@ Kaggle GPU quota is exhausted until Oct 24, so three CPU variants train for 11 h
 d=192 x 4 layers seeds 0/1, d=128 x 3 layers; ~2.3 s/step at batch 256, ~2 epochs). Data: bryantyu/casmi26-pf-data.
 Next: pf_* features on ret10 rows -> stage-1 CV gate -> v11 pipeline; a larger model on GPU after Oct 24.
 
+Fragment evidence v2 (casmi/fragscore.py, Priority 2): depth-mixed explained share + 1-cut coverage on the stage-1
+top 30 (fwd_v10 rows), stage-2 5-fold CV, two fold seeds: weighted cls2 +0.0047 / -0.0019, cls1 +0.0015 / -0.0011,
+all +0.0013 / +0.0005 -> noise-level, gate (+0.004 on both seeds) failed; not shipped (S2_EXTRA=frag2 kept).
+
 ## Fingerprint-model bound (Oct 20, design-panel A2) -- superseded, see above
 Within-formula top-1 of fp_cos on validation is 0.351 (1,321 queries with >= 2 isomers). Adding 0.07 SD to the truth's
 fp_cos (top-1 -> ~0.45, i.e. a much better fingerprint model) and re-running stage-1 CV on the v10 rows: all 0.895 ->
