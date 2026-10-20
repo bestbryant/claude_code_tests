@@ -233,6 +233,12 @@ truth source (a0.5 -> a0.5+pf, weighted): COCONUT -0.008, PubChemLite-only +0.08
 PeakFormer pays off when the ranker is pushed off documentation (alpha 1) -> v11 = alpha 1 + pf (pipeline T=v11l
 started with the local model; ensemble with the Kaggle CPU models next).
 
+v11l pipeline (alpha 1 + pf from the local PeakFormer; T=v11l ROWS=ret10pl ALPHA=1 scripts/pipeline_v8d.sh): ranker
+gain led by pf_bern_gap (6x the next feature). Validation (held-out val rows): stage 1 0.9028 (cls1 .8466, cls2
+.9329) vs v10 0.8912 (.8297 / .9241); stage 2 0.9011 (.8374 / .9352) vs v10 0.8938 (.8228 / .9317). Stage-2 5-fold
+CV on train queries: all .8971, cls1 .8818, cls2 .9047, weighted .6993 vs v10 .8942 / .8744 / .9040 / .6838. List
+confidence retrained on v11l scores (pother_v11l, AUC 0.891). Kernels casmi26-own-s2v11l and -s2v11lpc-ad.
+
 PubChem proposal channel (Oct 20): the public lineage's "other" source (answers outside train + COCONUT) is worth
 0.057 on the LB and comes from a separate PubChem channel (10 ppm window, top by documentation, f.z + 0.25 pop, slot
 insertion when the library match is weak). Ours: tier = 15.8M documented PubChem compounds outside pool v4 (sid >= 5
