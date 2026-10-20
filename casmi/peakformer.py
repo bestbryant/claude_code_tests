@@ -178,7 +178,8 @@ class PFScorer:
     """Like casmi.fpscore.FPScorer: score(spectra, pids, smiles) -> (cosine, f . z). Candidate fingerprints are
     computed from SMILES (casmi/richfp.py) and cached by pool id."""
 
-    def __init__(self, weights, pool_fp=None, device='cpu'):
+    def __init__(self, weights, pool_fp=None, device='cpu', fp_cache=None):
+        """fp_cache: optional npz (pid, ptr, idx) of raw on-bits by pool id (scripts/cache_richfp.py)."""
         from .richfp import N_RAW
         sd = torch.load(weights, map_location=device, weights_only=False)
         cfg = sd.pop('_cfg'); keep = np.asarray(sd.pop('_keep'))
@@ -188,9 +189,16 @@ class PFScorer:
         self.dev = device
         self.km = -np.ones(N_RAW, np.int64); self.km[keep] = np.arange(len(keep))
         self._fp = {}
+        self.cache = None
+        if fp_cache:
+            z = np.load(fp_cache)
+            self.cache = (dict(zip(z['pid'].tolist(), range(len(z['pid'])))), z['ptr'], z['idx'])
 
     def onbits(self, pid, smiles):
         v = self._fp.get(pid)
+        if v is None and self.cache is not None and pid in self.cache[0]:
+            j = self.cache[0][pid]; a = self.km[self.cache[2][self.cache[1][j]:self.cache[1][j + 1]].astype(np.int64)]
+            return a[a >= 0]
         if v is None:
             from .richfp import raw_onbits
             a = self.km[raw_onbits(smiles)]
@@ -212,3 +220,23 @@ class PFScorer:
             cos = (e @ m.T).squeeze(0).cpu().numpy()
             fz = fz_scores(z.unsqueeze(0), ids, rid, torch.zeros(len(lists), dtype=torch.long), len(lists)).cpu().numpy()
         return cos, fz
+
+
+class PFEnsemble:
+    """Several PeakFormer checkpoints: cosine = mean over models; f.z = mean of the per-query z-scored f.z (models
+    differ in scale). One checkpoint behaves exactly like PFScorer."""
+
+    def __init__(self, paths, device='cpu', fp_cache=None):
+        self.ms = [PFScorer(p, device=device, fp_cache=fp_cache) for p in paths]
+        for m in self.ms[1:]:          # one fingerprint cache for all members with the same kept bits
+            if np.array_equal(m.km, self.ms[0].km):
+                m._fp = self.ms[0]._fp; m.cache = self.ms[0].cache
+
+    def score(self, spectra, pids, smiles):
+        if len(self.ms) == 1:
+            return self.ms[0].score(spectra, pids, smiles)
+        cs, fs = [], []
+        for m in self.ms:
+            c, f = m.score(spectra, pids, smiles)
+            cs.append(c); fs.append((f - f.mean()) / (f.std() or 1.0))
+        return np.mean(cs, 0), np.mean(fs, 0)

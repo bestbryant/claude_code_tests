@@ -1,9 +1,10 @@
 """Add fingerprint-model features (fp_cos, fp_bern + within-query rank/gap) to dumped retrieval rows.
 
 Usage: python scripts/add_fp_feats.py <rows.parquet> <weights.pt> <out.parquet> [pool_dir|-] [shard nshards]
-A PeakFormer checkpoint (casmi/peakformer.py, has '_cfg') adds pf_* columns instead of fp_*.
+A PeakFormer checkpoint (casmi/peakformer.py, has '_cfg'; comma-separated = ensemble) adds pf_* columns instead
+of fp_*; RICHFP_CACHE = scripts/cache_richfp.py output.
 """
-import sys, time
+import os, sys, time
 import numpy as np, pandas as pd, torch
 sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.fpscore import FPScorer
@@ -18,10 +19,10 @@ POOL = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] != '-' else '/home/user/
 SHARD, NSH = (int(sys.argv[5]), int(sys.argv[6])) if len(sys.argv) > 6 else (0, 1)
 D = D[D.qid % NSH == SHARD]
 P = pd.read_parquet(f'{POOL}/pool.parquet')
-PF = '_cfg' in torch.load(wpath, map_location='cpu', weights_only=False)
-if PF:
-    from casmi.peakformer import PFScorer
-    sc = PFScorer(wpath, np.load(f'{POOL}/pool_fp.npy', mmap_mode='r'))
+PF = '_cfg' in torch.load(wpath.split(',')[0], map_location='cpu', weights_only=False)
+if PF:                  # comma-separated checkpoints -> ensemble
+    from casmi.peakformer import PFEnsemble
+    sc = PFEnsemble(wpath.split(','), fp_cache=os.environ.get('RICHFP_CACHE'))
 else:
     sc = FPScorer(wpath, np.load(f'{POOL}/pool_fp.npy', mmap_mode='r'))
 st = Store('/home/user/work/train_store'); meta = st.meta

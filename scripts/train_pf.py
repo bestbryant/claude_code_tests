@@ -9,7 +9,7 @@ adduct, top 64 of the union), peak dropout, intensity and ppm jitter.
 Loss = f.z and cosine scores, each against in-batch and same-mass window negatives (negs.npy), + fingerprint BCE.
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
-Env: PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS.
+Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS.
 """
 import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
@@ -48,6 +48,9 @@ tr = np.where(split == 0)[0]
 print('train spectra', len(tr), 'val', int((split == 1).sum()), 'held out', int((split == 2).sum()), 'bits', NB,
       f'{time.time() - t0:.0f}s', flush=True)
 w = np.where(inst_id[tr] == 1, 2.0, 1.0); cw = np.cumsum(w); cw /= cw[-1]
+S_BAL = float(os.environ.get('PF_SBAL', '0'))       # share of each batch drawn structure-uniformly
+so = tr[np.argsort(sidx[tr], kind='stable')]; ss = sidx[so]
+s_first = np.r_[0, np.where(np.diff(ss) != 0)[0] + 1]; s_len = np.diff(np.r_[s_first, len(ss)])
 
 # merge partners: training spectra grouped by (structure, adduct)
 gkey = sidx[tr].astype(np.int64) * 16 + add_id[tr]
@@ -184,6 +187,10 @@ step = 0; eye = torch.eye(B, dtype=torch.bool, device=dev); ar = torch.arange(B,
 for ep in range(EPOCHS):
     for _ in range(STEPS):
         idx = tr[np.minimum(np.searchsorted(cw, rng.random(B)), len(tr) - 1)]
+        nb = int(round(S_BAL * B))
+        if nb:
+            j = rng.integers(0, len(s_first), nb)
+            idx[:nb] = so[s_first[j] + (rng.random(nb) * s_len[j]).astype(np.int64)]
         s = sidx[idx].astype(np.int64)
         nl = negs[s]; cnt = (nl >= 0).sum(1)
         pick_pos = np.minimum((rng.random((B, NNEG)) * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)

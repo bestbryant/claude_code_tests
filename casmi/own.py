@@ -78,10 +78,10 @@ def query_from_rows(g):
     return Q, raw, M
 
 
-def stage1(R, fps, ranker, feats, g, k=30, dreams=None):
+def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None):
     """One molecule: stage-1 top-k candidate frame (all features, s1 = ranker score, s1_r = rank), one row per
     metric identity (key14), or None. dreams = (DreamsLib, {test row index: embedding}) adds the DreaMS analog
-    channel (casmi/dreams_feats.py)."""
+    channel (casmi/dreams_feats.py); pfs = PeakFormer scorer (casmi/peakformer.py) adds the pf_* columns."""
     Q, raw, M = query_from_rows(g)
     if not Q or not np.isfinite(M):
         return None
@@ -91,6 +91,9 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None):
     if fps is not None:
         cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
         fp_feats(df, cos, bern)
+    if pfs is not None:
+        cos, fz = pfs.score(raw, df.pid.values, df.smiles.values)
+        fp_feats(df, cos, fz, 'pf')
     if dreams is not None:
         add_dreams(df, R, dreams, g)
     if FREL_FEATS[0] in feats:
@@ -111,7 +114,7 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None):
     return out
 
 
-def predict(R, fps, ranker, feats, g, n=25):
+def predict(R, fps, ranker, feats, g, n=25, pfs=None):
     """One molecule: ranked list of (smiles, score, key14)."""
     Q, raw, M = query_from_rows(g)
     if not Q or not np.isfinite(M):
@@ -122,6 +125,9 @@ def predict(R, fps, ranker, feats, g, n=25):
     if fps is not None:
         cos, bern = fps.score(raw, df.pid.values, df.smiles.values)
         fp_feats(df, cos, bern)
+    if pfs is not None:
+        cos, fz = pfs.score(raw, df.pid.values, df.smiles.values)
+        fp_feats(df, cos, fz, 'pf')
     if FREL_FEATS[0] in feats:
         formula_rel(df)
     df['z'] = ranker.predict(df[feats].astype(float).values)

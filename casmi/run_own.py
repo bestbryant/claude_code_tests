@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = RK = FEATS = TEST = DREAMS = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -25,8 +25,8 @@ STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER feature
 def _one(mid):
     try:
         if STAGE2:
-            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30, dreams=DREAMS)
-        return mid, [list(x) for x in predict(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid])]
+            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30, dreams=DREAMS, pfs=PFS)
+        return mid, [list(x) for x in predict(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], pfs=PFS)]
     except Exception as e:
         print('own fail', mid, repr(e), flush=True)
         return mid, [] if not STAGE2 else None
@@ -101,7 +101,7 @@ def stage2(frames, mdir, work):
 
 
 def main(argv):
-    global R, FPS, RK, FEATS, TEST, DREAMS
+    global R, FPS, PFS, RK, FEATS, TEST, DREAMS
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -121,6 +121,10 @@ def main(argv):
     rk = os.environ.get('OWN_RANKER', 'ret_ranker')        # which ranker variant in the models dataset
     RK = lgb.Booster(model_file=f'{mdir}/{rk}.txt')
     FEATS = open(f'{mdir}/{rk}_feats.txt').read().split()
+    if 'pf_cos' in FEATS:          # PeakFormer checkpoints (OWN_PF: comma-separated names in the models dataset)
+        from .peakformer import PFEnsemble
+        PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
+        print('PeakFormer members', len(PFS.ms), flush=True)
     TEST = pd.read_parquet(test_p)
     TEST['molecule_id'] = TEST.molecule_id.astype(str)
     mids = list(dict.fromkeys(TEST.molecule_id))
