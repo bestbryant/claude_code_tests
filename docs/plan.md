@@ -212,6 +212,13 @@ Kaggle GPU quota is exhausted until Oct 24, so three CPU variants train for 11 h
 d=192 x 4 layers seeds 0/1, d=128 x 3 layers; ~2.3 s/step at batch 256, ~2 epochs). Data: bryantyu/casmi26-pf-data.
 Next: pf_* features on ret10 rows -> stage-1 CV gate -> v11 pipeline; a larger model on GPU after Oct 24.
 
+PeakFormer early check (Oct 20, local run d=192 x 4, structure-balanced, checkpoint after 3,000 steps = 0.33
+epoch): internal validation f.z MRR 0.584 / top-1 0.439 (FP v3: 0.549 / 0.392 after 4 epochs). Class-2 COCONUT
+non-train validation truths (scripts/eval_pf.py, within-formula): pf_bern MRR 0.419 vs fp_cos 0.430, wins vs COCONUT
+decoys 0.849 vs 0.829, vs train decoys 0.832 vs 0.794. Stage-1 CV (ret10 rows + pf): all 0.8951 -> 0.8991, cls1
++0.003, cls2 +0.0046, weighted cls2 -0.007 +- 0.010 (paired); replacing fp by pf: weighted -0.016 +- 0.011 -> the
+early model adds on top of fp but does not replace it; final models (2 epochs, ensemble) tonight.
+
 PubChem proposal channel (Oct 20): the public lineage's "other" source (answers outside train + COCONUT) is worth
 0.057 on the LB and comes from a separate PubChem channel (10 ppm window, top by documentation, f.z + 0.25 pop, slot
 insertion when the library match is weak). Ours: tier = 15.8M documented PubChem compounds outside pool v4 (sid >= 5
