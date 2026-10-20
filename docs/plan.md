@@ -240,6 +240,11 @@ channel quality pessimistic top-1 .12 / MRR .17 or optimistic .30 / .40, share o
 fixed 4,8,12,16,20 likewise (+0.006 / +0.012 / +0.016 / +0.031); proposals at the top for every list (1,3,5,...)
 cost -0.13 to -0.28. The simulated main lists are far better than the test's (sim MRR 0.77 vs LB ~0.33), so
 displacement costs are overstated here. Kernel knobs PC_POTHER=pother_v1.txt PC_TH PC_SLOTS_HI.
+Kernels casmi26-own-s2v10pc-ad (adaptive) and -fx (fixed 4,8,12,16,20), local epoch-2 PeakFormer: on the visible
+test.parquet both equal v10, because that file is a placeholder made of training spectra (every precursor occurs
+exactly in train.parquet) -> library similarity ~1 -> the lib >= 0.9 gate skips 398 of 400 molecules. The hidden
+rerun is where the channel acts; visible outputs cannot validate it (runtime with proposals for every molecule:
+pc-only kernel 54 min).
 
 Fragment evidence v2 (casmi/fragscore.py, Priority 2): depth-mixed explained share + 1-cut coverage on the stage-1
 top 30 (fwd_v10 rows), stage-2 5-fold CV, two fold seeds: weighted cls2 +0.0047 / -0.0019, cls1 +0.0015 / -0.0011,
