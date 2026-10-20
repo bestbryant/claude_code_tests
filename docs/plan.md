@@ -232,6 +232,14 @@ Same check with the epoch-1 checkpoint (250 truths, median window 1,313): n_pop 
 truth is a training-like structure among PubChem decoys), but the channel is strong -> LB probe casmi26-pc-only
 (every list = the channel's top 25; epoch-2 checkpoint, n_pop 5000, lam 0.05) replaces the s2src slot on Oct 21; it
 is directly comparable to the public lineage's "other" 0.057.
+Placement: list-confidence model (casmi/pother.py, scripts/train_pother.py): p(answer outside the pool) from the
+stage-1 top-30 list (top score, margins in score SDs, leading candidates' evidence and sources), trained on simulated
+lists with and without the truth; CV AUC 0.882 (doc-weighted class 2 0.737). Policy simulation (sim lists, assumed
+channel quality pessimistic top-1 .12 / MRR .17 or optimistic .30 / .40, share of "other" molecules 0.2 / 0.35):
+"slots 1,3,5,7,9 if p > 0.7 else 4,8,12,16,20" is positive in all four cases (+0.001 / +0.015 / +0.021 / +0.050),
+fixed 4,8,12,16,20 likewise (+0.006 / +0.012 / +0.016 / +0.031); proposals at the top for every list (1,3,5,...)
+cost -0.13 to -0.28. The simulated main lists are far better than the test's (sim MRR 0.77 vs LB ~0.33), so
+displacement costs are overstated here. Kernel knobs PC_POTHER=pother_v1.txt PC_TH PC_SLOTS_HI.
 
 Fragment evidence v2 (casmi/fragscore.py, Priority 2): depth-mixed explained share + 1-cut coverage on the stage-1
 top 30 (fwd_v10 rows), stage-2 5-fold CV, two fold seeds: weighted cls2 +0.0047 / -0.0019, cls1 +0.0015 / -0.0011,
