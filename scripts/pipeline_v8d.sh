@@ -33,7 +33,7 @@ for f in train val; do
 done
 cd $W
 G=""; GV=""
-for d in fwd2 fwd3 fwd4 fwd_v5w fwd_v7w fwd_v5w_a0.5 fwd_v8d fwd_v8e; do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
+for d in fwd2 fwd3 fwd4 fwd_v5w fwd_v7w fwd_v5w_a0.5 fwd_v8d fwd_v8e fwd_v10 fwd_$T; do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
 GL_GLOB="${G#,}" GL_GLOB_VAL="${GV#,}" \
   python3 $R/scripts/train_stage2.py fit fwd_$T/train own_models/ret_ranker_${T}_feats.txt own_models/stage2_$T.txt fwd_$T/val
 echo ${T}_DONE
