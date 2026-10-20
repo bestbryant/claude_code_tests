@@ -212,6 +212,15 @@ Kaggle GPU quota is exhausted until Oct 24, so three CPU variants train for 11 h
 d=192 x 4 layers seeds 0/1, d=128 x 3 layers; ~2.3 s/step at batch 256, ~2 epochs). Data: bryantyu/casmi26-pf-data.
 Next: pf_* features on ret10 rows -> stage-1 CV gate -> v11 pipeline; a larger model on GPU after Oct 24.
 
+PubChem proposal channel (Oct 20): the public lineage's "other" source (answers outside train + COCONUT) is worth
+0.057 on the LB and comes from a separate PubChem channel (10 ppm window, top by documentation, f.z + 0.25 pop, slot
+insertion when the library match is weak). Ours: tier = 15.8M documented PubChem compounds outside pool v4 (sid >= 5
+or pmid >= 1; scripts/build_pubchem_tier.py, dataset bryantyu/casmi26-pc-tier), casmi/pcchannel.py, run_own PC_TIER.
+Offline (scripts/eval_pcchannel.py, 100 class-2 validation truths placed into their tier window, median window 1,394,
+PeakFormer after only 1,500 steps): n_pop 2000, lam 0 -> MRR 0.194 (doc-weighted 0.153); lam 0.25 -> 0.395 (0.125);
+lam 0.5 -> 0.472 (0.095); n_pop 500 loses the weighted truths (0.06). -> use n_pop >= 2000 and a small lam; LB probe
+after the trained PeakFormer exists.
+
 Fragment evidence v2 (casmi/fragscore.py, Priority 2): depth-mixed explained share + 1-cut coverage on the stage-1
 top 30 (fwd_v10 rows), stage-2 5-fold CV, two fold seeds: weighted cls2 +0.0047 / -0.0019, cls1 +0.0015 / -0.0011,
 all +0.0013 / +0.0005 -> noise-level, gate (+0.004 on both seeds) failed; not shipped (S2_EXTRA=frag2 kept).
