@@ -5,6 +5,10 @@ Task: up to 25 ranked SMILES per test molecule; MRR@25 on tautomer-canonical InC
 Hidden test ~400 molecules (~1,500 timsTOF spectra), public LB = 31% (~124 molecules), private 69%.
 Code competition: notebook ≤ 9 h, no internet. Deadline Dec 14 2026 (merge/entry Dec 7).
 
+## Working rules (session)
+- Never end a turn with work remaining without arming the next self check-in (send_later): the owner is away
+  and should not have to say "keep going". Submissions open 00:00 UTC (5/day).
+
 ## Rules that shape the solution
 - Prize-eligible solutions may not use NIST or models trained on NIST; no non-commercial-only data.
 - Every pretrained weight must be reproducible from public training code + permitted data
@@ -51,6 +55,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-19 | casmi26-own-s2v4 v1 | pool v4 (+52k ChEBI/LIPID MAPS, in_bio flag), stage 1 v4c, stage 2 GLACIER | **0.330** (best compliant) |
 | 10-19 | casmi26-probe-train v1 | pool-v3/ranker-v2 lists restricted to training-structure candidates | 0.146 |
 | 10-19 | casmi26-probe-coco v1 | same, restricted to COCONUT candidates | 0.191 |
+| 10-20 | casmi26-own-s2v5w-a05 v1 | pool v4, doc-shift weighted class-2 simulation alpha 0.5, stage 2 GLACIER | pending |
+| 10-20 | casmi26-own-s2v5w v1 | same, alpha 1 | pending |
+| 10-20 | casmi26-fprobe-train v3 | public 0.451 lineage restricted to training structures | pending |
+| 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | pending |
+| 10-20 | casmi26-fprobe-other v3 | public lineage restricted to other candidates | pending |
 
 ## Lessons from the Oct 19 submissions
 - GLACIER stage 2 adds +0.010 over its stage 1 (0.307 -> 0.317); ChEBI/LMSD membership (pool v4, in_bio) adds
