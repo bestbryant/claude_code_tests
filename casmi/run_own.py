@@ -82,8 +82,22 @@ def stage2(frames, mdir, work):
     demote = float(os.environ.get('SRC_DEMOTE', '0'))   # LB experiment: push PubChemLite-only candidates down
     gate = tuple(float(x) for x in os.environ['SRC_GATE'].split(',')) if os.environ.get('SRC_GATE') else None
     pop = float(os.environ.get('POP_BOOST', '0'))
+    frag2 = 'ps_mix_mean' in f2
+    if frag2:
+        from .fragscore import candidate_scores, frag2_feats
+        from .spectra import clean_peaks
     for m, f in frames.items():
         f = add_features(f.assign(qid=m), scores)
+        if frag2:            # fragment evidence v2 (casmi/fragscore.py) on the stage-1 top 30
+            sp = []
+            for r in TEST[TEST.molecule_id == m].itertuples():
+                a, b = clean_peaks(np.asarray(r.ms2_mzs, np.float64), np.asarray(r.ms2_normalized_intensities, np.float64),
+                                   float(r.precursor_mz), rel_floor=0.005, top_k=64)
+                if len(a) >= 3:
+                    sp.append((a.astype(np.float64), b.astype(np.float64), float(r.precursor_mz), r.adduct))
+            for c, v in candidate_scores(list(f.smiles), sp).items():
+                f[c] = v
+            frag2_feats(f)
         f['z'] = rk2.predict(f[f2].astype(float).values)
         if pop and len(f) > 1:          # public-lineage style: z(score) + lambda * pop, pop = log1p SIDs + log1p PMIDs
             f['z'] = (f.z - f.z.mean()) / (float(f.z.std()) or 1.0) + pop * (f.pc_sid.fillna(0) + f.pc_pmid.fillna(0))

@@ -4,7 +4,8 @@ python scripts/train_stage2.py cv <prefix> <stage1_feats.txt>              5-fol
 python scripts/train_stage2.py fit <train_prefix> <stage1_feats.txt> <out.txt> [<val_prefix>]
 <prefix>.top.parquet from build_fwd_jobs.py and <prefix>.jobs_*.gl.json from the GLACIER workers.
 MRR counts the truth's rank inside the top-k list (0 when the truth is outside it); class-1 queries weigh x2 in fit.
-DOC_W / DOC_ALPHA: documentation-shift weights for class-2 queries, as in train_ret_ranker.py.
+DOC_W / DOC_ALPHA: documentation-shift weights for class-2 queries, as in train_ret_ranker.py. S2_EXTRA=frag2 adds
+the fragment evidence v2 columns (casmi/fragscore.py).
 """
 import glob, json, os, sys
 import numpy as np, pandas as pd
@@ -72,16 +73,21 @@ if __name__ == '__main__':
     mode = sys.argv[1]
     s1_feats = open(sys.argv[3]).read().split()
     feats = s1_feats + FWD_FEATS
+    if os.environ.get('S2_EXTRA') == 'frag2':         # fragment evidence v2 columns (scripts/add_frag2.py)
+        from casmi.fragscore import FRAG2_FEATS
+        feats = feats + FRAG2_FEATS
     if mode == 'cv':
         T = load(sys.argv[2])
-        q = T.qid.unique(); rng = np.random.default_rng(0); fold = dict(zip(q, rng.integers(0, 5, len(q))))
+        q = T.qid.unique(); rng = np.random.default_rng(int(os.environ.get('S2_FOLD_SEED', '0')))
+        fold = dict(zip(q, rng.integers(0, 5, len(q))))
         T['fold'] = T.qid.map(fold)
         T['s2'] = np.nan; T['s2_nofwd'] = np.nan
         for k in range(5):
             tr, te = T[T.fold != k], T[T.fold == k]
             T.loc[te.index, 's2'] = fit(tr, feats).predict(te[feats].astype(np.float32))
             base = s1_feats + ['s1', 's1_r']
-            T.loc[te.index, 's2_nofwd'] = fit(tr, base).predict(te[base].astype(np.float32))
+            if os.environ.get('S2_CV_NOFWD', '1') == '1':
+                T.loc[te.index, 's2_nofwd'] = fit(tr, base).predict(te[base].astype(np.float32))
         print('stage-1            ', mrr(T, 's1'), wmrr(T, 's1'))
         print('stage-2 without fwd', mrr(T, 's2_nofwd'), wmrr(T, 's2_nofwd'))
         print('stage-2 with GLACIER', mrr(T, 's2'), wmrr(T, 's2'))
