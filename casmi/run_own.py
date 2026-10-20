@@ -81,9 +81,12 @@ def stage2(frames, mdir, work):
     out = {}
     demote = float(os.environ.get('SRC_DEMOTE', '0'))   # LB experiment: push PubChemLite-only candidates down
     gate = tuple(float(x) for x in os.environ['SRC_GATE'].split(',')) if os.environ.get('SRC_GATE') else None
+    pop = float(os.environ.get('POP_BOOST', '0'))
     for m, f in frames.items():
         f = add_features(f.assign(qid=m), scores)
         f['z'] = rk2.predict(f[f2].astype(float).values)
+        if pop and len(f) > 1:          # public-lineage style: z(score) + lambda * pop, pop = log1p SIDs + log1p PMIDs
+            f['z'] = (f.z - f.z.mean()) / (float(f.z.std()) or 1.0) + pop * (f.pc_sid.fillna(0) + f.pc_pmid.fillna(0))
         if demote and len(f) > 1:
             pcl_only = ((f.in_pcl == 1) & (f.in_train == 0) & (f.in_coco == 0)
                         & (f.get('in_bio', 0) == 0)).values
