@@ -227,6 +227,11 @@ Offline (scripts/eval_pcchannel.py, 100 class-2 validation truths placed into th
 PeakFormer after only 1,500 steps): n_pop 2000, lam 0 -> MRR 0.194 (doc-weighted 0.153); lam 0.25 -> 0.395 (0.125);
 lam 0.5 -> 0.472 (0.095); n_pop 500 loses the weighted truths (0.06). -> use n_pop >= 2000 and a small lam; LB probe
 after the trained PeakFormer exists.
+Same check with the epoch-1 checkpoint (250 truths, median window 1,313): n_pop 5000, lam 0 -> MRR 0.380 (weighted
+0.463), lam 0.05 -> 0.429 (0.458), lam 0.25 -> 0.543 (0.403); n_pop 2000 lam 0 -> 0.333 (0.378). Optimistic (the
+truth is a training-like structure among PubChem decoys), but the channel is strong -> LB probe casmi26-pc-only
+(every list = the channel's top 25; epoch-2 checkpoint, n_pop 5000, lam 0.05) replaces the s2src slot on Oct 21; it
+is directly comparable to the public lineage's "other" 0.057.
 
 Fragment evidence v2 (casmi/fragscore.py, Priority 2): depth-mixed explained share + 1-cut coverage on the stage-1
 top 30 (fwd_v10 rows), stage-2 5-fold CV, two fold seeds: weighted cls2 +0.0047 / -0.0019, cls1 +0.0015 / -0.0011,
