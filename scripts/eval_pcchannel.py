@@ -28,7 +28,7 @@ W = pd.read_parquet('/home/user/work/pool4/doc_w.parquet').set_index('key').w
 tier = PubChemTier(tier_p)
 sc = PFEnsemble(pf.split(','))
 st = Store('/home/user/work/train_store'); meta = st.meta
-LAMS = (0.0, 0.1, 0.25, 0.5); NPOP = (500, 2000)
+LAMS = tuple(float(x) for x in os.environ.get('PC_LAMS', '0,0.1,0.25,0.5').split(',')); NPOP = tuple(int(x) for x in os.environ.get('PC_NPOPS', '500,2000').split(','))
 res = []
 for q in t.itertuples():
     spectra = []
