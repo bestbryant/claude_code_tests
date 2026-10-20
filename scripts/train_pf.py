@@ -9,7 +9,7 @@ adduct, top 64 of the union), peak dropout, intensity and ppm jitter.
 Loss = f.z and cosine scores, each against in-batch and same-mass window negatives (negs.npy), + fingerprint BCE.
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
-Env: PF_D, PF_LAYERS, PF_HEADS, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS.
+Env: PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS.
 """
 import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
@@ -62,7 +62,8 @@ pos_in_tr = np.full(N, -1, np.int64); pos_in_tr[tr] = np.arange(len(tr))
 D = lambda a: torch.from_numpy(np.ascontiguousarray(a)).to(dev)
 gPM, gPI, g_prec = D(PM), D(PI), D(prec.astype(np.float64))
 cfg = dict(n_bits=NB, d=int(os.environ.get('PF_D', '256')), layers=int(os.environ.get('PF_LAYERS', '6')),
-           heads=int(os.environ.get('PF_HEADS', '8')))
+           heads=int(os.environ.get('PF_HEADS', '8')), d_mol=int(os.environ.get('PF_DMOL', '512')),
+           drop=float(os.environ.get('PF_DROP', '0.1')))
 model = PeakFormer(**cfg).to(dev)
 if os.environ.get('PF_INIT'):
     sd = torch.load(os.environ['PF_INIT'], map_location=dev, weights_only=False)
@@ -217,7 +218,7 @@ for ep in range(EPOCHS):
         scaler.scale(loss).backward()
         scaler.unscale_(opt); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         scaler.step(opt); scaler.update(); step += 1; set_lr(step)
-        if step % 100 == 0:
+        if step % int(os.environ.get('PF_LOG', '100')) == 0:
             print(f'step {step}/{total} loss {loss.item():.3f} (cos b {loss_cb.item():.2f} h {loss_ch.item():.2f} | '
                   f'fz b {loss_fb.item():.2f} h {loss_fh.item():.2f} | bce {loss_bce.item():.4f}) tau {tau.item():.3f} '
                   f'alpha {alpha.item():.3f} {time.time() - t0:.0f}s', flush=True)

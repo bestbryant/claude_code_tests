@@ -183,7 +183,36 @@ merging sources, the public lineage 0.013). Class 1 is on par. Our current pipel
 probe5 kernels (Oct 21). LB experiments queued: SRC_DEMOTE (s2src, Oct 21), SRC_GATE (implemented), POP re-rank (the
 public lineage adds 0.15 * pop to its ranker z).
 
-## Fingerprint-model bound (Oct 20, design-panel A2)
+## COCONUT-gap workflow and PeakFormer (Oct 20, afternoon)
+Workflow wf_2a12e406-61f compared the public lineage's COCONUT ranking with ours mechanism by mechanism, each claim
+verified offline (full plan and verdicts: docs/coconut_gap_plan.md). Verdicts:
+- Fingerprint model quality: HOLDS, and the bound below was too small. Matching the public model's pairwise win rate
+  against COCONUT decoys (.857 -> ~.94) needs a +0.03 shift of the truth's fp_cos, not +0.009: stage-1 CV all .892 ->
+  .917, cls2 .901 -> .930, weighted cls2 .677 -> .775 (+0.10). Our within-formula MRR of fp_cos on class-2 COCONUT
+  truths is .408 (theirs .639 for f.z). -> Priority 1.
+- Fragmentation scorer (depth-mixed explained share + cleavage coverage): holds, small (+0.002..0.007 LB; GLACIER
+  already reorders isomers for ~93% of molecules). -> Priority 2, CPU.
+- Rejected (offline checks): documentation-blind ranker + z+0.15 pop (-0.027 weighted cls2), source-tiered list
+  composition (+0.000..0.005 on pool v4: pool v4 already removed most PubChem crowding), deeper shortlist before GLACIER
+  (~+0.001), metric-identity keys (CV -0.0004 +- 0.0016), RRF with a second engine, core-only popularity prior,
+  analog-search details, tautomer-invariant Tanimoto.
+- Also tested here: slot-keeping within-formula GLACIER swaps (the public fusion) on fwd_v5w_a0.5 OOF: 0.71 vs our
+  stage 2 0.89 (weighted cls2 0.59 vs 0.68) -> no.
+
+PeakFormer (casmi/peakformer.py, scripts/train_pf.py), own implementation of the idea:
+- peak tokens = exact-m/z and neutral-loss sinusoids (0.01-1000 Da) + intensity; global token = precursor + metadata;
+  transformer encoder;
+- two heads: bit logits z over a 7-block RDKit fingerprint (casmi/richfp.py: Morgan r2/r3 4096, feature-Morgan,
+  paths <= 6, atom pairs, torsions, MACCS; 15,440 informative bits, scripts/prep_pf_data.py) scored as f.z, and a
+  cosine embedding;
+- trained against in-batch and 10 ppm window negatives plus BCE, with merge augmentation (1-3 same-structure,
+  same-adduct spectra), peak dropout, ppm/intensity jitter;
+- inference views = each spectrum + merged spectra per adduct.
+Kaggle GPU quota is exhausted until Oct 24, so three CPU variants train for 11 h (kernels casmi26-pf-cpu-a/b/c:
+d=192 x 4 layers seeds 0/1, d=128 x 3 layers; ~2.3 s/step at batch 256, ~2 epochs). Data: bryantyu/casmi26-pf-data.
+Next: pf_* features on ret10 rows -> stage-1 CV gate -> v11 pipeline; a larger model on GPU after Oct 24.
+
+## Fingerprint-model bound (Oct 20, design-panel A2) -- superseded, see above
 Within-formula top-1 of fp_cos on validation is 0.351 (1,321 queries with >= 2 isomers). Adding 0.07 SD to the truth's
 fp_cos (top-1 -> ~0.45, i.e. a much better fingerprint model) and re-running stage-1 CV on the v10 rows: all 0.895 ->
 0.903, cls2 0.903 -> 0.912, weighted cls2 0.693 -> 0.718. Even that is ~+0.01 on the LB -> a stronger fingerprint
