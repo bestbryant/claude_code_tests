@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = PFS = RK = FEATS = TEST = DREAMS = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -114,8 +114,43 @@ def stage2(frames, mdir, work):
     return out
 
 
+def _pc_one(args):
+    """PubChem proposals for one molecule (casmi/pcchannel.py)."""
+    from .own import query_from_rows
+    from .pcchannel import propose
+    mid, n_pop, lam = args
+    try:
+        _, raw, M = query_from_rows(TEST[TEST.molecule_id == mid])
+        if not np.isfinite(M):
+            return mid, None
+        return mid, propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam).head(25)
+    except Exception as e:
+        print('pc fail', mid, repr(e), flush=True)
+        return mid, None
+
+
+def pc_channel(lists, frames, procs):
+    """PC_TIER=<tier.npz>: insert the PubChem channel's best proposals at PC_SLOTS (default 4,8,12,16,20) into every
+    list whose best library similarity is below PC_GATE (default 0.9). PC_NPOP / PC_LAM: window size by documentation
+    and the documentation weight of the proposal score."""
+    from .metric import key14
+    from .pcchannel import insert
+    slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
+    gate = float(os.environ.get('PC_GATE', '0.9'))
+    n_pop, lam = int(os.environ.get('PC_NPOP', '2000')), float(os.environ.get('PC_LAM', '0.25'))
+    todo = [m for m in lists if lists[m] and (m not in frames or float(frames[m].lib.max()) < gate)]
+    with Pool(procs) as pool:
+        props = dict(pool.imap_unordered(_pc_one, [(m, n_pop, lam) for m in todo], chunksize=2))
+    n = 0
+    for m, pr in props.items():
+        if pr is not None and len(pr):
+            lists[m] = insert(lists[m], pr, slots, len(slots), key14); n += 1
+    print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n, flush=True)
+    return lists
+
+
 def main(argv):
-    global R, FPS, PFS, RK, FEATS, TEST, DREAMS
+    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -167,6 +202,15 @@ def main(argv):
         print('stage 1 done', len(frames), f'{time.time()-t0:.0f}s', flush=True)
         res_ = {m: [] for m in mids}
         res_.update(stage2(frames, mdir, work))
+    else:
+        frames = {}
+    if os.environ.get('PC_TIER'):
+        from .pcchannel import PubChemTier
+        TIER = PubChemTier(os.environ['PC_TIER'])
+        if PFS is None:
+            from .peakformer import PFEnsemble
+            PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
+        res_ = pc_channel(res_, frames, procs)
     json.dump(res_, open(out, 'w'))
     print('own lists', sum(bool(v) for v in res_.values()), 'of', len(mids), f'{time.time()-t0:.0f}s', flush=True)
 
