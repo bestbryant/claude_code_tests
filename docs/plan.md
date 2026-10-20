@@ -169,6 +169,13 @@ this size cannot be LB-confirmed; decide them on CV and keep the one with the be
 equivalent on the LB -> keep alpha 0.5, the CV-dominant one, as the default); (2) the LB is only informative for
 effects >= ~0.05, i.e. the 0.12 gap to the public lineage, which the source probes target.
 
+## Enveda-180 Zenodo release (Oct 20)
+Zenodo 21346580 (CC BY 4.0, explicitly allowed): enveda-180-filtered.parquet has 1,175,202 spectra of 184,088
+structures; 3,717 of them are not in train.parquet (14,341 spectra), but all carry Enamine catalogue ids (synthetic
+screening compounds, e.g. thiazole carboxamides) and only 6 are in our pool (PubChemLite), none in COCONUT -> not the
+natural-product test chemistry; not added. The full (unfiltered) release is 2.6 GB and was not checked.
+Design-panel decision tree for the probe outcomes: docs/next_steps_oct20.md.
+
 ## Post-hoc popularity knob (Oct 20)
 The public lineage re-ranks by z(ranker) + 0.15 * pop. On top of stage2_v5w_a0.5 (single validation split, pop =
 log PubChem SIDs + log PMIDs): lambda +0.10 all 0.902 -> 0.905, cls1 0.840 -> 0.858, but weighted cls2 0.728 -> 0.698;

@@ -63,9 +63,14 @@ def stage2(frames, mdir, work):
     rk2 = lgb.Booster(model_file=f'{mdir}/{STAGE2}.txt')
     f2 = open(f'{mdir}/{STAGE2}_feats.txt').read().split()
     out = {}
+    demote = float(os.environ.get('SRC_DEMOTE', '0'))   # LB experiment: push PubChemLite-only candidates down
     for m, f in frames.items():
         f = add_features(f.assign(qid=m), scores)
         f['z'] = rk2.predict(f[f2].astype(float).values)
+        if demote and len(f) > 1:
+            pcl_only = ((f.in_pcl == 1) & (f.in_train == 0) & (f.in_coco == 0)
+                        & (f.get('in_bio', 0) == 0)).values
+            f.loc[pcl_only, 'z'] -= demote * float(f.z.std())
         f = f.sort_values('z', ascending=False)
         out[m] = [[s, float(z), k] for s, z, k in zip(f.smiles, f.z, f.key14)][:25]
     print('stage 2: molecules with GLACIER scores', sum(1 for v in scores.values() if any(x is not None for x in v.values())),
