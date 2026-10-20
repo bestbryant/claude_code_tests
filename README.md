@@ -37,6 +37,18 @@ of one library spectrum per structure and polarity, computed on Kaggle CPU shard
 embedding neighbours give a second analog channel and a frozen-embedding fingerprint head
 (`scripts/train_dreams_fp.py`).
 
+**PeakFormer** (`casmi/peakformer.py`, `scripts/train_pf.py`; in progress): a peak-token transformer that reads
+each peak's exact m/z and neutral loss as multi-scale sinusoids (0.01–1000 Da) and predicts logits over a 7-block
+RDKit structure fingerprint (`casmi/richfp.py`); a candidate scores f·z (its fingerprint's Bernoulli log-likelihood)
+plus a cosine embedding score. Trained against same-mass pool negatives and in-batch negatives with merged-spectrum
+augmentation (`kernels/casmi26-pf-cpu-*`, `kernels/casmi26-pf-train`); its scores are stage-1 features (`pf_*`,
+`scripts/pipeline_v11.sh`).
+
+**PubChem proposal channel** (`casmi/pcchannel.py`, `scripts/build_pubchem_tier.py`; in progress): 15.8M documented
+PubChem compounds outside the pool, mass-sorted; for a test molecule the 10 ppm window is scored by the PeakFormer
+(+ a small documentation term) and the best proposals are inserted at fixed list positions when the library match
+is weak (`PC_TIER`, `PC_SLOTS`, `PC_GATE` in `casmi/run_own.py`).
+
 Also here: the novel-structure engine for molecules absent from PubChem (`casmi/novel.py`: analogue derivation with
 modification-site localisation, conjugate assembly from hydrolysis building blocks) and LB probe kernels.
 
