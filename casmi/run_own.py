@@ -32,6 +32,22 @@ def _one(mid):
         return mid, [] if not STAGE2 else None
 
 
+def source_gate(f, top, margin):
+    """LB experiment (SRC_GATE=top,margin): candidates outside training structures and COCONUT may not take the first
+    `top` ranks unless their stage-2 score beats the best training/COCONUT candidate by `margin` per-molecule SDs.
+    f must be sorted by z (descending); returns the reordered frame."""
+    core = ((f.in_train == 1) | (f.in_coco == 1)).values
+    if core.all() or not core.any():
+        return f
+    sd = float(f.z.std()) or 1.0
+    best_core = float(f.z[core].max())
+    A, B = f[core], f[~core]
+    allowed = B.z.values > best_core + margin * sd          # strong enough to compete for the top ranks
+    head = pd.concat([A, B[allowed]]).sort_values('z', ascending=False).iloc[:int(top)]
+    rest = f.drop(head.index)
+    return pd.concat([head, rest])
+
+
 def stage2(frames, mdir, work):
     """GLACIER (own runner, casmi.fwdrun) on every stage-1 top-30 -> forward-model features -> stage-2 ranker.
     Any GLACIER failure leaves the features NaN (the ranker handles missing values) rather than dropping molecules."""
@@ -64,6 +80,7 @@ def stage2(frames, mdir, work):
     f2 = open(f'{mdir}/{STAGE2}_feats.txt').read().split()
     out = {}
     demote = float(os.environ.get('SRC_DEMOTE', '0'))   # LB experiment: push PubChemLite-only candidates down
+    gate = tuple(float(x) for x in os.environ['SRC_GATE'].split(',')) if os.environ.get('SRC_GATE') else None
     for m, f in frames.items():
         f = add_features(f.assign(qid=m), scores)
         f['z'] = rk2.predict(f[f2].astype(float).values)
@@ -72,6 +89,8 @@ def stage2(frames, mdir, work):
                         & (f.get('in_bio', 0) == 0)).values
             f.loc[pcl_only, 'z'] -= demote * float(f.z.std())
         f = f.sort_values('z', ascending=False)
+        if gate:
+            f = source_gate(f, *gate)
         out[m] = [[s, float(z), k] for s, z, k in zip(f.smiles, f.z, f.key14)][:25]
     print('stage 2: molecules with GLACIER scores', sum(1 for v in scores.values() if any(x is not None for x in v.values())),
           'of', len(frames), flush=True)
