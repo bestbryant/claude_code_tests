@@ -5,6 +5,7 @@ Adds lib_all (best weighted-entropy similarity over every same-polarity training
 only), lib_all_n (number of compared pairs) and lib_all_r / lib_all_gap. Hiding exactly as scripts/dump_ret_rows.py
 (standard mode): class 2 hides the truth structure, class 1 hides the query spectra. Query spectra are cleaned as in
 the dump (top 64 peaks, 0.5% floor, electron-mass corrected precursor for positive enveda-180 rows).
+XINST=1: class 1 additionally hides the truth's library spectra from the query's instrument types (cross-instrument check).
 """
 import os, sys, time
 import numpy as np, pandas as pd, pyarrow.parquet as pq
@@ -23,7 +24,9 @@ if not os.path.exists(lib_p):
 L = AnalogLib(lib_p)
 lib_of = pd.Series(np.arange(len(L.key))).groupby(L.key).apply(list).to_dict()
 D = pd.read_parquet(rows_p).reset_index(drop=True)
-meta = pd.read_parquet('/home/user/data/train_meta.parquet', columns=['ingest_lib', 'adduct'])
+meta = pd.read_parquet('/home/user/data/train_meta.parquet', columns=['inchikey14', 'ingest_lib', 'adduct', 'instrument_type'])
+XINST = os.environ.get('XINST') == '1'      # class 1: also hide every library spectrum of the truth from the query's instrument types
+inst = meta.instrument_type.fillna('').values
 Q = D.drop_duplicates('qid')[['qid', 'cls', 'truth', 'q_rows']].copy()
 Q['rows'] = Q.q_rows.map(lambda s: [int(x) for x in s.split(',')])
 need = sorted({r for rr in Q.rows for r in rr})
@@ -52,6 +55,9 @@ for n_done, (qid, g) in enumerate(D.groupby('qid', sort=False)):
     q = qinfo.loc[qid]
     qs = [spec[r] for r in q.rows if r in spec]
     hr = set(q.rows) if q.cls == 1 else set()
+    if XINST and q.cls == 1:
+        qi = {inst[r] for r in q.rows}
+        hr |= {int(L.row[j]) for j in lib_of.get(q.truth, ()) if inst[int(L.row[j])] in qi}
     for i, k in zip(g.index.values, g.key.values):
         if q.cls == 2 and k == q.truth:
             continue

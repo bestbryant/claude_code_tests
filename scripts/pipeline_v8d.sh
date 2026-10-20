@@ -2,7 +2,7 @@
 # v8d = DreaMS analog channel (casmi/dreams_feats.py) + documentation-shift weights (alpha 0.5) + 63-leaf stage-1 trees.
 # [T=name RANKER_PARAMS='{}'] scripts/pipeline_v8d.sh      (expects ret4_{train,val}_fp.parquet, dreams_qemb.npz and work/dreams_lib/dreams_lib_*.npz)
 set -euo pipefail
-T=${T:-v8d}; ROWS=ret8
+T=${T:-v8d}; ROWS=${ROWS:-ret8}
 W=/home/user/work; R=/home/user/claude_code_tests
 export DOC_W=$W/pool4/doc_w.parquet DOC_ALPHA=0.5 RANKER_PARAMS=${RANKER_PARAMS:-'{"num_leaves": 63, "min_data_in_leaf": 50}'}
 cd $R
@@ -33,7 +33,7 @@ for f in train val; do
 done
 cd $W
 G=""; GV=""
-for d in fwd2 fwd3 fwd4 fwd_v5w fwd_v7w fwd_v5w_a0.5 fwd_v8d; do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
+for d in fwd2 fwd3 fwd4 fwd_v5w fwd_v7w fwd_v5w_a0.5 fwd_v8d fwd_v8e; do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
 GL_GLOB="${G#,}" GL_GLOB_VAL="${GV#,}" \
   python3 $R/scripts/train_stage2.py fit fwd_$T/train own_models/ret_ranker_${T}_feats.txt own_models/stage2_$T.txt fwd_$T/val
 echo ${T}_DONE

@@ -86,7 +86,8 @@ def main(argv):
     os.makedirs(work, exist_ok=True)
     t0 = time.time()
     build_analog_lib(train_p, f'{work}/analog_lib.npz', per_struct=3)
-    build_analog_lib(train_p, f'{work}/lib10.npz', per_struct=10)
+    cap = int(os.environ.get('LIB_CAP', '10'))    # spectra per (structure, polarity) for direct library matching
+    build_analog_lib(train_p, f'{work}/lib10.npz', per_struct=cap)
     print('own libraries', f'{time.time()-t0:.0f}s', flush=True)
     import lightgbm as lgb, torch
     torch.set_num_threads(1)
