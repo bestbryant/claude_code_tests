@@ -169,6 +169,15 @@ this size cannot be LB-confirmed; decide them on CV and keep the one with the be
 equivalent on the LB -> keep alpha 0.5, the CV-dominant one, as the default); (2) the LB is only informative for
 effects >= ~0.05, i.e. the 0.12 gap to the public lineage, which the source probes target.
 
+## Full-library matching (Oct 20, design-panel C1)
+The direct library channel used lib10 (<= 10 spectra per structure and polarity, prioritised [M+H]+/[M-H]-, 15-65 eV,
+TOF). scripts/add_libfull_feats.py recomputes it against every training spectrum with a test adduct (lib_all.npz,
+2,057,184 spectra; same hiding as the dump). Validation, library similarity alone, class 1: 0.834 -> 0.861; with the
+truth's same-instrument spectra hidden (XINST=1, the realistic cross-instrument case): 0.781 -> 0.860.
+Stage-1 5-fold CV with lib / lib_n / lib_r / lib_gap replaced (ret10 rows): alpha 0.5 0.887 -> 0.895, cls1 0.861 ->
+0.880, cls2 0.900 -> 0.903, weighted cls2 0.673 -> 0.693; alpha 0 0.888 -> 0.896. -> pipeline v10 (T=v10
+ROWS=ret10), kernel with LIB_CAP=100000.
+
 ## Enveda-180 Zenodo release (Oct 20)
 Zenodo 21346580 (CC BY 4.0, explicitly allowed): enveda-180-filtered.parquet has 1,175,202 spectra of 184,088
 structures; 3,717 of them are not in train.parquet (14,341 spectra), but all carry Enamine catalogue ids (synthetic
