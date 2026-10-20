@@ -1,0 +1,16 @@
+{
+  "id": "bryantyu/casmi26-pf-train",
+  "title": "casmi26-pf-train",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["bryantyu/casmi26-code", "bryantyu/casmi26-fp-data"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}

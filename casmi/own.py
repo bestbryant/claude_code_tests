@@ -11,12 +11,13 @@ from .prep_meta import inst_family
 from .spectra import clean_peaks, neutral_mass
 
 FP_FEATS = ['fp_cos', 'fp_bern', 'fp_cos_r', 'fp_bern_r', 'fp_cos_gap', 'fp_bern_gap']
+PF_FEATS = [f.replace('fp_', 'pf_') for f in FP_FEATS]          # PeakFormer (casmi/peakformer.py) columns
 
 
-def fp_feats(df, cos, bern):
-    """Add fingerprint-model columns to one query's candidate frame (in place)."""
-    df['fp_cos'] = cos; df['fp_bern'] = bern
-    for c in ('fp_cos', 'fp_bern'):
+def fp_feats(df, cos, bern, prefix='fp'):
+    """Add fingerprint-model columns to one query's candidate frame (in place); prefix 'pf' for the PeakFormer."""
+    df[prefix + '_cos'] = cos; df[prefix + '_bern'] = bern
+    for c in (prefix + '_cos', prefix + '_bern'):
         df[c + '_r'] = df[c].rank(ascending=False, method='min')
         df[c + '_gap'] = df[c] - df[c].max()
     return df
