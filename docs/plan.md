@@ -55,8 +55,8 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-19 | casmi26-own-s2v4 v1 | pool v4 (+52k ChEBI/LIPID MAPS, in_bio flag), stage 1 v4c, stage 2 GLACIER | **0.330** (best compliant) |
 | 10-19 | casmi26-probe-train v1 | pool-v3/ranker-v2 lists restricted to training-structure candidates | 0.146 |
 | 10-19 | casmi26-probe-coco v1 | same, restricted to COCONUT candidates | 0.191 |
-| 10-20 | casmi26-own-s2v5w-a05 v1 | pool v4, doc-shift weighted class-2 simulation alpha 0.5, stage 2 GLACIER | pending |
-| 10-20 | casmi26-own-s2v5w v1 | same, alpha 1 | pending |
+| 10-20 | casmi26-own-s2v5w-a05 v1 | pool v4, doc-shift weighted class-2 simulation alpha 0.5, stage 2 GLACIER | 0.323 |
+| 10-20 | casmi26-own-s2v5w v1 | same, alpha 1 | 0.332 |
 | 10-20 | casmi26-fprobe-train v3 | public 0.451 lineage restricted to training structures | pending |
 | 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | pending |
 | 10-20 | casmi26-fprobe-other v3 | public lineage restricted to other candidates | pending |
@@ -160,6 +160,14 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 - casmi26-own-s2v8e v1 ran on Kaggle in 56 min (DreaMS library 360,144 loaded, 1,213 test spectra embedded in ~4 min,
   no per-molecule failures, 400/400 lists, top-1 equal to s2v5w-a05 on 98.2% of the placeholder test) -> ready for an
   LB slot on Oct 21.
+
+## Oct 20 LB: documentation-shift weighting is invisible on the LB
+alpha 0.5 0.323, alpha 1 0.332 vs s2v4 0.330 (same pool, same stage-2 design). Non-monotone in alpha and well inside
+the +-0.03 noise of 124 public molecules. Arithmetic: a +0.09 weighted class-2 gain on ~20% of the molecules is
+~+0.02 at most -- below what one public LB submission can resolve. Consequences: (1) offline-validated changes of
+this size cannot be LB-confirmed; decide them on CV and keep the one with the better weighted CV (alpha 1 / a0.5 are
+equivalent on the LB -> keep alpha 0.5, the CV-dominant one, as the default); (2) the LB is only informative for
+effects >= ~0.05, i.e. the 0.12 gap to the public lineage, which the source probes target.
 
 ## Post-hoc popularity knob (Oct 20)
 The public lineage re-ranks by z(ranker) + 0.15 * pop. On top of stage2_v5w_a0.5 (single validation split, pop =
