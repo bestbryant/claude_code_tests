@@ -4,7 +4,7 @@
 set -euo pipefail
 T=${T:-v8d}; ROWS=${ROWS:-ret8}
 W=/home/user/work; R=/home/user/claude_code_tests
-export DOC_W=$W/pool4/doc_w.parquet DOC_ALPHA=0.5 RANKER_PARAMS=${RANKER_PARAMS:-'{"num_leaves": 63, "min_data_in_leaf": 50}'}
+export DOC_W=$W/pool4/doc_w.parquet DOC_ALPHA=${ALPHA:-0.5} RANKER_PARAMS=${RANKER_PARAMS:-'{"num_leaves": 63, "min_data_in_leaf": 50}'}
 cd $R
 for s in train val; do
   [ -f $W/${ROWS}_${s}_fp.parquet ] || python3 scripts/add_dreams_feats.py $W/ret4_${s}_fp.parquet $W/${ROWS}_${s}_fp.parquet \

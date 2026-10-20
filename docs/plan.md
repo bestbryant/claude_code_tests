@@ -219,6 +219,20 @@ decoys 0.849 vs 0.829, vs train decoys 0.832 vs 0.794. Stage-1 CV (ret10 rows + 
 +0.003, cls2 +0.0046, weighted cls2 -0.007 +- 0.010 (paired); replacing fp by pf: weighted -0.016 +- 0.011 -> the
 early model adds on top of fp but does not replace it; final models (2 epochs, ensemble) tonight.
 
+PeakFormer final local model (9 h CPU, ~2.6M samples; internal val f.z MRR 0.631): class-2 COCONUT non-train
+truths within-formula MRR 0.463 (fp_cos 0.430), all-candidates MRR 0.431 (0.382), wins vs train decoys 0.859 (0.794),
+vs COCONUT decoys 0.878 (0.829). Stage-1 CV (ret10pl rows):
+| config | all | cls1 | cls2 | cls2w |
+| a0.5 | .8951 | .8804 | .9025 | .6931 |
+| a0.5+pf | .8989 | .8817 | .9075 | .6894 |
+| a0.5+pf-fp | .8996 | .8804 | .9093 | .6850 |
+| a1 | .8820 | .8820 | .8820 | .6872 |
+| a1+pf | .8939 | .8836 | .8991 | .7103 |
+Paired: a1+pf vs a0.5 weighted cls2 +0.017 +- 0.011 (cls1 +0.003, cls2 -0.003); a1+pf vs a1 +0.023 +- 0.012. By
+truth source (a0.5 -> a0.5+pf, weighted): COCONUT -0.008, PubChemLite-only +0.080 (n 112), bio-only +0.006. The
+PeakFormer pays off when the ranker is pushed off documentation (alpha 1) -> v11 = alpha 1 + pf (pipeline T=v11l
+started with the local model; ensemble with the Kaggle CPU models next).
+
 PubChem proposal channel (Oct 20): the public lineage's "other" source (answers outside train + COCONUT) is worth
 0.057 on the LB and comes from a separate PubChem channel (10 ppm window, top by documentation, f.z + 0.25 pop, slot
 insertion when the library match is weak). Ours: tier = 15.8M documented PubChem compounds outside pool v4 (sid >= 5

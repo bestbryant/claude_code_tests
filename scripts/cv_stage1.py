@@ -48,6 +48,7 @@ configs = {'v4c': (base, 0.0), 'v5w': (base, 1.0), 'v4c+frel': (base + FREL_FEAT
            'a1+lotus': (base + LT_COLS, 1.0),
            'a0.5+dr': (base + DR_FEATS, 0.5), 'a0+dr': (base + DR_FEATS, 0.0),
            'a0.5+dr-an': ([f for f in base if not f.startswith('an_')] + DR_FEATS, 0.5),
+           'a1+pf': (base + PF_FEATS, 1.0), 'a1': (base, 1.0),
            'a0.5+pf': (base + PF_FEATS, 0.5), 'a0.5+pf+frel': (base + PF_FEATS + PF_FREL, 0.5), 'a0.5+pf-fp': ([f for f in base if f not in FP_FEATS] + PF_FEATS, 0.5)}
 sel = sys.argv[1:] or list(configs)
 for name in sel:
