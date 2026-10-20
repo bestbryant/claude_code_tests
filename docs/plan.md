@@ -175,6 +175,12 @@ noise). With full 0.451, train + other = 0.212, so the public lineage's COCONUT-
 its full list (ours: 0.191 even when restricted, less in our full list) -> the gap is natural-product (COCONUT)
 ranking plus crowding by other sources: branch A of docs/next_steps_oct20.md.
 
+## Fingerprint-model bound (Oct 20, design-panel A2)
+Within-formula top-1 of fp_cos on validation is 0.351 (1,321 queries with >= 2 isomers). Adding 0.07 SD to the truth's
+fp_cos (top-1 -> ~0.45, i.e. a much better fingerprint model) and re-running stage-1 CV on the v10 rows: all 0.895 ->
+0.903, cls2 0.903 -> 0.912, weighted cls2 0.693 -> 0.718. Even that is ~+0.01 on the LB -> a stronger fingerprint
+model (FP v5 / GPU) is not the lever for the 0.12 gap; not pursued now.
+
 ## Full-library matching (Oct 20, design-panel C1)
 The direct library channel used lib10 (<= 10 spectra per structure and polarity, prioritised [M+H]+/[M-H]-, 15-65 eV,
 TOF). scripts/add_libfull_feats.py recomputes it against every training spectrum with a test adduct (lib_all.npz,
