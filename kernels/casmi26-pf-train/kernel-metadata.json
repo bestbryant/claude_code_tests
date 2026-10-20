@@ -8,7 +8,11 @@
   "enable_gpu": true,
   "enable_tpu": false,
   "enable_internet": false,
-  "dataset_sources": ["bryantyu/casmi26-code", "bryantyu/casmi26-fp-data"],
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-fp-data",
+    "bryantyu/casmi26-pf-data"
+  ],
   "competition_sources": [],
   "kernel_sources": [],
   "model_sources": [],

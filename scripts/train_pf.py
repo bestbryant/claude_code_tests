@@ -64,6 +64,22 @@ pos_in_tr = np.full(N, -1, np.int64); pos_in_tr[tr] = np.arange(len(tr))
 
 D = lambda a: torch.from_numpy(np.ascontiguousarray(a)).to(dev)
 gPM, gPI, g_prec = D(PM), D(PI), D(prec.astype(np.float64))
+if dev == 'cuda':          # fingerprint CSR on the device: per-step gathers of ~30M bit ids stay off the CPU
+    g_csr = {'s': (D(s_ptr), D(s_idx.astype(np.int32))), 'n': (D(n_ptr), D(n_idx.astype(np.int32)))}
+
+
+def bits_of(which, rows):
+    """On-bit ids, bag offsets and row ids (device tensors) of structure ('s') or negative ('n') rows."""
+    if dev != 'cuda':
+        i, o, r = csr_rows(*((s_ptr, s_idx) if which == 's' else (n_ptr, n_idx)), rows)
+        return D(i), D(o), D(r)
+    ptr, idx = g_csr[which]
+    rows = torch.from_numpy(np.ascontiguousarray(rows)).to(dev)
+    st = ptr[rows]; ln = ptr[rows + 1] - st
+    off = torch.cumsum(ln, 0) - ln
+    rid = torch.repeat_interleave(torch.arange(len(rows), device=dev), ln)
+    pos = torch.repeat_interleave(st - off, ln) + torch.arange(int(ln.sum()), device=dev)
+    return idx[pos].long(), off, rid
 cfg = dict(n_bits=NB, d=int(os.environ.get('PF_D', '256')), layers=int(os.environ.get('PF_LAYERS', '6')),
            heads=int(os.environ.get('PF_HEADS', '8')), d_mol=int(os.environ.get('PF_DMOL', '512')),
            drop=float(os.environ.get('PF_DROP', '0.1')))
@@ -197,14 +213,14 @@ for ep in range(EPOCHS):
         pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[cnt == 0] = -1
         okn = pick >= 0
         owner = np.repeat(np.arange(B), NNEG)[okn.reshape(-1)]
-        i1, o1, r1 = csr_rows(s_ptr, s_idx, s)
-        i2, o2, r2 = csr_rows(n_ptr, n_idx, pick[okn])
+        i1, o1, r1 = bits_of('s', s)
+        i2, o2, r2 = bits_of('n', pick[okn])
         mz, it, valid, pr, meta = batch_inputs(idx)
         with torch.autocast(dev, enabled=amp):
             e_s, z = model.encode_spec(mz, it, valid, pr, meta)
-            e_pos = model.encode_mol(D(i1), D(o1)).float()
-            e_neg = model.encode_mol(D(i2), D(o2)).float()
-        Ft = torch.zeros(B, NB, device=dev); Ft[D(r1), D(i1)] = 1.0
+            e_pos = model.encode_mol(i1, o1).float()
+            e_neg = model.encode_mol(i2, o2).float()
+        Ft = torch.zeros(B, NB, device=dev); Ft[r1, i1] = 1.0
         same = D(s[:, None] == s[None, :]) & ~eye
         tau = model.log_tau.exp().clamp(0.01, 1.0); alpha = model.log_alpha.exp()
         # cosine head
@@ -216,7 +232,7 @@ for ep in range(EPOCHS):
         # f.z head
         fz_b = (alpha * (z @ Ft.T)).masked_fill(same, -1e4)
         f_neg = torch.full((B, NNEG), -1e4, device=dev)
-        f_neg[D(okn)] = alpha * fz_scores(z, D(i2), D(r2), D(owner), len(owner))
+        f_neg[D(okn)] = alpha * fz_scores(z, i2, r2, D(owner), len(owner))
         loss_fb = F.cross_entropy(fz_b, ar)
         loss_fh = F.cross_entropy(torch.cat([fz_b.diagonal().unsqueeze(1), f_neg], 1), torch.zeros(B, dtype=torch.long, device=dev))
         loss_bce = F.binary_cross_entropy_with_logits(z, Ft)
