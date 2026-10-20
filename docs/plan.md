@@ -239,6 +239,12 @@ gain led by pf_bern_gap (6x the next feature). Validation (held-out val rows): s
 CV on train queries: all .8971, cls1 .8818, cls2 .9047, weighted .6993 vs v10 .8942 / .8744 / .9040 / .6838. List
 confidence retrained on v11l scores (pother_v11l, AUC 0.891). Kernels casmi26-own-s2v11l and -s2v11lpc-ad.
 
+Kaggle CPU PeakFormers (11 h): a d=192x4 seed 0 val f.z 0.651 / sum 0.650; b (merge 0.5) 0.634 / 0.635; c d=128x3
+0.633 / 0.638; local d (structure-balanced half batches) 0.631 / 0.630. Ensemble a+b+c+d (cos mean, z-scored f.z
+mean): COCONUT non-train within-formula MRR 0.474 (sum) / 0.469 (f.z), wins vs COCONUT decoys 0.888; stage-1 CV
+a1+pf .8918 / .8839 / .8959 / w .7056 (local-only .8939 / .8836 / .8991 / .7103); v11 pipeline val stage 2 .8948
+(v11l .9011) -> the z-scored ensemble does not beat the single local model; v11a (model a alone) running.
+
 PubChem proposal channel (Oct 20): the public lineage's "other" source (answers outside train + COCONUT) is worth
 0.057 on the LB and comes from a separate PubChem channel (10 ppm window, top by documentation, f.z + 0.25 pop, slot
 insertion when the library match is weak). Ours: tier = 15.8M documented PubChem compounds outside pool v4 (sid >= 5
