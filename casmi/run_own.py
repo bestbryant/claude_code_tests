@@ -132,19 +132,27 @@ def _pc_one(args):
 def pc_channel(lists, frames, procs):
     """PC_TIER=<tier.npz>: insert the PubChem channel's best proposals at PC_SLOTS (default 4,8,12,16,20) into every
     list whose best library similarity is below PC_GATE (default 0.9). PC_NPOP / PC_LAM: window size by documentation
-    and the documentation weight of the proposal score."""
+    and the documentation weight of the proposal score; PC_ONLY=1 replaces every list by the proposals (LB probe)."""
     from .metric import key14
     from .pcchannel import insert
     slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
     gate = float(os.environ.get('PC_GATE', '0.9'))
     n_pop, lam = int(os.environ.get('PC_NPOP', '2000')), float(os.environ.get('PC_LAM', '0.25'))
-    todo = [m for m in lists if lists[m] and (m not in frames or float(frames[m].lib.max()) < gate)]
+    if os.environ.get('PC_ONLY') == '1':
+        todo = list(lists)
+    else:
+        todo = [m for m in lists if lists[m] and (m not in frames or float(frames[m].lib.max()) < gate)]
     with Pool(procs) as pool:
         props = dict(pool.imap_unordered(_pc_one, [(m, n_pop, lam) for m in todo], chunksize=2))
     n = 0
+    only = os.environ.get('PC_ONLY') == '1'          # LB probe: the channel's own top 25 replaces every list
     for m, pr in props.items():
         if pr is not None and len(pr):
-            lists[m] = insert(lists[m], pr, slots, len(slots), key14); n += 1
+            if only:
+                lists[m] = [[s, float(v), key14(s)] for s, v in zip(pr.smiles, pr.pc_score)][:25]
+            else:
+                lists[m] = insert(lists[m], pr, slots, len(slots), key14)
+            n += 1
     print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n, flush=True)
     return lists
 
