@@ -136,6 +136,14 @@ def pc_channel(lists, frames, procs):
     from .metric import key14
     from .pcchannel import insert
     slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
+    hi = None                 # PC_POTHER=<model>: lists likely missing the answer get the proposals at PC_SLOTS_HI
+    if os.environ.get('PC_POTHER'):
+        import lightgbm as lgb
+        from .pother import FEATS as PO_FEATS, list_feats
+        po = lgb.Booster(model_file=os.path.join(os.environ['OWN_MODELS'], os.environ['PC_POTHER']))
+        th = float(os.environ.get('PC_TH', '0.7'))
+        hi_slots = tuple(int(x) for x in os.environ.get('PC_SLOTS_HI', '1,3,5,7,9').split(','))
+        hi = {m: float(po.predict(np.array([[list_feats(f, 's1')[c] for c in PO_FEATS]], float))[0]) for m, f in frames.items()}
     gate = float(os.environ.get('PC_GATE', '0.9'))
     n_pop, lam = int(os.environ.get('PC_NPOP', '2000')), float(os.environ.get('PC_LAM', '0.25'))
     if os.environ.get('PC_ONLY') == '1':
@@ -151,9 +159,11 @@ def pc_channel(lists, frames, procs):
             if only:
                 lists[m] = [[s, float(v), key14(s)] for s, v in zip(pr.smiles, pr.pc_score)][:25]
             else:
-                lists[m] = insert(lists[m], pr, slots, len(slots), key14)
+                sl = hi_slots if (hi is not None and hi.get(m, 0.0) > th) else slots
+                lists[m] = insert(lists[m], pr, sl, len(sl), key14)
             n += 1
-    print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n, flush=True)
+    print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n,
+          'early slots', 0 if hi is None else sum(v > th for v in hi.values()), flush=True)
     return lists
 
 
@@ -218,6 +228,7 @@ def main(argv):
         if PFS is None:
             from .peakformer import PFEnsemble
             PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
+        os.environ['OWN_MODELS'] = mdir
         res_ = pc_channel(res_, frames, procs)
     json.dump(res_, open(out, 'w'))
     print('own lists', sum(bool(v) for v in res_.values()), 'of', len(mids), f'{time.time()-t0:.0f}s', flush=True)
