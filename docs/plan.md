@@ -161,6 +161,14 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   no per-molecule failures, 400/400 lists, top-1 equal to s2v5w-a05 on 98.2% of the placeholder test) -> ready for an
   LB slot on Oct 21.
 
+## Post-hoc popularity knob (Oct 20)
+The public lineage re-ranks by z(ranker) + 0.15 * pop. On top of stage2_v5w_a0.5 (single validation split, pop =
+log PubChem SIDs + log PMIDs): lambda +0.10 all 0.902 -> 0.905, cls1 0.840 -> 0.858, but weighted cls2 0.728 -> 0.698;
+lambda -0.10 the reverse (weighted cls2 0.747, cls1 0.799). Popularity only on in-train candidates promotes training
+decoys in class-2 queries (cls2 0.935 -> 0.917 at +0.1). No free lunch: a trade-off the LB alpha A/B already probes.
+Not used. Probe kernels casmi26-probe5-{train,coco,other} (alpha-0.5 lists restricted per source, same key sets as
+the public-lineage probes) are running for a like-for-like comparison.
+
 ## Source-decomposition probes of the public lineage (Oct 19)
 kernels/casmi26-fprobe-{train,coco,other}: the forked 0.451 notebook (CPU variant) with its final lists restricted
 to training structures / COCONUT-not-train / everything else (keys from bryantyu/casmi26-srckeys). Compared with our
