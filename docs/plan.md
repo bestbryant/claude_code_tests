@@ -58,7 +58,7 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-20 | casmi26-own-s2v5w-a05 v1 | pool v4, doc-shift weighted class-2 simulation alpha 0.5, stage 2 GLACIER | 0.323 |
 | 10-20 | casmi26-own-s2v5w v1 | same, alpha 1 | 0.332 |
 | 10-20 | casmi26-fprobe-train v3 | public 0.451 lineage restricted to training structures | 0.155 |
-| 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | pending |
+| 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | 0.252 |
 | 10-20 | casmi26-fprobe-other v3 | public lineage restricted to other candidates | 0.057 |
 
 ## Lessons from the Oct 19 submissions
@@ -169,11 +169,19 @@ this size cannot be LB-confirmed; decide them on CV and keep the one with the be
 equivalent on the LB -> keep alpha 0.5, the CV-dominant one, as the default); (2) the LB is only informative for
 effects >= ~0.05, i.e. the 0.12 gap to the public lineage, which the source probes target.
 
-## Public-lineage source decomposition (Oct 20, partial)
-fprobe-train 0.155 (ours, pool-v3 lists: 0.146), fprobe-other 0.057, fprobe-coco pending. Class 1 is on par (+0.009,
-noise). With full 0.451, train + other = 0.212, so the public lineage's COCONUT-not-train answers are worth >= 0.24 in
-its full list (ours: 0.191 even when restricted, less in our full list) -> the gap is natural-product (COCONUT)
-ranking plus crowding by other sources: branch A of docs/next_steps_oct20.md.
+## Public-lineage source decomposition (Oct 20)
+| source restriction | public lineage | ours (pool-v3 / ranker-v2 lists) | gap |
+|---|---|---|---|
+| training structures | 0.155 | 0.146 | +0.009 (noise) |
+| COCONUT-not-train | 0.252 | 0.191 | +0.061 |
+| other | 0.057 | (pubchem probe not run) | ? |
+| sum of restricted | 0.464 | >= 0.337 | |
+| full list | 0.451 | 0.295 | |
+| loss from merging sources | 0.013 | >= 0.042 | >= +0.03 |
+The 0.12-0.16 gap is (1) ranking inside COCONUT (+0.06 restricted) and (2) list composition (we lose >= 0.04 when
+merging sources, the public lineage 0.013). Class 1 is on par. Our current pipeline's own decomposition comes from the
+probe5 kernels (Oct 21). LB experiments queued: SRC_DEMOTE (s2src, Oct 21), SRC_GATE (implemented), POP re-rank (the
+public lineage adds 0.15 * pop to its ranker z).
 
 ## Fingerprint-model bound (Oct 20, design-panel A2)
 Within-formula top-1 of fp_cos on validation is 0.351 (1,321 queries with >= 2 isomers). Adding 0.07 SD to the truth's
