@@ -232,6 +232,17 @@ def main(argv):
             PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
         os.environ['OWN_MODELS'] = mdir
         res_ = pc_channel(res_, frames, procs)
+    if os.environ.get('ZEN_PATH'):          # Zenodo-extra library channel (casmi/zen.py)
+        from .metric import key14
+        from .zen import ZenLib, insert_zen
+        ZL = ZenLib(os.environ['ZEN_PATH'])
+        t1, t2 = float(os.environ.get('ZEN_T1', '0.7')), float(os.environ.get('ZEN_T2', '0.5'))
+        n = 0
+        for m in mids:
+            mt = ZL.match(TEST[TEST.molecule_id == m])
+            if mt and mt[0][0] >= t2 and res_.get(m) is not None:
+                res_[m] = insert_zen(res_[m], mt, t1, t2, key14); n += 1
+        print('Zenodo channel: inserted into', n, 'of', len(mids), 'lists', flush=True)
     json.dump(res_, open(out, 'w'))
     print('own lists', sum(bool(v) for v in res_.values()), 'of', len(mids), f'{time.time()-t0:.0f}s', flush=True)
 
