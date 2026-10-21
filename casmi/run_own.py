@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -124,7 +124,14 @@ def _pc_one(args):
         if not np.isfinite(M):
             return mid, None
         if isinstance(TIER, FullTier):
-            return mid, propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000'))).head(25)
+            pr = propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000'))).head(25)
+            f = (FRAMES or {}).get(mid)
+            if len(pr) and f is not None and len(f):            # rel: best proposal f.z minus best pool f.z, same model
+                m0 = PFS.ms[0] if hasattr(PFS, 'ms') else PFS
+                _, pool_fz = m0.score(raw, f.pid.values, f.smiles.values)
+                _, pc_fz = m0.score(raw, [-1 - int(c) for c in pr.cid.values], list(pr.smiles))
+                pr = pr.assign(rel=float(np.max(pc_fz) - np.max(pool_fz)))
+            return mid, pr
         return mid, propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam).head(25)
     except Exception as e:
         print('pc fail', mid, repr(e), flush=True)
@@ -132,9 +139,13 @@ def _pc_one(args):
 
 
 def pc_channel(lists, frames, procs):
+    global FRAMES
+    FRAMES = frames
     """PC_TIER=<tier.npz>: insert the PubChem channel's best proposals at PC_SLOTS (default 4,8,12,16,20) into every
     list whose best library similarity is below PC_GATE (default 0.9). PC_NPOP / PC_LAM: window size by documentation
-    and the documentation weight of the proposal score; PC_ONLY=1 replaces every list by the proposals (LB probe)."""
+    and the documentation weight of the proposal score; PC_ONLY=1 replaces every list by the proposals (LB probe);
+    PC_PROMO=<f.z margin>: with the full tier, PC #1 goes to rank 1 when its f.z exceeds the best pool candidate's by
+    more than the margin (same PeakFormer member)."""
     from .metric import key14
     from .pcchannel import insert
     slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
@@ -154,7 +165,8 @@ def pc_channel(lists, frames, procs):
         todo = [m for m in lists if lists[m] and (m not in frames or float(frames[m].lib.max()) < gate)]
     with Pool(procs) as pool:
         props = dict(pool.imap_unordered(_pc_one, [(m, n_pop, lam) for m in todo], chunksize=2))
-    n = 0
+    n = n_promo = 0
+    promo = float(os.environ['PC_PROMO']) if os.environ.get('PC_PROMO') else None   # f.z margin for rank-1 promotion
     only = os.environ.get('PC_ONLY') == '1'          # LB probe: the channel's own top 25 replaces every list
     for m, pr in props.items():
         if pr is not None and len(pr):
@@ -162,10 +174,13 @@ def pc_channel(lists, frames, procs):
                 lists[m] = [[s, float(v), key14(s)] for s, v in zip(pr.smiles, pr.pc_score)][:25]
             else:
                 sl = hi_slots if (hi is not None and hi.get(m, 0.0) > th) else slots
+                if promo is not None and 'rel' in pr and float(pr.rel.iloc[0]) > promo:
+                    sl = (1,) + tuple(x for x in sl if x > 1)       # PC #1 promoted to rank 1 (f.z margin over the pool)
+                    n_promo += 1
                 lists[m] = insert(lists[m], pr, sl, len(sl), key14)
             n += 1
     print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n,
-          'early slots', 0 if hi is None else sum(v > th for v in hi.values()), flush=True)
+          'early slots', 0 if hi is None else sum(v > th for v in hi.values()), 'promoted', n_promo, flush=True)
     return lists
 
 
