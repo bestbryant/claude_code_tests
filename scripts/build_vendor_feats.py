@@ -13,6 +13,9 @@ sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.dirname(_
 from casmi.keyset import pack
 from casmi.retrieval import VENDORS, BIOACT
 
+SPECTRAL = ('MassBank', 'MoNA', 'NIST Mass Spectrometry', 'Metabolomics Workbench', 'Human Metabolome Database',
+            'West Coast Metabolomics', 'GNPS', 'mzCloud', 'HMDB')
+
 if __name__ == '__main__':
     pool_dir, sd, ikp = sys.argv[1:4]
     P = pd.read_parquet(f'{pool_dir}/pool.parquet', columns=['key'])
@@ -39,7 +42,11 @@ if __name__ == '__main__':
             f[pr[ps == names.index(n)]] = 1
         V[c] = f
     V['v_bioact'] = V[BIOACT].sum(1).astype(np.int8)
-    V['v_nsrc'] = np.log1p(np.bincount(pr, minlength=len(P))).astype(np.float32)
+    # depositor count without spectral libraries / metabolomics databases: a simulated class-2 truth is a training
+    # structure, so those deposits would leak "has public spectra" (MoNA: 35% of class-2 truths vs 1.6% of decoys)
+    spec = [i for i, n in enumerate(names) if any(t in n for t in SPECTRAL)]
+    keep = ~np.isin(ps, spec)
+    V['v_nsrc'] = np.log1p(np.bincount(pr[keep], minlength=len(P))).astype(np.float32)
     V.to_parquet(f'{pool_dir}/vendor.parquet')
     print('pool rows', len(P), 'with any deposit', int((V.v_nsrc > 0).sum()))
     print(V.mean().round(4).to_dict())

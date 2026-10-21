@@ -133,11 +133,10 @@ def _pc_one(args):
             pr = propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000')), exclude=PC_EXCL, lam=lam,
                               pop_union=int(os.environ.get('PC_POP_UNION', '0')))
             f = (FRAMES or {}).get(mid)
-            if len(pr) and f is not None and len(f):            # rel: best proposal f.z minus best pool f.z, same model
-                m0 = PFS.ms[0] if hasattr(PFS, 'ms') else PFS
-                _, pool_fz = m0.score(raw, f.pid.values, f.smiles.values)
-                _, pc_fz = m0.score(raw, [-1 - int(c) for c in pr.cid.values], list(pr.smiles))
-                pr = pr.assign(rel=float(np.max(pc_fz) - np.max(pool_fz)))
+            # rel: best proposal f.z minus best stage-1 pool f.z (single PeakFormer: both raw); the proposals' own
+            # pc_fz, not a rescoring under other ids (the per-worker fingerprint cache is keyed by id)
+            if (len(pr) and f is not None and len(f) and 'pf_bern' in f and len(getattr(PFS, 'ms', [PFS])) == 1):
+                pr = pr.assign(rel=float(pr.pc_fz.max() - f.pf_bern.max()))
             return mid, pr
         from .pcchannel import finalize          # distinct metric identities (stereo / tautomer duplicates)
         pr = propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam)
@@ -178,7 +177,8 @@ def pc_channel(lists, frames, procs):
     if os.environ.get('PC_ONLY') == '1':
         todo = list(lists)
     else:
-        todo = [m for m in lists if lists[m] and (m not in frames or float(frames[m].lib.max()) < gate)]
+        # molecules without a stage-1 frame (empty pool window, unusable spectra) are proposed for too
+        todo = [m for m in lists if m not in frames or float(frames[m].lib.max()) < gate]
     with Pool(procs) as pool:
         props = dict(pool.imap_unordered(_pc_one, [(m, n_pop, lam) for m in todo], chunksize=2))
     n = n_promo = 0

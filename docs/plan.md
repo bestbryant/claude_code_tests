@@ -99,6 +99,17 @@ simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib g
   fingerprint caches over 400 windows of up to 150k compounds) -> not re-run; the Enamine tier replaced the full tier
   as the main channel and its policy is calibrated locally (scripts/sim_enam_policy.py).
 
+## Pre-submission review (workflow wf_7a997223-4ef, 4 reviewers, Oct 21)
+No blockers. Fixed: (1) molecules without a stage-1 list now also get channel proposals (gate no longer requires a
+non-empty list); (2) full-tier rel taken from the proposals' own f.z (the rescoring under -1-cid ids could hit the
+per-worker fingerprint cache keyed by -1-row ids); (3) the push retry loop treated any non-slot error (a 500 at 09:34)
+as success -> scripts/push_retry.sh exits only on "successfully pushed"; (4) v_nsrc counted spectral-library depositors
+(MoNA 35% of simulated class-2 truths vs 1.6% of decoys = "has public spectra" leak; measured effect on v12 <= 0.001
+class-2 MRR) -> excluded in scripts/build_vendor_feats.py for the next rebuild (v12 itself unchanged). Verified: ret12
+rows = ret10pl + 22 vendor columns, vendor values match by pid, Kaggle pool4 / vendor files have the local md5s, no
+VENDORS source is a spectral library. (1) and (2) are in the code of casmi26-own-s2v12purch, not in the running
+s2v11lenam / s2v12 (rare molecules only).
+
 ## Purchasable-compound prior (Oct 21): the test molecules are physical samples Enveda bought
 Same depositor analysis for Enveda's natural-product examples (enveda-np-examples, 250 structures, 99.6% COCONUT):
 MedChemExpress 96%, TargetMol 94%, BioCrick 79%, ChemFaces 62%, Selleck 60%, AbMole 58%, ApexBio 55% -- against
