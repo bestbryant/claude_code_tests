@@ -4,7 +4,8 @@ for a test molecule from its 10 ppm neutral-mass window and scored by the PeakFo
   propose(M, spectra)  -> frame of the window's top-n_pop compounds by documentation (pop), with the PeakFormer
                           cosine / f.z, their within-window z-scores and score = z(f.z) + z(cos) + lam * pop
   insert(final, props, slots, k)  -> the final ranked list with the best k proposals at the given 1-based slots
-                          (proposals whose metric key is already listed are skipped)
+                          (proposals whose metric key is already listed are skipped); a list shorter than 25 is
+                          then filled up with the remaining proposals
 """
 import numpy as np
 import pandas as pd
@@ -57,6 +58,12 @@ def insert(final, props, slots=(4, 8, 12, 16, 20), k=5, key14=None):
         pos = min(slots[added] - 1, len(out))
         out.insert(pos, [s, float('nan'), kk])
         have.add(kk); added += 1
+    for s in props.smiles.values:             # vacant places at the end of a short list cost nothing to fill
+        if len(out) >= 25:
+            break
+        kk = key14(s) if key14 else None
+        if kk is not None and kk not in have:
+            out.append([s, float('nan'), kk]); have.add(kk)
     return out[:25]
 
 
