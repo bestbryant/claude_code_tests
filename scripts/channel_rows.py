@@ -75,8 +75,14 @@ def one(r):
 
 
 if __name__ == '__main__':
-    with Pool(procs, initializer=init) as pool:
-        res = [x for x in pool.imap_unordered(one, t.to_dict("records"), chunksize=2) if x is not None]
+    res = []
+    # workers recycled every 40 queries: the PeakFormer fingerprint cache grows with every window (OOM otherwise)
+    with Pool(procs, initializer=init, maxtasksperchild=40) as pool:
+        for n, x in enumerate(pool.imap_unordered(one, t.to_dict("records"), chunksize=1)):
+            if x is not None:
+                res.append(x)
+            if n % 100 == 0:
+                print('done', n, 'of', len(t), flush=True)
     R = pd.concat(res, ignore_index=True)
     R.to_parquet(out_p)
     q = R.drop_duplicates('qid')
