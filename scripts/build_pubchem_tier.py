@@ -5,6 +5,8 @@ pubchem_dir holds cid_ik.npy (CID -> packed InChIKey14) and cnt_sid / cnt_pmid /
 counts). A CID is kept when sid >= min_sid or pmid >= min_pmid, its key is new to the pool, its SMILES is a single
 component with a net-neutral formula and its monoisotopic mass is in 80-1500 Da; one CID per key (the most documented). Masses come
 from PubChem's CID-Mass, SMILES from CID-SMILES (both streamed from the PubChem FTP).
+SEL_CIDS=<cids.npy>: keep exactly these CIDs (key new to the pool) instead of the documentation cut, e.g. the CIDs with
+an Enamine deposit (scripts/pc_sid_sources.py) for the Enamine tier.
 Writes <out_dir>/tier.npz: mass (float64, sorted), cid (uint32), key (uint64), pop (float32 = log1p sid + log1p pmid
 + 0.5 log1p patent), smi_off (int64), smi (uint8 concatenated SMILES).
 """
@@ -24,9 +26,16 @@ ik = np.load(f'{pcd}/cid_ik.npy', mmap_mode='r')
 sid_m = np.load(f'{pcd}/cnt_sid.npy', mmap_mode='r'); pmid_m = np.load(f'{pcd}/cnt_pmid.npy', mmap_mode='r')
 have = np.unique(pack(list(pd.read_parquet(f'{pool_dir}/pool.parquet', columns=['key']).key)))
 sel = np.zeros(len(ik), bool)
+pick = None
+if os.environ.get('SEL_CIDS'):
+    c = np.load(os.environ['SEL_CIDS']).astype(np.int64)
+    pick = np.zeros(len(ik), bool); pick[c[c < len(ik)]] = True
 for a in range(0, len(ik), 10_000_000):             # chunked: the per-CID arrays are 200M long
     k = np.asarray(ik[a:a + 10_000_000])
-    m = ((np.asarray(sid_m[a:a + 10_000_000]) >= min_sid) | (np.asarray(pmid_m[a:a + 10_000_000]) >= min_pmid)) & (k > 0)
+    if pick is not None:
+        m = pick[a:a + len(k)] & (k > 0)
+    else:
+        m = ((np.asarray(sid_m[a:a + 10_000_000]) >= min_sid) | (np.asarray(pmid_m[a:a + 10_000_000]) >= min_pmid)) & (k > 0)
     j = np.minimum(np.searchsorted(have, k), len(have) - 1)
     sel[a:a + len(k)] = m & (have[j] != k)
 print('selected CIDs', int(sel.sum()), f'{time.time() - t0:.0f}s', flush=True)

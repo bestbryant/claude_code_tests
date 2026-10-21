@@ -66,6 +66,31 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | 0.320 |
 | 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | 0.307 |
 
+## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
+The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
+PubChem depositors (scripts/pc_sid_sources.py streams SID-Map: 335M deposits with a CID, 893 sources), share of keys
+with a deposit from the source:
+| population | Enamine | AKos | ZINC | Jena (COCONUT) | ChEBI |
+|---|---|---|---|---|---|
+| enveda-180 training structures (178k) | **0.948** | 0.706 | 0.573 | 0.000 | 0.000 |
+| Zenodo extras absent from train (3.6k; Enveda, enamine_catalog_id) | **0.943** | 0.642 | 0.552 | 0.000 | 0.000 |
+| COCONUT-not-train (428k) | 0.027 | 0.276 | 0.320 | 0.792 | 0.133 |
+| ChEBI/LMSD-not-train (64k) | 0.071 | 0.229 | 0.260 | 0.010 | 0.743 |
+| random PubChem (300k) | 0.040 | 0.191 | 0.110 | 0.007 | 0.002 |
+-> an Enveda-measured molecule outside COCONUT is almost surely an Enamine compound (likelihood ratio ~24 vs PubChem
+at large). Enamine-deposited PubChem keys: 4.88M (339k in pool v4, 189k training structures). 484 of 955 class-2
+validation queries have an Enamine truth, 236 of them unreachable through COCONUT / PubChemLite / ChEBI-LMSD.
+Enamine tier (SEL_CIDS in scripts/build_pubchem_tier.py, exclusion = train + COCONUT keys): 4,556,691 compounds,
+dataset bryantyu/casmi26-pc-enam (tier_enam.npz). Offline (scripts/eval_pcchannel.py PC_TRUTH_KEYS=enamine keys
+PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local PeakFormer): median window 866,
+| lam (pop) | 0 | 0.1 | 0.25 | 0.5 |
+|---|---|---|---|---|
+| MRR | **0.666** | 0.653 | 0.624 | 0.550 |
+| top-1 | 0.525 | 0.513 | 0.483 | 0.394 |
+(the documented full tier's median window is 12.8k at test masses: same truths, ~15x more decoys). Probe kernel
+casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
+simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
+
 ## Second-ranker rank-2 insertion (other-gap item 4, Oct 21) -- refuted offline
 Source-blind stage-1 ranker (scripts/train_ret_ranker.py --source-blind: no in_coco / in_bio / PubChemLite / PubChem /
 LOTUS / priors; alpha 1, ret10pl rows) and the same without in_train / lib_n (--no-membership); its top-1 moved to rank 2

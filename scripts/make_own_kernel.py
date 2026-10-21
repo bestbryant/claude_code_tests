@@ -3,7 +3,8 @@
 python scripts/make_own_kernel.py <slug> <stage1_ranker> <stage2_ranker> [KEY=VALUE ...]
 KEY=VALUE pairs become environment variables of casmi.run_own (e.g. OWN_PF=pf_a.pt,pf_b.pt  PC_SLOTS=4,8,12,16,20).
 PC_TIER=1 mounts bryantyu/casmi26-pc-tier and points PC_TIER at its tier.npz; PC_TIER=full mounts the output of
-kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH); PC_POP=1 the full-tier documentation
+kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); PC_TIER=enam the Enamine tier
+(bryantyu/casmi26-pc-enam, tier_enam.npz); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH); PC_POP=1 the full-tier documentation
 prior; PC_EXCLUDE=1 the probe source key sets (bryantyu/casmi26-srckeys).
 """
 import json, os, sys
@@ -17,6 +18,8 @@ meta = json.load(open(os.path.join(src, 'kernel-metadata.json')))
 meta['id'] = f'bryantyu/{slug}'; meta['title'] = slug
 if env.get('PC_TIER') == 'full':             # full PubChem tier = output of kernels/casmi26-pc-full-build
     meta['kernel_sources'] = meta.get('kernel_sources', []) + ['bryantyu/casmi26-pc-full-build']
+elif env.get('PC_TIER') == 'enam':           # Enamine tier (Enamine-deposited PubChem compounds outside train + COCONUT)
+    meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-pc-enam']
 elif env.get('PC_TIER'):
     meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-pc-tier']
 if env.get('ZEN'):                           # Zenodo-extra library channel (casmi/zen.py)
@@ -30,6 +33,7 @@ nb = open(os.path.join(src, 'notebook.py')).read()
 nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replace("OWN_STAGE2 = 'stage2_v10'", f"OWN_STAGE2 = {rk2!r}")
 extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE')}
 pc = ("'PC_TIER': os.path.dirname(first('tier_full/mass.npy')), " if env.get('PC_TIER') == 'full'
+      else "'PC_TIER': first('tier_enam.npz'), " if env.get('PC_TIER') == 'enam'
       else "'PC_TIER': first('tier.npz'), " if env.get('PC_TIER') else '')
 pc += "'ZEN_PATH': first('zen_extra.parquet'), " if env.get('ZEN') else ''
 pc += "'PC_POP': first('pop.npy'), " if env.get('PC_POP') else ''

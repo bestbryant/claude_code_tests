@@ -139,7 +139,8 @@ def _pc_one(args):
                 _, pc_fz = m0.score(raw, [-1 - int(c) for c in pr.cid.values], list(pr.smiles))
                 pr = pr.assign(rel=float(np.max(pc_fz) - np.max(pool_fz)))
             return mid, pr
-        return mid, propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam).head(25)
+        from .pcchannel import finalize          # distinct metric identities (stereo / tautomer duplicates)
+        return mid, finalize(propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam), PC_EXCL or None)
     except Exception as e:
         print('pc fail', mid, repr(e), flush=True)
         return mid, None

@@ -6,6 +6,8 @@ documentation cut or ranks below 25). Documentation shift: training structures a
 hidden answers, so results with lam > 0 are optimistic; the weighted line uses the doc-shift weights.
 
 python scripts/eval_pcchannel.py <rows_fp.parquet> <tier.npz> <pf checkpoints, comma-separated> [n_queries]
+PC_TRUTH_KEYS=<packed keys .npy>: only truths in this set (e.g. Enamine-deposited structures for the Enamine tier);
+PC_NOREACH=1: only truths outside COCONUT / PubChemLite / ChEBI-LMSD (unreachable through the pool's other sources).
 """
 import os, sys
 import numpy as np, pandas as pd
@@ -18,8 +20,12 @@ from casmi.spectra import Store
 
 rows, tier_p, pf = sys.argv[1:4]
 nq = int(sys.argv[4]) if len(sys.argv) > 4 else 300
-D = pd.read_parquet(rows, columns=['qid', 'pid', 'label', 'cls', 'truth', 'q_rows'])
+D = pd.read_parquet(rows, columns=['qid', 'pid', 'label', 'cls', 'truth', 'q_rows', 'in_coco', 'in_pcl', 'in_bio'])
 t = D[(D.label == 1) & (D.cls == 2)].drop_duplicates('qid')
+if os.environ.get('PC_TRUTH_KEYS'):
+    t = t[np.isin(pack(list(t.truth)), np.load(os.environ['PC_TRUTH_KEYS']))]
+if os.environ.get('PC_NOREACH') == '1':
+    t = t[(t.in_coco == 0) & (t.in_pcl == 0) & (t.in_bio == 0)]
 t = t.sample(min(nq, len(t)), random_state=0)
 P = pd.read_parquet('/home/user/work/pool4/pool.parquet', columns=['smiles', 'mass'])
 need = pack(list(t.truth))
