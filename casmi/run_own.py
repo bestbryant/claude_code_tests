@@ -140,7 +140,13 @@ def _pc_one(args):
                 pr = pr.assign(rel=float(np.max(pc_fz) - np.max(pool_fz)))
             return mid, pr
         from .pcchannel import finalize          # distinct metric identities (stereo / tautomer duplicates)
-        return mid, finalize(propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam), PC_EXCL or None)
+        pr = propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam)
+        f = (FRAMES or {}).get(mid)
+        # rel: best window f.z minus best stage-1 pool f.z (single PeakFormer: both raw, as in scripts/sim_enam_policy.py)
+        rel = (float(pr.pc_fz.max() - f.pf_bern.max()) if (len(pr) and f is not None and len(f) and 'pf_bern' in f
+                                                           and len(getattr(PFS, 'ms', [PFS])) == 1) else None)
+        pr = finalize(pr, PC_EXCL or None)
+        return mid, (pr.assign(rel=rel) if rel is not None and len(pr) else pr)
     except Exception as e:
         print('pc fail', mid, repr(e), flush=True)
         return mid, None
