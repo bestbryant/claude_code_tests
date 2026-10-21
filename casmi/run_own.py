@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -124,7 +124,8 @@ def _pc_one(args):
         if not np.isfinite(M):
             return mid, None
         if isinstance(TIER, FullTier):
-            pr = propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000'))).head(25)
+            pr = propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000')), exclude=PC_EXCL, lam=lam,
+                              pop_union=int(os.environ.get('PC_POP_UNION', '0')))
             f = (FRAMES or {}).get(mid)
             if len(pr) and f is not None and len(f):            # rel: best proposal f.z minus best pool f.z, same model
                 m0 = PFS.ms[0] if hasattr(PFS, 'ms') else PFS
@@ -145,7 +146,9 @@ def pc_channel(lists, frames, procs):
     list whose best library similarity is below PC_GATE (default 0.9). PC_NPOP / PC_LAM: window size by documentation
     and the documentation weight of the proposal score; PC_ONLY=1 replaces every list by the proposals (LB probe);
     PC_PROMO=<f.z margin>: with the full tier, PC #1 goes to rank 1 when its f.z exceeds the best pool candidate's by
-    more than the margin (same PeakFormer member)."""
+    more than the margin (same PeakFormer member); PC_REL_AGG=<margin>: slots 2,4,6,8,10 above it; PC_S_PROMO /
+    PC_POP_PROMO: also promote when the #1 score exceeds PC_S_PROMO and its documentation prior is >= PC_POP_PROMO.
+    Full tier: PC_POP=<pop.npy>, PC_N1 (pass-1 survivors), PC_POP_UNION (best-documented rows added to pass 2)."""
     from .metric import key14
     from .pcchannel import insert
     slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
@@ -166,7 +169,9 @@ def pc_channel(lists, frames, procs):
     with Pool(procs) as pool:
         props = dict(pool.imap_unordered(_pc_one, [(m, n_pop, lam) for m in todo], chunksize=2))
     n = n_promo = 0
-    promo = float(os.environ['PC_PROMO']) if os.environ.get('PC_PROMO') else None   # f.z margin for rank-1 promotion
+    env_f = lambda k: float(os.environ[k]) if os.environ.get(k) else None
+    promo, agg = env_f('PC_PROMO'), env_f('PC_REL_AGG')        # f.z margins over the pool: promotion / aggressive slots
+    s_promo, pop_promo = env_f('PC_S_PROMO'), env_f('PC_POP_PROMO') or 5.0    # or a high score of a documented #1
     only = os.environ.get('PC_ONLY') == '1'          # LB probe: the channel's own top 25 replaces every list
     for m, pr in props.items():
         if pr is not None and len(pr):
@@ -174,8 +179,12 @@ def pc_channel(lists, frames, procs):
                 lists[m] = [[s, float(v), key14(s)] for s, v in zip(pr.smiles, pr.pc_score)][:25]
             else:
                 sl = hi_slots if (hi is not None and hi.get(m, 0.0) > th) else slots
-                if promo is not None and 'rel' in pr and float(pr.rel.iloc[0]) > promo:
-                    sl = (1,) + tuple(x for x in sl if x > 1)       # PC #1 promoted to rank 1 (f.z margin over the pool)
+                rel = float(pr.rel.iloc[0]) if 'rel' in pr else None
+                if agg is not None and rel is not None and rel > agg:
+                    sl = (2, 4, 6, 8, 10)                            # strong out-of-pool fit: aggressive slots
+                if ((promo is not None and rel is not None and rel > promo)
+                        or (s_promo is not None and float(pr.pc_score.iloc[0]) > s_promo and float(pr['pop'].iloc[0]) >= pop_promo)):
+                    sl = (1,) + tuple(x for x in sl if x > 1)       # PC #1 promoted to rank 1
                     n_promo += 1
                 lists[m] = insert(lists[m], pr, sl, len(sl), key14)
             n += 1
@@ -185,7 +194,7 @@ def pc_channel(lists, frames, procs):
 
 
 def main(argv):
-    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER
+    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER, PC_EXCL
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -241,10 +250,20 @@ def main(argv):
         frames = {}
     if os.environ.get('PC_TIER'):
         from .pcchannel import FullTier, PubChemTier
-        TIER = FullTier(os.environ['PC_TIER']) if os.path.isdir(os.environ['PC_TIER']) else PubChemTier(os.environ['PC_TIER'])
+        TIER = (FullTier(os.environ['PC_TIER'], os.environ.get('PC_POP')) if os.path.isdir(os.environ['PC_TIER'])
+                else PubChemTier(os.environ['PC_TIER']))
         if PFS is None:
             from .peakformer import PFEnsemble
             PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
+        # standard InChIKey14 never proposed: the pool (scored by stage 1/2) and/or probe source sets
+        # (PC_EXCLUDE=<srckeys parquet>, PC_EXCLUDE_SRC=train,coco)
+        PC_EXCL = set()
+        if os.environ.get('PC_EXCL_POOL') == '1':
+            PC_EXCL |= set(R.key_idx)
+        if os.environ.get('PC_EXCLUDE'):
+            K = pd.read_parquet(os.environ['PC_EXCLUDE'])
+            PC_EXCL |= set(K.key[K.src.isin(os.environ.get('PC_EXCLUDE_SRC', 'train,coco').split(','))])
+        print('PubChem channel excludes', len(PC_EXCL), 'keys', flush=True)
         os.environ['OWN_MODELS'] = mdir
         res_ = pc_channel(res_, frames, procs)
     if os.environ.get('ZEN_PATH'):          # Zenodo-extra library channel (casmi/zen.py)

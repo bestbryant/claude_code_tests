@@ -71,9 +71,11 @@ class FullTier:
     """Full PubChem tier (kernels/casmi26-pc-full-build): directory with mass.npy (float32, sorted), cid.npy,
     smi_off.npy, smi.npy; no documentation counts."""
 
-    def __init__(self, d):
+    def __init__(self, d, pop_path=None):
         self.mass = np.load(f'{d}/mass.npy', mmap_mode='r'); self.cid = np.load(f'{d}/cid.npy', mmap_mode='r')
         self.off = np.load(f'{d}/smi_off.npy', mmap_mode='r'); self.smi = np.load(f'{d}/smi.npy', mmap_mode='r')
+        # documentation prior aligned to the rows (dataset bryantyu/casmi26-pc-full-pop), or None
+        self.pop = np.load(pop_path, mmap_mode='r') if pop_path else None
 
     def smiles(self, i):
         return bytes(self.smi[self.off[i]:self.off[i + 1]]).decode()
@@ -88,9 +90,33 @@ class FullTier:
         return np.linspace(lo, hi - 1, cap).astype(np.int64)
 
 
-def propose_full(tier, pfs, M, spectra, n1=2000):
+def finalize(f, exclude=None, n=25):
+    """Best n proposals of a scored frame with distinct metric identity (tautomer-canonical InChIKey14, so stereo /
+    tautomer duplicates do not waste places), skipping structures whose standard InChIKey14 is in `exclude`."""
+    from rdkit import Chem
+    from .metric import key14
+    keep, seen = [], set()
+    for i, s in enumerate(f.smiles.values):
+        k = key14(s)
+        if k is None or k in seen:
+            continue
+        if exclude:
+            m = Chem.MolFromSmiles(s)
+            if m is None:
+                continue
+            Chem.RemoveStereochemistry(m)
+            if Chem.MolToInchiKey(m)[:14] in exclude:
+                continue
+        seen.add(k); keep.append(i)
+        if len(keep) >= n:
+            break
+    return f.iloc[keep].reset_index(drop=True)
+
+
+def propose_full(tier, pfs, M, spectra, n1=2000, exclude=None, lam=0.0, pop_union=0):
     """Two-pass proposals from the full tier: pass 1 scores every window compound by f.z over its Morgan r2 block
-    (casmi/richfp.py block 0, cheap); the best n1 get the full PeakFormer score; score = z(f.z) + z(cos)."""
+    (casmi/richfp.py block 0, cheap); the best n1 (plus the pop_union best-documented rows) get the full PeakFormer
+    score; score = z(f.z) + z(cos) + lam * pop; then finalize() (distinct metric identities, `exclude` keys dropped)."""
     from rdkit import Chem
     from .peakformer import embed_query
     idx = tier.window(M)
@@ -114,9 +140,14 @@ def propose_full(tier, pfs, M, spectra, n1=2000):
     if not ok.any():
         return pd.DataFrame(columns=cols)
     top = np.argsort(-s1)[:min(n1, int(ok.sum()))]
+    pw = np.asarray(tier.pop[idx], np.float32) if tier.pop is not None else np.zeros(len(idx), np.float32)
+    if pop_union and tier.pop is not None:
+        pu = np.argsort(-np.where(ok, pw, -np.inf))[:min(pop_union, int(ok.sum()))]
+        top = np.union1d(top, pu)
     ssel = [smi[j] for j in top]
     cos, fz = pfs.score(spectra, [-1 - int(idx[j]) for j in top], ssel)
     zs = lambda v: (v - v.mean()) / (v.std() or 1.0)
-    f = pd.DataFrame(dict(smiles=ssel, cid=np.asarray(tier.cid[idx[top]]).astype(np.int64), pop=0.0, pc_cos=cos, pc_fz=fz))
-    f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values)
-    return f.sort_values('pc_score', ascending=False).reset_index(drop=True)
+    f = pd.DataFrame(dict(smiles=ssel, cid=np.asarray(tier.cid[idx[top]]).astype(np.int64), pop=pw[top], pc_cos=cos,
+                          pc_fz=fz))
+    f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values) + lam * f['pop'].values
+    return finalize(f.sort_values('pc_score', ascending=False).reset_index(drop=True), exclude)

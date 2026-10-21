@@ -3,7 +3,8 @@
 python scripts/make_own_kernel.py <slug> <stage1_ranker> <stage2_ranker> [KEY=VALUE ...]
 KEY=VALUE pairs become environment variables of casmi.run_own (e.g. OWN_PF=pf_a.pt,pf_b.pt  PC_SLOTS=4,8,12,16,20).
 PC_TIER=1 mounts bryantyu/casmi26-pc-tier and points PC_TIER at its tier.npz; PC_TIER=full mounts the output of
-kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH).
+kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH); PC_POP=1 the full-tier documentation
+prior; PC_EXCLUDE=1 the probe source key sets (bryantyu/casmi26-srckeys).
 """
 import json, os, sys
 
@@ -20,13 +21,19 @@ elif env.get('PC_TIER'):
     meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-pc-tier']
 if env.get('ZEN'):                           # Zenodo-extra library channel (casmi/zen.py)
     meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-zen-extra']
+if env.get('PC_POP'):                        # documentation prior aligned to the full tier
+    meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-pc-full-pop']
+if env.get('PC_EXCLUDE'):                    # probe source key sets (train / coco)
+    meta['dataset_sources'] = sorted(set(meta['dataset_sources'] + ['bryantyu/casmi26-srckeys']))
 json.dump(meta, open(os.path.join(dst, 'kernel-metadata.json'), 'w'), indent=2)
 nb = open(os.path.join(src, 'notebook.py')).read()
 nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replace("OWN_STAGE2 = 'stage2_v10'", f"OWN_STAGE2 = {rk2!r}")
-extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN')}
+extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE')}
 pc = ("'PC_TIER': os.path.dirname(first('tier_full/mass.npy')), " if env.get('PC_TIER') == 'full'
       else "'PC_TIER': first('tier.npz'), " if env.get('PC_TIER') else '')
 pc += "'ZEN_PATH': first('zen_extra.parquet'), " if env.get('ZEN') else ''
+pc += "'PC_POP': first('pop.npy'), " if env.get('PC_POP') else ''
+pc += "'PC_EXCLUDE': first('casmi_probe_srckeys.parquet'), " if env.get('PC_EXCLUDE') else ''
 old = "'GL_THREADS': '4', 'GL_BUDGET': '14400', 'LIB_CAP': '100000'}"
 assert nb.count(old) == 1
 nb = nb.replace(old, "'GL_THREADS': '4', 'GL_BUDGET': '14400', 'LIB_CAP': '100000', " + pc + f"**{extra!r}}}")
