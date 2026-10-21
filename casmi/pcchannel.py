@@ -78,10 +78,14 @@ class FullTier:
     def smiles(self, i):
         return bytes(self.smi[self.off[i]:self.off[i + 1]]).decode()
 
-    def window(self, M, ppm=10.0, cap=60000):
+    def window(self, M, ppm=10.0, cap=150000):
+        """Tier rows within ppm of M; a window larger than cap is thinned by a uniform stride (never truncated at
+        one mass edge)."""
         tol = max(M * ppm * 1e-6, 0.002)
         lo, hi = np.searchsorted(self.mass, M - tol), np.searchsorted(self.mass, M + tol)
-        return np.arange(lo, min(hi, lo + cap))
+        if hi - lo <= cap:
+            return np.arange(lo, hi)
+        return np.linspace(lo, hi - 1, cap).astype(np.int64)
 
 
 def propose_full(tier, pfs, M, spectra, n1=2000):
