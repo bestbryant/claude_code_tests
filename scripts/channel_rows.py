@@ -79,7 +79,9 @@ def one(r):
         f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values)
         f = f.sort_values('pc_score', ascending=False).reset_index(drop=True)
         rank0 = 0 if present else int(np.flatnonzero(f.label.values == 1)[0]) + 1
-        g = rerank_feats(f, Q, M, L, FP, KI, hide={r['truth']})
+        # class 2: the answer has no library spectra (key hidden); present class 1: its other spectra stay in the
+        # library as at test time (approximated by no hiding; the query's own spectra may then match themselves)
+        g = rerank_feats(f, Q, M, L, FP, KI, hide=set() if (present and int(r['cls']) == 1) else {r['truth']})
         return g.drop(columns=['smiles']).assign(qid=int(r['qid']), rank0=rank0, noreach=bool(r['noreach']))
     except Exception as e:
         print('fail', r['qid'], repr(e), flush=True)
