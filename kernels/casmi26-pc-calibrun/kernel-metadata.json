@@ -1,0 +1,15 @@
+{
+  "id": "bryantyu/casmi26-pc-calibrun",
+  "title": "casmi26-pc-calibrun",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["bryantyu/casmi26-code", "bryantyu/casmi26-models", "bryantyu/casmi26-pc-full-pop", "bryantyu/casmi26-pc-calib", "metric/rdkit-2026-3-3-wheel"],
+  "competition_sources": [],
+  "kernel_sources": ["bryantyu/casmi26-pc-full-build"],
+  "model_sources": []
+}
