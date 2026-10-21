@@ -60,6 +60,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-20 | casmi26-fprobe-train v3 | public 0.451 lineage restricted to training structures | 0.155 |
 | 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | 0.252 |
 | 10-20 | casmi26-fprobe-other v3 | public lineage restricted to other candidates | 0.057 |
+| 10-21 | casmi26-pc-only v1 | PROBE: PubChem channel only (tier outside the pool, PeakFormer local epoch 2) | pending |
+| 10-21 | casmi26-probe5-other v1 | PROBE: own alpha-0.5 lists restricted to other candidates (pool v4) | pending |
+| 10-21 | casmi26-own-s2v10 v1 | v10: full-library matching + alpha 0.5, stage 2 GLACIER | pending |
+| 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | pending |
+| 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | pending |
 
 ## Lessons from the Oct 19 submissions
 - GLACIER stage 2 adds +0.010 over its stage 1 (0.307 -> 0.317); ChEBI/LMSD membership (pool v4, in_bio) adds
