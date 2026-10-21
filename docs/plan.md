@@ -99,6 +99,12 @@ simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib g
   fingerprint caches over 400 windows of up to 150k compounds) -> not re-run; the Enamine tier replaced the full tier
   as the main channel and its policy is calibrated locally (scripts/sim_enam_policy.py).
 
+## PeakFormer SBAL runs e/f/g (Kaggle CPU, 11 h, Oct 21)
+Internal validation f.z MRR / sum MRR at the last epoch: e 0.639 / 0.649, f 0.631 / 0.627, **g 0.654 / 0.658** (larger
+model, 45 MB) vs local d 0.631 / 0.630 and a 0.651 / 0.650. Next: pf features from g alone on the v12 rows (ret12g,
+/home/user/work/pf_g_feats.sh) -> stage-1 CV vf+pf+vend vs ret12 (.9024 / .8882 / .9095 / vf-w .9587); channel check
+with g on the unreachable Enamine truths (d: MRR 0.666).
+
 ## Pre-submission review (workflow wf_7a997223-4ef, 4 reviewers, Oct 21)
 No blockers. Fixed: (1) molecules without a stage-1 list now also get channel proposals (gate no longer requires a
 non-empty list); (2) full-tier rel taken from the proposals' own f.z (the rescoring under -1-cid ids could hit the
