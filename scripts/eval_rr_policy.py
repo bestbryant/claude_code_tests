@@ -18,7 +18,8 @@ TR = TR[TR.groupby('qid').label.transform('max') == 1].sort_values(['qid', 'pc_s
 prm = dict(objective='lambdarank', metric='map', eval_at=[25], learning_rate=0.05, num_leaves=15, min_data_in_leaf=50,
            feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambdarank_truncation_level=25, verbose=-1,
            num_threads=4, seed=0)
-m = lgb.train(prm, lgb.Dataset(TR[RR_FEATS].astype(float), TR.label, group=TR.groupby('qid', sort=False).size().values), 300)
+m = (lgb.Booster(model_file=os.environ['RR_MODEL']) if os.environ.get('RR_MODEL')      # e.g. own_models/pc_rerank_v1t.txt
+     else lgb.train(prm, lgb.Dataset(TR[RR_FEATS].astype(float), TR.label, group=TR.groupby('qid', sort=False).size().values), 300))
 
 
 def conf(path):
@@ -84,6 +85,7 @@ for col in ('rr_top', 'rr_gap'):
                 continue
             cands.append((f'{col} agg>{qa} promo>{qb}', None, None, ta, tb, col))
             cands.append((f'rel + {col} agg>{qa} promo>{qb}', 15, 60, ta, tb, col))
+print('present rr_top p90 / p95 / p99 thresholds', np.round(qp['rr_top'], 3))
 print(f'{"policy":36s} d_present  other   ' + '  '.join(f'pi={x}' for x in (0.05, 0.1, 0.2, 0.3)))
 for name, agg, promo, ta, tb, col in cands:
     a, b = mrr_present(slots(pr, agg, promo, ta, tb, col)), mrr_other(slots(ot, agg, promo, ta, tb, col))

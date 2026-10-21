@@ -140,18 +140,24 @@ def _pc_one(args):
             return mid, pr
         from .pcchannel import finalize          # distinct metric identities (stereo / tautomer duplicates)
         pr = propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam)
+        rr_top = None
         if RERANK is not None and len(pr):       # PC_RERANK: the best 100 re-ordered with analog / fragment evidence
             from .pcchannel import rerank_feats
             Q, _, _ = query_from_rows(TEST[TEST.molecule_id == mid])
             top = rerank_feats(pr, Q, M, R.L, R.fp, R.key_idx)
             top['rr'] = RERANK[0].predict(top[RERANK[1]].astype(float).values)
+            rr_top = float(top.rr.max())        # the re-ranker's confidence (PC_RR_AGG / PC_RR_PROMO triggers)
             pr = pd.concat([top.sort_values('rr', ascending=False)[pr.columns], pr.iloc[len(top):]], ignore_index=True)
         f = (FRAMES or {}).get(mid)
         # rel: best window f.z minus best stage-1 pool f.z (single PeakFormer: both raw, as in scripts/sim_enam_policy.py)
         rel = (float(pr.pc_fz.max() - f.pf_bern.max()) if (len(pr) and f is not None and len(f) and 'pf_bern' in f
                                                            and len(getattr(PFS, 'ms', [PFS])) == 1) else None)
         pr = finalize(pr, PC_EXCL or None)
-        return mid, (pr.assign(rel=rel) if rel is not None and len(pr) else pr)
+        if rel is not None and len(pr):
+            pr = pr.assign(rel=rel)
+        if rr_top is not None and len(pr):
+            pr = pr.assign(rr_top=rr_top)
+        return mid, pr
     except Exception as e:
         print('pc fail', mid, repr(e), flush=True)
         return mid, None
@@ -191,6 +197,7 @@ def pc_channel(lists, frames, procs):
     env_f = lambda k: float(os.environ[k]) if os.environ.get(k) else None
     promo, agg = env_f('PC_PROMO'), env_f('PC_REL_AGG')        # f.z margins over the pool: promotion / aggressive slots
     s_promo, pop_promo = env_f('PC_S_PROMO'), env_f('PC_POP_PROMO') or 5.0    # or a high score of a documented #1
+    rr_agg, rr_promo = env_f('PC_RR_AGG'), env_f('PC_RR_PROMO')   # or the re-ranker's confidence (scripts/eval_rr_policy.py)
     only = os.environ.get('PC_ONLY') == '1'          # LB probe: the channel's own top 25 replaces every list
     for m, pr in props.items():
         if pr is not None and len(pr):
@@ -199,9 +206,12 @@ def pc_channel(lists, frames, procs):
             else:
                 sl = hi_slots if (hi is not None and hi.get(m, 0.0) > th) else slots
                 rel = float(pr.rel.iloc[0]) if 'rel' in pr else None
-                if agg is not None and rel is not None and rel > agg:
+                rrt = float(pr.rr_top.iloc[0]) if 'rr_top' in pr else None
+                if ((agg is not None and rel is not None and rel > agg)
+                        or (rr_agg is not None and rrt is not None and rrt > rr_agg)):
                     sl = (2, 4, 6, 8, 10)                            # strong out-of-pool fit: aggressive slots
                 if ((promo is not None and rel is not None and rel > promo)
+                        or (rr_promo is not None and rrt is not None and rrt > rr_promo)
                         or (s_promo is not None and float(pr.pc_score.iloc[0]) > s_promo and float(pr['pop'].iloc[0]) >= pop_promo)):
                     sl = (1,) + tuple(x for x in sl if x > 1)       # PC #1 promoted to rank 1
                     n_promo += 1
