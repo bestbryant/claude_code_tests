@@ -66,6 +66,18 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | 0.320 |
 | 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | 0.307 |
 
+## Second-ranker rank-2 insertion (other-gap item 4, Oct 21) -- refuted offline
+Source-blind stage-1 ranker (scripts/train_ret_ranker.py --source-blind: no in_coco / in_bio / PubChemLite / PubChem /
+LOTUS / priors; alpha 1, ret10pl rows) and the same without in_train / lib_n (--no-membership); its top-1 moved to rank 2
+of the v11l stage-1 list (scripts/eval_r2.py, 979 validation queries; mix = 0.45 cls1 + 0.55 weighted cls2):
+| second ranker | alone cls2w | insert at 2: d cls1 | d cls2w | d mix |
+|---|---|---|---|---|
+| v11sb (source-blind) | .7411 (v11l .7333) | -0.0004 | -0.0036 | -0.0022 |
+| v11sbnm (+ no membership) | -- | +0.0029 | -0.0015 | +0.0005 |
+Gating on the second ranker's top-1 margin and / or a low main margin never beats +0.0007. The second ranker sees the
+same candidates and evidence, so its top-1 is rarely right where v11l's top 2 is wrong -> not shipped (knob OWN_R2 /
+OWN_R2_SLOT in casmi/run_own.py kept, off by default).
+
 ## Lessons from the Oct 21 submissions
 - "Other" answers (not train, not COCONUT) are where the public lineage leads most clearly: its lists restricted to
   them score 0.057; ours 0.007 (pool v4: PubChemLite + ChEBI/LMSD) + 0.006 (documented PubChem tier, sid >= 5 or

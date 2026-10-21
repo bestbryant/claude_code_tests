@@ -80,10 +80,12 @@ def query_from_rows(g):
     return Q, raw, M
 
 
-def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None):
+def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None, second=None):
     """One molecule: stage-1 top-k candidate frame (all features, s1 = ranker score, s1_r = rank), one row per
     metric identity (key14), or None. dreams = (DreamsLib, {test row index: embedding}) adds the DreaMS analog
-    channel (casmi/dreams_feats.py); pfs = PeakFormer scorer (casmi/peakformer.py) adds the pf_* columns."""
+    channel (casmi/dreams_feats.py); pfs = PeakFormer scorer (casmi/peakformer.py) adds the pf_* columns;
+    second = (ranker, feats) of a second (source-blind) ranker: its top-1 is flagged r2_top = 1 (and appended when
+    outside the top k) for the rank-2 insertion in casmi/run_own.py."""
     Q, raw, M = query_from_rows(g)
     if not Q or not np.isfinite(M):
         return None
@@ -112,9 +114,21 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None):
         seen.add(kk); keep.append((i, kk))
         if len(keep) >= k:
             break
+    top2 = None
+    if second is not None:
+        s1b = second[0].predict(df[second[1]].astype(float).values)
+        for i in df.index.values[np.argsort(-s1b, kind='stable')]:
+            kk = key14(df.smiles[i])
+            if kk is not None:
+                top2 = (i, kk)
+                break
+        if top2 is not None and top2[1] not in seen:
+            keep.append(top2)
     out = df.loc[[i for i, _ in keep]].copy()
     out['key14'] = [kk for _, kk in keep]
     out['s1_r'] = np.arange(1, len(out) + 1)
+    if second is not None:
+        out['r2_top'] = (out.key14 == (top2[1] if top2 else None)).astype(np.int8)
     return out
 
 

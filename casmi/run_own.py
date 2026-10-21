@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = SECOND = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -25,7 +25,7 @@ STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER feature
 def _one(mid):
     try:
         if STAGE2:
-            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30, dreams=DREAMS, pfs=PFS)
+            return mid, stage1(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], k=30, dreams=DREAMS, pfs=PFS, second=SECOND)
         return mid, [list(x) for x in predict(R, FPS, RK, FEATS, TEST[TEST.molecule_id == mid], pfs=PFS)]
     except Exception as e:
         print('own fail', mid, repr(e), flush=True)
@@ -83,6 +83,7 @@ def stage2(frames, mdir, work):
     gate = tuple(float(x) for x in os.environ['SRC_GATE'].split(',')) if os.environ.get('SRC_GATE') else None
     pop = float(os.environ.get('POP_BOOST', '0'))
     frag2 = 'ps_mix_mean' in f2
+    r2, n_r2 = int(os.environ.get('OWN_R2_SLOT', '2')) if SECOND is not None else 0, 0
     if frag2:
         from .fragscore import candidate_scores, frag2_feats
         from .spectra import clean_peaks
@@ -108,9 +109,14 @@ def stage2(frames, mdir, work):
         f = f.sort_values('z', ascending=False)
         if gate:
             f = source_gate(f, *gate)
+        if r2 and 'r2_top' in f and f.r2_top.any():      # second ranker's top-1 moved up to rank r2
+            j = int(np.flatnonzero(f.r2_top.values == 1)[0])
+            if j >= r2:
+                o = list(range(len(f))); o.insert(r2 - 1, o.pop(j))
+                f = f.iloc[o]; n_r2 += 1
         out[m] = [[s, float(z), k] for s, z, k in zip(f.smiles, f.z, f.key14)][:25]
     print('stage 2: molecules with GLACIER scores', sum(1 for v in scores.values() if any(x is not None for x in v.values())),
-          'of', len(frames), flush=True)
+          'of', len(frames), '| second-ranker insertions', n_r2, flush=True)
     return out
 
 
@@ -194,7 +200,7 @@ def pc_channel(lists, frames, procs):
 
 
 def main(argv):
-    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER, PC_EXCL
+    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER, PC_EXCL, SECOND
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -214,6 +220,9 @@ def main(argv):
     rk = os.environ.get('OWN_RANKER', 'ret_ranker')        # which ranker variant in the models dataset
     RK = lgb.Booster(model_file=f'{mdir}/{rk}.txt')
     FEATS = open(f'{mdir}/{rk}_feats.txt').read().split()
+    if os.environ.get('OWN_R2'):   # second (source-blind) stage-1 ranker: its top-1 goes to rank OWN_R2_SLOT (default 2)
+        SECOND = (lgb.Booster(model_file=f"{mdir}/{os.environ['OWN_R2']}.txt"),
+                  open(f"{mdir}/{os.environ['OWN_R2']}_feats.txt").read().split())
     if 'pf_cos' in FEATS:          # PeakFormer checkpoints (OWN_PF: comma-separated names in the models dataset)
         from .peakformer import PFEnsemble
         PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])

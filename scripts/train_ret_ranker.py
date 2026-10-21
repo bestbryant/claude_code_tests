@@ -3,6 +3,8 @@
 Class-2 queries are kept only when the truth is reachable through a non-training source (COCONUT or PubChemLite),
 because a class-2 answer is by definition not a training structure.
 Usage: python scripts/train_ret_ranker.py <train_rows> <val_rows> <model_out.txt> [--no-prior] [--no-fp] [pool_dir]
+--source-blind: no source membership or documentation (in_coco / in_bio / PubChemLite / PubChem / LOTUS / priors), the
+second ranker whose top-1 is inserted at rank 2 (OWN_R2 in casmi/run_own.py); with --no-membership also no in_train / lib_n.
 DOC_W=<weights.parquet> [DOC_ALPHA=a]: documentation-shift weights for class-2 queries (casmi/docw.py).
 """
 import os, sys
@@ -40,6 +42,8 @@ feats = [f for f in FEATS + PCL_COLS + PC_COLS + ['in_bio'] + LT_COLS + FP_FEATS
          if f in TR.columns and f in VA.columns]
 if '--no-prior' in flags:
     feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS[1:] + PC_COLS + LT_COLS + ['in_coco']]
+if '--source-blind' in flags:
+    feats = [f for f in feats if f not in PRIOR_COLS + PCL_COLS + PC_COLS + LT_COLS + ['in_coco', 'in_bio']]
 if '--no-membership' in flags:
     feats = [f for f in feats if f not in ('in_train', 'lib_n')]
 if '--no-fp' in flags:
