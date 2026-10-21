@@ -75,6 +75,10 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   (drug-like vendor compounds - Enveda-180 is an Enamine library). -> full PubChem tier built on Kaggle (internet
   kernel, local disk too small), two-pass channel; Zenodo-extra probe (3,717 Enveda-180 structures absent from
   train, mostly without PubChem CID) on Oct 22.
+- Full PubChem tier (kernels/casmi26-pc-full-build, internet kernel, 17 min): 109.8M single-component net-neutral
+  compounds of 80-1500 Da, 5.9 GB SMILES; channel casmi/pcchannel.propose_full (pass 1: f.z over the Morgan r2 block
+  for the whole 10 ppm window, top 2000; pass 2: full PeakFormer); probe casmi26-pcfull-only, combined kernels
+  casmi26-own-s2v11lpcf-ad / -fx.
 - v11l 0.320 vs v10 0.314 (PeakFormer + alpha 1: +0.006, inside LB noise); inserting the documented-tier proposals
   costs 0.013 (0.307): no proposals from that tier until the tier is right.
 
