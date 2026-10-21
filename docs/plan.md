@@ -60,11 +60,23 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-20 | casmi26-fprobe-train v3 | public 0.451 lineage restricted to training structures | 0.155 |
 | 10-20 | casmi26-fprobe-coco v3 | public lineage restricted to COCONUT-not-train | 0.252 |
 | 10-20 | casmi26-fprobe-other v3 | public lineage restricted to other candidates | 0.057 |
-| 10-21 | casmi26-pc-only v1 | PROBE: PubChem channel only (tier outside the pool, PeakFormer local epoch 2) | pending |
-| 10-21 | casmi26-probe5-other v1 | PROBE: own alpha-0.5 lists restricted to other candidates (pool v4) | pending |
-| 10-21 | casmi26-own-s2v10 v1 | v10: full-library matching + alpha 0.5, stage 2 GLACIER | pending |
-| 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | pending |
-| 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | pending |
+| 10-21 | casmi26-pc-only v1 | PROBE: PubChem channel only (documented tier outside the pool, PeakFormer local epoch 2) | 0.006 |
+| 10-21 | casmi26-probe5-other v1 | PROBE: own alpha-0.5 lists restricted to other candidates (pool v4) | 0.007 |
+| 10-21 | casmi26-own-s2v10 v1 | v10: full-library matching + alpha 0.5, stage 2 GLACIER | 0.314 |
+| 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | 0.320 |
+| 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | 0.307 |
+
+## Lessons from the Oct 21 submissions
+- "Other" answers (not train, not COCONUT) are where the public lineage leads most clearly: its lists restricted to
+  them score 0.057; ours 0.007 (pool v4: PubChemLite + ChEBI/LMSD) + 0.006 (documented PubChem tier, sid >= 5 or
+  pmid >= 1). The public PubChem tier is (near-)complete PubChem (6.7 GB; 3.5% of a random sample has a PubMed
+  article) and its channel ranks the WHOLE 10 ppm window by spectral f.z first (ECFP4-block first pass, top 5000,
+  then full fingerprint + 0.25 pop). Our documentation cut removed exactly the long tail where these answers are
+  (drug-like vendor compounds - Enveda-180 is an Enamine library). -> full PubChem tier built on Kaggle (internet
+  kernel, local disk too small), two-pass channel; Zenodo-extra probe (3,717 Enveda-180 structures absent from
+  train, mostly without PubChem CID) on Oct 22.
+- v11l 0.320 vs v10 0.314 (PeakFormer + alpha 1: +0.006, inside LB noise); inserting the documented-tier proposals
+  costs 0.013 (0.307): no proposals from that tier until the tier is right.
 
 ## Lessons from the Oct 19 submissions
 - GLACIER stage 2 adds +0.010 over its stage 1 (0.307 -> 0.317); ChEBI/LMSD membership (pool v4, in_bio) adds
