@@ -93,8 +93,10 @@ simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib g
 
 ## Kernel status (Oct 21, 09:50 UTC)
 - casmi26-enam-only v1 complete (400 / 400 lists, channel on every molecule, 91 min) -> Oct 22 probe.
-- casmi26-own-s2v11lenam v1 pushed 09:34, casmi26-own-s2v12 v1 pushed 09:48, casmi26-own-s2v12purch queued
-  (/home/user/work/push_queue.sh; CPU slots shared with another session on the account).
+- Complete with clean logs (400 / 400 lists): casmi26-own-s2v11lenam (60 min), casmi26-own-s2v12 (66 min; lists differ
+  from v11l for 399 / 400, top-1 for 12), casmi26-own-s2v12purch (62 min), casmi26-own-s2v12purchrr (51 min),
+  casmi26-purch-only-rr (89 min, re-ranker on all 400 molecules, top-1 differs from the PeakFormer-only Enamine probe for
+  244 / 400), casmi26-probe12-coco pushed. Oct 22 slots: enam-only, v12, v12purchrr, v12purch, pcfull-only2.
 - casmi26-pc-calibrun (full-tier calibration) died after ~5 h with an empty log (probably memory: per-worker
   fingerprint caches over 400 windows of up to 150k compounds) -> not re-run; the Enamine tier replaced the full tier
   as the main channel and its policy is calibrated locally (scripts/sim_enam_policy.py).
