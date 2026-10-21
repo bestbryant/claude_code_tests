@@ -39,7 +39,7 @@ def propose(tier, pfs, M, spectra, n_pop=2000, lam=0.25):
     cos, fz = pfs.score(spectra, [-1 - int(i) for i in idx], smi)        # negative ids: never collide with pool ids
     zs = lambda v: (v - v.mean()) / (v.std() or 1.0)
     f = pd.DataFrame(dict(smiles=smi, cid=np.asarray(tier.cid[idx]).astype(np.int64), pop=tier.pop[idx], pc_cos=cos,
-                          pc_fz=fz))
+                          pc_fz=fz, mass=tier.mass[idx]))
     f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values) + lam * f['pop'].values
     return f.sort_values('pc_score', ascending=False).reset_index(drop=True)
 
@@ -151,3 +151,75 @@ def propose_full(tier, pfs, M, spectra, n1=2000, exclude=None, lam=0.0, pop_unio
                           pc_fz=fz))
     f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values) + lam * f['pop'].values
     return finalize(f.sort_values('pc_score', ascending=False).reset_index(drop=True), exclude)
+
+
+# no documentation column: a simulated truth's counts are summed per key, tier rows' per CID (and documentation-shifted)
+RR_FEATS = ['pc_score', 'fz_z', 'cos_z', 'fz_r', 'cos_r', 'fz_gap', 'cos_gap', 'an_best', 'an_tan_best', 'an_sum',
+            'an_top1_tan', 'an_r', 'frag', 'frag_n', 'frag_r', 'ppm', 'ha', 'n_win']
+
+
+def rerank_feats(f, Q, M, L, pool_fp, key_idx, hide=(), k=100, n_analog=20, an_pow=3.0):
+    """Evidence for the channel's best k proposals (f: propose() frame sorted by pc_score) beyond the PeakFormer:
+    spectral analogs (library spectra similar to the query -> Tanimoto of their structures to each proposal, as the
+    pool's an_* features in casmi/retrieval.py), fragment explanation of the query peaks, mass error, size and
+    documentation. Q: cleaned query spectra dict(mz, it, pol); L: AnalogLib; pool_fp / key_idx: packed Morgan r2 2048
+    of the pool and key -> pool row (analog structures are training structures); hide: keys excluded from the analog
+    search (the simulated truth). Returns the top-k frame with RR_FEATS columns."""
+    from rdkit import Chem
+    from rdkit.Chem import rdFingerprintGenerator
+    from .frag import fragments, annotate
+    from .retrieval import tanimoto_packed
+    n_win = len(f)
+    f = f.head(k).reset_index(drop=True).copy()
+    n = len(f)
+    zs = lambda v: (v - v.mean()) / (v.std() or 1.0)
+    f['fz_z'], f['cos_z'] = zs(f.pc_fz.values), zs(f.pc_cos.values)
+    f['fz_r'] = f.pc_fz.rank(ascending=False).values; f['cos_r'] = f.pc_cos.rank(ascending=False).values
+    f['fz_gap'] = f.pc_fz - f.pc_fz.max(); f['cos_gap'] = f.pc_cos - f.pc_cos.max()
+    gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+    mols = [Chem.MolFromSmiles(s) for s in f.smiles]
+    C = np.stack([np.packbits(gen.GetFingerprintAsNumPy(m).astype(np.uint8)) if m is not None else np.zeros(256, np.uint8)
+                  for m in mols]) if n else np.zeros((0, 256), np.uint8)
+    agg = {}
+    for q in Q:
+        for j, s, _ in L.search(q['mz'], q['it'], M, q['pol'], exclude_keys=set(hide), top=40):
+            kk = L.key[j]
+            if kk not in agg or s > agg[kk]:
+                agg[kk] = s
+    an = sorted(agg.items(), key=lambda x: -x[1])[:n_analog]
+    an_best = np.zeros(n); an_tan = np.zeros(n); an_sum = np.zeros(n); an_top1 = np.zeros(n)
+    for r, (kk, s) in enumerate(an):
+        pi = key_idx.get(kk)
+        if pi is None or n == 0:
+            continue
+        t = tanimoto_packed(np.asarray(pool_fp[pi]), C)
+        v = (s ** an_pow) * t
+        an_best = np.maximum(an_best, v); an_tan = np.maximum(an_tan, t); an_sum += v
+        if r == 0:
+            an_top1 = t
+    f['an_best'], f['an_tan_best'], f['an_sum'], f['an_top1_tan'] = an_best, an_tan, an_sum, an_top1
+    f['an_r'] = pd.Series(an_best).rank(ascending=False).values if n else []
+    peaks = {}
+    pos = [q for q in Q if q['pol'] == 0]
+    for q in (pos if pos else Q):
+        for x, y in zip(np.round(q['mz'], 3), q['it']):
+            peaks[x] = max(peaks.get(x, 0.0), y)
+    qmz = np.array(sorted(peaks)); qit = np.array([peaks[x] for x in qmz]); tot = (qit ** 2).sum()
+    keep = qmz < M - 0.5
+    qmz, qit = qmz[keep], qit[keep]
+    frag = np.zeros(n); frag_n = np.zeros(n)
+    for c, m in enumerate(mols):
+        if m is None or m.GetNumHeavyAtoms() > 80 or len(qmz) == 0:
+            continue
+        fr = fragments(m)
+        if not fr:
+            continue
+        hit = np.array([len(a) > 0 for a in annotate(fr, qmz, positive=bool(pos), tol=0.01, hshift=(-2, -1, 0, 1))])
+        frag[c] = (qit[hit] ** 2).sum() / max(tot, 1e-9); frag_n[c] = hit.mean()
+    f['frag'], f['frag_n'] = frag, frag_n
+    f['frag_r'] = pd.Series(frag).rank(ascending=False).values if n else []
+    f['ha'] = [m.GetNumHeavyAtoms() if m is not None else 0 for m in mols]
+    from rdkit.Chem.Descriptors import ExactMolWt      # RDKit for every row (tier masses are PubChem's, rounded)
+    f['ppm'] = [(ExactMolWt(m) - M) / M * 1e6 if m is not None else 0.0 for m in mols]
+    f['n_win'] = float(n_win)
+    return f

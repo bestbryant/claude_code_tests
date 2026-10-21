@@ -16,7 +16,7 @@ from .build import build_analog_lib
 from .own import predict, stage1
 from .retrieval import Retrieval
 
-R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = SECOND = None
+R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = SECOND = RERANK = None
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
@@ -140,6 +140,12 @@ def _pc_one(args):
             return mid, pr
         from .pcchannel import finalize          # distinct metric identities (stereo / tautomer duplicates)
         pr = propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam)
+        if RERANK is not None and len(pr):       # PC_RERANK: the best 100 re-ordered with analog / fragment evidence
+            from .pcchannel import rerank_feats
+            Q, _, _ = query_from_rows(TEST[TEST.molecule_id == mid])
+            top = rerank_feats(pr, Q, M, R.L, R.fp, R.key_idx)
+            top['rr'] = RERANK[0].predict(top[RERANK[1]].astype(float).values)
+            pr = pd.concat([top.sort_values('rr', ascending=False)[pr.columns], pr.iloc[len(top):]], ignore_index=True)
         f = (FRAMES or {}).get(mid)
         # rel: best window f.z minus best stage-1 pool f.z (single PeakFormer: both raw, as in scripts/sim_enam_policy.py)
         rel = (float(pr.pc_fz.max() - f.pf_bern.max()) if (len(pr) and f is not None and len(f) and 'pf_bern' in f
@@ -207,7 +213,7 @@ def pc_channel(lists, frames, procs):
 
 
 def main(argv):
-    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER, PC_EXCL, SECOND
+    global R, FPS, PFS, RK, FEATS, TEST, DREAMS, TIER, PC_EXCL, SECOND, RERANK
     test_p, train_p, res, mdir, out = argv[:5]
     work = argv[5] if len(argv) > 5 else '/kaggle/working/own'
     procs = int(argv[6]) if len(argv) > 6 else 4
@@ -280,6 +286,9 @@ def main(argv):
             K = pd.read_parquet(os.environ['PC_EXCLUDE'])
             PC_EXCL |= set(K.key[K.src.isin(os.environ.get('PC_EXCLUDE_SRC', 'train,coco').split(','))])
         print('PubChem channel excludes', len(PC_EXCL), 'keys', flush=True)
+        if os.environ.get('PC_RERANK'):          # channel re-ranker (scripts/train_channel_rr.py) in the models dataset
+            RERANK = (lgb.Booster(model_file=f"{mdir}/{os.environ['PC_RERANK']}.txt"),
+                      open(f"{mdir}/{os.environ['PC_RERANK']}_feats.txt").read().split())
         os.environ['OWN_MODELS'] = mdir
         res_ = pc_channel(res_, frames, procs)
     if os.environ.get('ZEN_PATH'):          # Zenodo-extra library channel (casmi/zen.py)
