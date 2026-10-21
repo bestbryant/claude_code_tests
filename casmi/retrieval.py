@@ -8,6 +8,7 @@ Channels
 Simulation controls: `hide_keys` removes structures from library + analog search (class 2), `drop_keys` also
 removes them from the candidate pool (class 3), `hide_rows` removes specific library spectra (class 1).
 """
+import os
 import numpy as np
 import pandas as pd
 from rdkit import Chem, RDLogger
@@ -27,6 +28,17 @@ PCL_COLS = ['in_pcl', 'pcl_pubmed', 'pcl_patent', 'pcl_anno', 'pcl_bio', 'pcl_fo
 PC_COLS = ['pc_sid', 'pc_pmid', 'pc_patent', 'pc_ncid']      # PubChem documentation counts (log1p)
 LT_COLS = ['lt_n_org', 'lt_n_ref', 'lt_n_plant', 'lt_n_pfam', 'lt_n_pgen', 'lt_n_fungi', 'lt_n_bact',
            'lt_plant_frac']                                  # LOTUS occurrences (pool v5, scripts/add_lotus.py)
+# PubChem depositors per structure (pool_dir/vendor.parquet, scripts/build_vendor_feats.py): the test molecules are
+# physical samples (Enamine catalogue, bioactive / natural-product vendor libraries)
+VENDORS = {'v_enamine': 'Enamine', 'v_mce': 'MedChemexpress MCE', 'v_targetmol': 'TargetMol', 'v_selleck': 'Selleck Chemicals',
+           'v_biocrick': 'BioCrick', 'v_chemfaces': 'ChemFaces', 'v_abmole': 'AbMole Bioscience',
+           'v_apexbio': 'ApexBio Technology', 'v_adooq': 'Adooq BioScience', 'v_biopurify': 'Biopurify Phytochemicals',
+           'v_tocris': 'Tocris Bioscience', 'v_sigma': 'Sigma-Aldrich', 'v_tci': 'TCI (Tokyo Chemical Industry)',
+           'v_scbt': 'Santa Cruz Biotechnology, Inc.', 'v_chemscene': 'AbaChemScene', 'v_biosynth': 'Biosynth',
+           'v_akos': 'AKos Consulting & Solutions', 'v_zinc': 'ZINC', 'v_mcule': 'Mcule', 'v_molport': 'Molport'}
+BIOACT = ['v_mce', 'v_targetmol', 'v_selleck', 'v_biocrick', 'v_chemfaces', 'v_abmole', 'v_apexbio', 'v_adooq',
+          'v_biopurify', 'v_tocris']
+VEND_COLS = list(VENDORS) + ['v_bioact', 'v_nsrc']
 
 
 def tanimoto_packed(a, B):
@@ -39,6 +51,12 @@ def tanimoto_packed(a, B):
 class Retrieval:
     def __init__(self, pool_dir, analog_lib: AnalogLib, prior_path=None, ppm=10.0, min_da=0.002, lib_full=None):
         self.P = pd.read_parquet(f'{pool_dir}/pool.parquet')
+        if os.path.exists(f'{pool_dir}/vendor.parquet'):         # depositor columns, rows aligned with pool.parquet
+            V = pd.read_parquet(f'{pool_dir}/vendor.parquet')
+            assert len(V) == len(self.P), ('vendor.parquet does not match the pool', len(V), len(self.P))
+            for c in VEND_COLS:
+                if c in V.columns:
+                    self.P[c] = V[c].values
         self.fp = np.load(f'{pool_dir}/pool_fp.npy', mmap_mode='r')
         self.mass = self.P.mass.values
         self.key_idx = {k: i for i, k in enumerate(self.P.key.values)}
@@ -159,6 +177,9 @@ class Retrieval:
                 df[c] = self.P[c].values[idx].astype(float)
         if 'in_bio' in self.P.columns:   # ChEBI / LIPID MAPS membership (pool v4)
             df['in_bio'] = self.P.in_bio.values[idx].astype(float)
+        for c in VEND_COLS:          # PubChem depositors (vendor.parquet)
+            if c in self.P.columns:
+                df[c] = self.P[c].values[idx].astype(float)
         for c in LT_COLS:            # LOTUS occurrence counts (pool v5)
             if c in self.P.columns:
                 df[c] = self.P[c].values[idx].astype(float)

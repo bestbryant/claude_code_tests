@@ -24,9 +24,14 @@ if 'pf_cos' in D.columns and PF_FREL[0] not in D.columns:          # within-form
     if 'formula' not in D.columns:
         D['formula'] = pd.read_parquet(f'{W}/pool4/pool.parquet', columns=['formula']).formula.to_numpy(dtype=object)[D.pid.values]
     formula_rel(D, PF_FREL_SRC)
+from casmi.retrieval import VEND_COLS                           # vendor-deposit columns (pool4/vendor.parquet by pid)
+if os.path.exists(f'{W}/pool4/vendor.parquet') and VEND_COLS[0] not in D.columns:
+    V = pd.read_parquet(f'{W}/pool4/vendor.parquet')
+    for c in VEND_COLS:
+        D[c] = V[c].values[D.pid.values].astype(float)
 q = D.drop_duplicates('qid').set_index('qid')
 t = D[D.label == 1].drop_duplicates('qid').set_index('qid')
-RW = pd.read_parquet(f'{W}/pool4/doc_w.parquet').set_index('key').w
+RW = pd.read_parquet(os.environ.get('CV_EVAL_W', f'{W}/pool4/doc_w.parquet')).set_index('key').w   # reporting weights
 qw = t.truth.map(RW).fillna(1).clip(0.02, 20).where(t.cls == 2)
 print('queries', len(q), 'cls2', int((q.cls == 2).sum()), 'ESS weighted cls2', round(qw.sum() ** 2 / (qw ** 2).sum(), 1), flush=True)
 fold = pd.Series(np.random.default_rng(0).integers(0, 5, len(q)), index=q.index)
@@ -49,7 +54,15 @@ configs = {'v4c': (base, 0.0), 'v5w': (base, 1.0), 'v4c+frel': (base + FREL_FEAT
            'a0.5+dr': (base + DR_FEATS, 0.5), 'a0+dr': (base + DR_FEATS, 0.0),
            'a0.5+dr-an': ([f for f in base if not f.startswith('an_')] + DR_FEATS, 0.5),
            'a1+pf': (base + PF_FEATS, 1.0), 'a1': (base, 1.0),
-           'a0.5+pf': (base + PF_FEATS, 0.5), 'a0.5+pf+frel': (base + PF_FEATS + PF_FREL, 0.5), 'a0.5+pf-fp': ([f for f in base if f not in FP_FEATS] + PF_FEATS, 0.5)}
+           'a0.5+pf': (base + PF_FEATS, 0.5), 'a0.5+pf+frel': (base + PF_FEATS + PF_FREL, 0.5), 'a0.5+pf-fp': ([f for f in base if f not in FP_FEATS] + PF_FEATS, 0.5),
+           'a1+pf+vend': (base + PF_FEATS + VEND_COLS, 1.0),
+           'a1+pf+vbio': (base + PF_FEATS + ['v_enamine', 'v_bioact', 'v_mce', 'v_targetmol', 'v_selleck'], 1.0),
+           'a0.5+pf+vend': (base + PF_FEATS + VEND_COLS, 0.5)}
+# class-2 weight tables other than the documentation shift (casmi/docw.py): vendor-purchasable target
+WTAB = {'vf+pf+vend': f'{W}/pool4/vf_w.parquet', 'vfd05+pf+vend': f'{W}/pool4/vfd05_w.parquet',
+        'vfd1+pf+vend': f'{W}/pool4/vfd1_w.parquet', 'vf+pf': f'{W}/pool4/vf_w.parquet'}
+configs.update({'vf+pf+vend': (base + PF_FEATS + VEND_COLS, 1.0), 'vfd05+pf+vend': (base + PF_FEATS + VEND_COLS, 1.0),
+                'vfd1+pf+vend': (base + PF_FEATS + VEND_COLS, 1.0), 'vf+pf': (base + PF_FEATS, 1.0)})
 sel = sys.argv[1:] or list(configs)
 for name in sel:
     feats, alpha = configs[name]
@@ -57,7 +70,7 @@ for name in sel:
     for k in range(5):
         tr = D[D.fold != k]; c1 = tr[tr.cls == 1]
         T = pd.concat([tr, c1.assign(qid=c1.qid + 1_000_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
-        w = query_weights(T, f'{W}/pool4/doc_w.parquet', alpha) if alpha > 0 else None
+        w = query_weights(T, WTAB.get(name, f'{W}/pool4/doc_w.parquet'), alpha) if alpha > 0 else None
         m = lgb.train(params, lgb.Dataset(T[feats].astype(float).values, T.label.values, weight=w, group=T.groupby('qid', sort=False).size().values), ROUNDS)
         te = D.fold == k
         D.loc[te, 'p'] = m.predict(D.loc[te, feats].astype(float).values)

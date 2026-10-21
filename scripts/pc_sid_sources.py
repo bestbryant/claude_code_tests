@@ -9,12 +9,12 @@ import numpy as np, pandas as pd
 
 out = sys.argv[1]
 t0 = time.time()
-p = subprocess.Popen('curl -s https://ftp.ncbi.nlm.nih.gov/pubchem/Substance/Extras/SID-Map.gz | gunzip -c', shell=True,
+p = subprocess.Popen("curl -s https://ftp.ncbi.nlm.nih.gov/pubchem/Substance/Extras/SID-Map.gz | gunzip -c"
+                     " | awk -F'\\t' 'NF >= 4 && $4 != \"\" {print $4 \"\\t\" $2}'", shell=True,
                      stdout=subprocess.PIPE, bufsize=1 << 24)
 codes, cids, srcs = {}, [], []
-for ch in pd.read_csv(p.stdout, sep='\t', header=None, usecols=[1, 3], names=['sid', 'src', 'reg', 'cid'],
-                      dtype={'src': str, 'cid': 'float64'}, chunksize=10_000_000, quoting=3, na_filter=True,
-                      on_bad_lines='skip'):
+for ch in pd.read_csv(p.stdout, sep='\t', header=None, names=['cid', 'src'], dtype={'src': str, 'cid': 'float64'},
+                      chunksize=10_000_000, quoting=3, on_bad_lines='skip'):
     ch = ch[ch.cid.notna()]
     u = ch.src.unique()
     for s in u:

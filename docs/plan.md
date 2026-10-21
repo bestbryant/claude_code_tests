@@ -91,6 +91,21 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
 
+## Purchasable-compound prior (Oct 21): the test molecules are physical samples Enveda bought
+Same depositor analysis for Enveda's natural-product examples (enveda-np-examples, 250 structures, 99.6% COCONUT):
+MedChemExpress 96%, TargetMol 94%, BioCrick 79%, ChemFaces 62%, Selleck 60%, AbMole 58%, ApexBio 55% -- against
+2.3% / 3.8% / 1.0% / 1.0% / 0.1% / 0.2% / 0.1% of COCONUT-not-train (likelihood ratios 24-280). Union "purchasable"
+flag (Enamine or one of 10 bioactive / NP vendors; pool4/vendor.parquet, scripts/build_vendor_feats.py): npx 98.8%,
+enveda-180 92.3%, other training libraries 36.7%, reachable non-train 19.9% (COCONUT 6.1% = 27k of 450k; PubChemLite
+35.6%; ChEBI/LMSD 13.2%). Bioactive-vendor structures: 110k keys, 55.7k outside the pool.
+Stage-1 CV with the depositor columns (v_* , v_bioact, v_nsrc; alpha-1 doc weights): all .8939 -> .8965, cls1 .8836
+-> .8831, cls2 .8991 -> .9033, cls2w .7103 -> .7075 (noise). By truth: COCONUT class-2 truths WITH a bioactive vendor
+.9306 -> .9439 (n 1021) / .9652 -> .9735 (n 849, also Enamine), WITHOUT .8615 -> .8589 (n 1755): the columns act as
+a prior learned at the simulation's 54% purchasable base rate. Conflict found: the alpha-1 documentation weights give
+purchasable class-2 truths only 13% of the class-2 weight (they are documented), while Enveda's real samples are ~99%
+purchasable. -> weight tables with a vendor target: vf (w = 0.97 / 0.54 for purchasable truths, 0.03 / 0.46 otherwise;
+ESS ~2.2k), vfd05 / vfd1 (vf x doc weight^0.5 / ^1); CV evaluated under the vf target (CV_EVAL_W).
+
 ## Second-ranker rank-2 insertion (other-gap item 4, Oct 21) -- refuted offline
 Source-blind stage-1 ranker (scripts/train_ret_ranker.py --source-blind: no in_coco / in_bio / PubChemLite / PubChem /
 LOTUS / priors; alpha 1, ret10pl rows) and the same without in_train / lib_n (--no-membership); its top-1 moved to rank 2
