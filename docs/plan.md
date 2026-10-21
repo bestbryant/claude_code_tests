@@ -91,6 +91,14 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
 
+## Kernel status (Oct 21, 09:50 UTC)
+- casmi26-enam-only v1 complete (400 / 400 lists, channel on every molecule, 91 min) -> Oct 22 probe.
+- casmi26-own-s2v11lenam v1 pushed 09:34, casmi26-own-s2v12 v1 pushed 09:48, casmi26-own-s2v12purch queued
+  (/home/user/work/push_queue.sh; CPU slots shared with another session on the account).
+- casmi26-pc-calibrun (full-tier calibration) died after ~5 h with an empty log (probably memory: per-worker
+  fingerprint caches over 400 windows of up to 150k compounds) -> not re-run; the Enamine tier replaced the full tier
+  as the main channel and its policy is calibrated locally (scripts/sim_enam_policy.py).
+
 ## Purchasable-compound prior (Oct 21): the test molecules are physical samples Enveda bought
 Same depositor analysis for Enveda's natural-product examples (enveda-np-examples, 250 structures, 99.6% COCONUT):
 MedChemExpress 96%, TargetMol 94%, BioCrick 79%, ChemFaces 62%, Selleck 60%, AbMole 58%, ApexBio 55% -- against
