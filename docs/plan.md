@@ -263,6 +263,8 @@ Same check with the epoch-1 checkpoint (250 truths, median window 1,313): n_pop 
 truth is a training-like structure among PubChem decoys), but the channel is strong -> LB probe casmi26-pc-only
 (every list = the channel's top 25; epoch-2 checkpoint, n_pop 5000, lam 0.05) replaces the s2src slot on Oct 21; it
 is directly comparable to the public lineage's "other" 0.057.
+Final local PeakFormer (same check, 250 truths): lam 0 -> MRR 0.485 (weighted 0.581), lam 0.05 -> 0.540 (0.547),
+lam 0.1 -> 0.574 (0.540), lam 0.2 -> 0.602 (0.505); n_pop 5000 = 20000 (windows rarely exceed 5000).
 Placement: list-confidence model (casmi/pother.py, scripts/train_pother.py): p(answer outside the pool) from the
 stage-1 top-30 list (top score, margins in score SDs, leading candidates' evidence and sources), trained on simulated
 lists with and without the truth; CV AUC 0.882 (doc-weighted class 2 0.737). Policy simulation (sim lists, assumed
