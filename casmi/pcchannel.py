@@ -58,3 +58,54 @@ def insert(final, props, slots=(4, 8, 12, 16, 20), k=5, key14=None):
         out.insert(pos, [s, float('nan'), kk])
         have.add(kk); added += 1
     return out[:25]
+
+
+class FullTier:
+    """Full PubChem tier (kernels/casmi26-pc-full-build): directory with mass.npy (float32, sorted), cid.npy,
+    smi_off.npy, smi.npy; no documentation counts."""
+
+    def __init__(self, d):
+        self.mass = np.load(f'{d}/mass.npy', mmap_mode='r'); self.cid = np.load(f'{d}/cid.npy', mmap_mode='r')
+        self.off = np.load(f'{d}/smi_off.npy', mmap_mode='r'); self.smi = np.load(f'{d}/smi.npy', mmap_mode='r')
+
+    def smiles(self, i):
+        return bytes(self.smi[self.off[i]:self.off[i + 1]]).decode()
+
+    def window(self, M, ppm=10.0, cap=60000):
+        tol = max(M * ppm * 1e-6, 0.002)
+        lo, hi = np.searchsorted(self.mass, M - tol), np.searchsorted(self.mass, M + tol)
+        return np.arange(lo, min(hi, lo + cap))
+
+
+def propose_full(tier, pfs, M, spectra, n1=2000):
+    """Two-pass proposals from the full tier: pass 1 scores every window compound by f.z over its Morgan r2 block
+    (casmi/richfp.py block 0, cheap); the best n1 get the full PeakFormer score; score = z(f.z) + z(cos)."""
+    from rdkit import Chem
+    from .peakformer import embed_query
+    idx = tier.window(M)
+    cols = ['smiles', 'cid', 'pop', 'pc_cos', 'pc_fz', 'pc_score']
+    if len(idx) == 0 or pfs is None:
+        return pd.DataFrame(columns=cols)
+    m0 = pfs.ms[0] if hasattr(pfs, 'ms') else pfs
+    _, z = embed_query(m0.m, spectra, m0.dev)
+    zb = np.zeros(4096, np.float32)
+    kept = m0.km[:4096]
+    zb[kept >= 0] = z.numpy()[kept[kept >= 0]]
+    from .richfp import _gens
+    gen = _gens()[0]
+    smi = [tier.smiles(i) for i in idx]
+    s1 = np.full(len(idx), -np.inf, np.float32)
+    for j, s in enumerate(smi):
+        mol = Chem.MolFromSmiles(s)
+        if mol is not None:
+            s1[j] = zb[list(gen.GetFingerprint(mol).GetOnBits())].sum()
+    ok = np.isfinite(s1)
+    if not ok.any():
+        return pd.DataFrame(columns=cols)
+    top = np.argsort(-s1)[:min(n1, int(ok.sum()))]
+    ssel = [smi[j] for j in top]
+    cos, fz = pfs.score(spectra, [-1 - int(idx[j]) for j in top], ssel)
+    zs = lambda v: (v - v.mean()) / (v.std() or 1.0)
+    f = pd.DataFrame(dict(smiles=ssel, cid=np.asarray(tier.cid[idx[top]]).astype(np.int64), pop=0.0, pc_cos=cos, pc_fz=fz))
+    f['pc_score'] = zs(f.pc_fz.values) + zs(f.pc_cos.values)
+    return f.sort_values('pc_score', ascending=False).reset_index(drop=True)

@@ -117,12 +117,14 @@ def stage2(frames, mdir, work):
 def _pc_one(args):
     """PubChem proposals for one molecule (casmi/pcchannel.py)."""
     from .own import query_from_rows
-    from .pcchannel import propose
+    from .pcchannel import FullTier, propose, propose_full
     mid, n_pop, lam = args
     try:
         _, raw, M = query_from_rows(TEST[TEST.molecule_id == mid])
         if not np.isfinite(M):
             return mid, None
+        if isinstance(TIER, FullTier):
+            return mid, propose_full(TIER, PFS, M, raw, n1=int(os.environ.get('PC_N1', '2000'))).head(25)
         return mid, propose(TIER, PFS, M, raw, n_pop=n_pop, lam=lam).head(25)
     except Exception as e:
         print('pc fail', mid, repr(e), flush=True)
@@ -223,8 +225,8 @@ def main(argv):
     else:
         frames = {}
     if os.environ.get('PC_TIER'):
-        from .pcchannel import PubChemTier
-        TIER = PubChemTier(os.environ['PC_TIER'])
+        from .pcchannel import FullTier, PubChemTier
+        TIER = FullTier(os.environ['PC_TIER']) if os.path.isdir(os.environ['PC_TIER']) else PubChemTier(os.environ['PC_TIER'])
         if PFS is None:
             from .peakformer import PFEnsemble
             PFS = PFEnsemble([f'{mdir}/{n}' for n in os.environ.get('OWN_PF', 'pf_model.pt').split(',')])
