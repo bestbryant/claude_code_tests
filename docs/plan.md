@@ -119,6 +119,15 @@ truth's best-analog Tanimoto has median 0.58 vs 0.22 for decoys (Enamine series)
 +0.082 / +0.127 at pi = 0.05 / 0.1 / 0.2 / 0.3 (PeakFormer only: +0.009 / +0.026 / +0.061 / +0.097). Final model
 pc_rerank_v1 (train + val, 2,701 queries); kernels casmi26-own-s2v12purchrr (v12 + purchasable channel + re-ranker) and
 casmi26-purch-only-rr (probe: re-ranked channel only).
+Leakage audit (workflow wf_b7f8c93a-7df, 3 auditors x 2 skeptics, 47 agents): 22 findings, none a material inflation.
+No feature marks the appended truth (fake-truth test: an unrelated Enamine training structure re-ranks at chance, MRR
+0.013); splits clean (cr_train truths split 2, cr_val split 1, PeakFormer split 0); misses counted in both orders;
+hide={truth} removes every same-structure analog for the unreachable subset. Small effects: window still centred on the
+truth mass (+0.003), seed choice (+0.003; 5 seeds 0.832-0.844), query make-up vs test (gain -0.006 to -0.016), pool vs
+PubChem SMILES of the truth (-0.004, offline pessimistic), PC_GATE ignored (-0.005). 5-fold CV on 1,489 train
+unreachable queries: +0.214. Decisive proxy under kernel conditions: 222 Zenodo Enveda/Enamine compounds absent from
+train (own spectra, PubChem SMILES, hide=()): analog evidence transfers (P(an_r = 1) 0.640 vs 0.655 in the simulation)
+and the re-ranker lifts PF-only 0.275 -> 0.668 (the PeakFormer alone suffers there from the Q-TOF vs timsTOF shift).
 
 ## PeakFormer SBAL runs e/f/g (Kaggle CPU, 11 h, Oct 21)
 Internal validation f.z MRR / sum MRR at the last epoch: e 0.639 / 0.649, f 0.631 / 0.627, **g 0.654 / 0.658** (larger
