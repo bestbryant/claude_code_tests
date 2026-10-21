@@ -99,6 +99,25 @@ simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib g
   fingerprint caches over 400 windows of up to 150k compounds) -> not re-run; the Enamine tier replaced the full tier
   as the main channel and its policy is calibrated locally (scripts/sim_enam_policy.py).
 
+## Channel re-ranker (Oct 21): analog evidence lifts the purchasable channel to top-1 75%
+casmi/pcchannel.rerank_feats on the channel's best 100 proposals: PeakFormer z / ranks / gaps, spectral analogs (top-20
+library spectra by analog search, truth key hidden -> Tanimoto of their structures to each proposal, an_* as in the pool),
+fragment explanation, RDKit ppm, heavy atoms (no documentation column: a simulated truth's counts are per key, tier rows'
+per CID). Rows: scripts/channel_rows.py on the purchasable tier, simulated class-2 queries with Enamine truths (train
+2,277 / val 484; workers recycled every 40 queries after OOM kills). LambdaRank (scripts/train_channel_rr.py):
+| validation | PeakFormer only MRR / top-1 | re-ranked MRR / top-1 |
+|---|---|---|
+| all Enamine truths (484) | 0.604 / 0.475 | 0.787 / 0.705 |
+| unreachable (236) | 0.666 / 0.525 | **0.844 / 0.754** |
+Leak found and fixed: the simulation centred the query mass on the truth's exact mass (truth ppm = 0); with the
+precursor-derived mass (as at test time, query_from_rows) the first model's 0.885 dropped to 0.844 (without ppm 0.839).
+Exact analog duplicates of the truth (another InChIKey-14 of the same structure in the library) are rare (0.4-1.4%); the
+truth's best-analog Tanimoto has median 0.58 vs 0.22 for decoys (Enamine series). Gain led by an_r (50%) and fz_gap
+(28%). Policy re-check with the re-ranked channel ranks (sim_enam_rr.parquet): agg 15 / promo 60 -> +0.014 / +0.036 /
++0.082 / +0.127 at pi = 0.05 / 0.1 / 0.2 / 0.3 (PeakFormer only: +0.009 / +0.026 / +0.061 / +0.097). Final model
+pc_rerank_v1 (train + val, 2,701 queries); kernels casmi26-own-s2v12purchrr (v12 + purchasable channel + re-ranker) and
+casmi26-purch-only-rr (probe: re-ranked channel only).
+
 ## PeakFormer SBAL runs e/f/g (Kaggle CPU, 11 h, Oct 21)
 Internal validation f.z MRR / sum MRR at the last epoch: e 0.639 / 0.649, f 0.631 / 0.627, **g 0.654 / 0.658** (larger
 model, 45 MB) vs local d 0.631 / 0.630 and a 0.651 / 0.650. Next: pf features from g alone on the v12 rows (ret12g,
