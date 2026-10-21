@@ -128,6 +128,13 @@ PubChem SMILES of the truth (-0.004, offline pessimistic), PC_GATE ignored (-0.0
 unreachable queries: +0.214. Decisive proxy under kernel conditions: 222 Zenodo Enveda/Enamine compounds absent from
 train (own spectra, PubChem SMILES, hide=()): analog evidence transfers (P(an_r = 1) 0.640 vs 0.655 in the simulation)
 and the re-ranker lifts PF-only 0.275 -> 0.668 (the PeakFormer alone suffers there from the Q-TOF vs timsTOF shift).
+Confidence trigger (scripts/eval_rr_policy.py, train-only re-ranker pc_rerank_v1t, answer-present windows from
+scripts/channel_rows.py present mode with class-1 truths' library spectra kept): rr_top = best re-ranker score of the
+window; present p90 / p95 = 3.14 / 3.79. B slots if rel > 15 or rr_top > 3.14, rank-1 promotion if rel > 60 or
+rr_top > 3.79: d_present -0.020, gains +0.011 / +0.043 / +0.106 / +0.170 at pi = 0.05 / 0.1 / 0.2 / 0.3 (rel only:
++0.014 / +0.036 / +0.082 / +0.127; the simulated main lists are stronger than the test's, so the displacement cost is
+overstated). Kernel casmi26-own-s2v12purchrr2 (PC_RERANK=pc_rerank_v1t PC_RR_AGG=3.14 PC_RR_PROMO=3.79) for Oct 23;
+choose between it and s2v12purchrr by the enam-only probe (pi).
 
 ## PeakFormer SBAL runs e/f/g (Kaggle CPU, 11 h, Oct 21)
 Internal validation f.z MRR / sum MRR at the last epoch: e 0.639 / 0.649, f 0.631 / 0.627, **g 0.654 / 0.658** (larger
