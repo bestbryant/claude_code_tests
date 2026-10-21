@@ -79,6 +79,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   compounds of 80-1500 Da, 5.9 GB SMILES; channel casmi/pcchannel.propose_full (pass 1: f.z over the Morgan r2 block
   for the whole 10 ppm window, top 2000; pass 2: full PeakFormer); probe casmi26-pcfull-only, combined kernels
   casmi26-own-s2v11lpcf-ad / -fx.
+- Ready for Oct 22 (trigger 00:04): zen-probe, pcfull-only, probe11-coco (v11l restricted to COCONUT-not-train),
+  v11l + full-PubChem channel adaptive / fixed. Prepared if the Zenodo probe is positive: casmi/zen.py (direct
+  spectral match to the 3,717 Zenodo-extra structures, inserted at rank 1 / 3 above similarity 0.7 / 0.5; ZEN=1 in
+  scripts/make_own_kernel.py). PeakFormer CPU runs e/f/g (structure-balanced) finish ~11:40 UTC Oct 21; GPU run
+  armed for Oct 24 00:20 UTC.
 - v11l 0.320 vs v10 0.314 (PeakFormer + alpha 1: +0.006, inside LB noise); inserting the documented-tier proposals
   costs 0.013 (0.307): no proposals from that tier until the tier is right.
 
