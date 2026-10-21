@@ -84,6 +84,16 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   spectral match to the 3,717 Zenodo-extra structures, inserted at rank 1 / 3 above similarity 0.7 / 0.5; ZEN=1 in
   scripts/make_own_kernel.py). PeakFormer CPU runs e/f/g (structure-balanced) finish ~11:40 UTC Oct 21; GPU run
   armed for Oct 24 00:20 UTC.
+- Workflow wf_a82a089e-6e1 (docs/other_gap_plan.md): the public "other" 0.057 = PubChem channel ~0.03-0.045
+  (standalone list 0.037; near-complete 105.9M tier, median window 12.8k at test masses, 58% vendor-deposited; two-pass
+  ECFP4-block f.z with N1 5000 + 200 best-documented rows, score z(f.z) + 0.25 pop; lib < 0.9 gate; slots 2,4,..,10 if
+  rel = best PC f.z - best pool f.z > 600 else 4,8,..,20; PC #1 promoted to rank 1 if rel > 150 or S > 6 and pop >= 5
+  (promotion credited >= +0.024 LB)) + engine-2 ChEBI/LMSD ~0.005-0.01 (rank-2 insert of engine 2's top-1) + generated
+  derivatives ~0.003-0.01. Refuted: DreaMS tail fill (dead code), engine-2 COCONUT copy, source-blind ranker as the
+  lever. Our channel fixed accordingly (uniform window thinning, metric-identity dedup, exclusion sets, aligned pop
+  prior dataset casmi26-pc-full-pop, pop union, PC_PROMO / PC_REL_AGG / PC_S_PROMO knobs); probes pcfull-only2
+  (spectral, train + COCONUT excluded) and pcfull-only3 (+ pop); thresholds from a simulation kernel
+  (casmi26-pc-calibrun, 400 class-2 validation queries against the full tier).
 - v11l 0.320 vs v10 0.314 (PeakFormer + alpha 1: +0.006, inside LB noise); inserting the documented-tier proposals
   costs 0.013 (0.307): no proposals from that tier until the tier is right.
 
