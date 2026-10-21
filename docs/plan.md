@@ -105,6 +105,18 @@ a prior learned at the simulation's 54% purchasable base rate. Conflict found: t
 purchasable class-2 truths only 13% of the class-2 weight (they are documented), while Enveda's real samples are ~99%
 purchasable. -> weight tables with a vendor target: vf (w = 0.97 / 0.54 for purchasable truths, 0.03 / 0.46 otherwise;
 ESS ~2.2k), vfd05 / vfd1 (vf x doc weight^0.5 / ^1); CV evaluated under the vf target (CV_EVAL_W).
+Stage-1 5-fold CV (ret10pl rows; cls2w here = vf-target weighted, last column = the old doc-shift target):
+| config | all | cls1 | cls2 | cls2w (vf) | cls2w (doc) |
+|---|---|---|---|---|---|
+| a1+pf (v11l recipe) | .8939 | .8836 | .8991 | .9314 | .7103 |
+| a1+pf+vend | .8965 | .8831 | .9033 | .9415 | .7075 |
+| vf+pf | .9005 | .8877 | .9070 | .9484 | .6546 |
+| **vf+pf+vend** | **.9024** | **.8882** | .9095 | .9587 | .6746 |
+| vfd05+pf+vend | .9007 | .8818 | .9103 | .9606 | .6778 |
+The two hypotheses about the hidden class-2 population disagree (vf vs doc target); the physical-sample evidence
+favours the vendor target, and vf+pf+vend is also best on the unweighted columns -> pipeline v12 (T=v12 ROWS=ret12
+ALPHA=1 DOC_W=pool4/vf_w.parquet scripts/pipeline_v8d.sh; kernels need VEND=1 = dataset bryantyu/casmi26-vendor,
+VENDOR_PATH) for an LB A/B against v11l (0.320).
 
 ## Second-ranker rank-2 insertion (other-gap item 4, Oct 21) -- refuted offline
 Source-blind stage-1 ranker (scripts/train_ret_ranker.py --source-blind: no in_coco / in_bio / PubChemLite / PubChem /

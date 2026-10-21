@@ -51,8 +51,9 @@ def tanimoto_packed(a, B):
 class Retrieval:
     def __init__(self, pool_dir, analog_lib: AnalogLib, prior_path=None, ppm=10.0, min_da=0.002, lib_full=None):
         self.P = pd.read_parquet(f'{pool_dir}/pool.parquet')
-        if os.path.exists(f'{pool_dir}/vendor.parquet'):         # depositor columns, rows aligned with pool.parquet
-            V = pd.read_parquet(f'{pool_dir}/vendor.parquet')
+        vp = os.environ.get('VENDOR_PATH', f'{pool_dir}/vendor.parquet')
+        if os.path.exists(vp):                   # depositor columns, rows aligned with pool.parquet
+            V = pd.read_parquet(vp)
             assert len(V) == len(self.P), ('vendor.parquet does not match the pool', len(V), len(self.P))
             for c in VEND_COLS:
                 if c in V.columns:
