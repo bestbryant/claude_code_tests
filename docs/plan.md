@@ -109,6 +109,15 @@ simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib g
   (inside noise); the COCONUT-restricted probes (probe11-coco vs probe12-coco) isolate it next.
 - Next channel policy: precision over recall -- at most one or two proposals, only on high re-ranker confidence, never
   in the 2..10 band by default.
+- Calibrating the policy simulation to these two LB points fails (scripts/calib_policy.py): with pi = 0.037 / 0.666 =
+  0.056 the observed net implies a present-list cost of -0.039; reweighting the simulated lists towards answers below
+  rank 1 reaches only -0.023, and the model predicts +0.003 for v12purchrr where the LB gave -0.016. The simulation
+  misses something about the hidden lists beyond the rank of the answer (more gated molecules, higher rel /
+  re-ranker scores on the hidden spectra), so policy choices go to the LB directly: promotion-only mode (PC_SLOTS=''
+  -> only the channel's re-ranked #1 moves to rank 1, and only when the re-ranker confidence rr_top exceeds a
+  threshold; no other insertions), kernels casmi26-own-s2v11lprop95 (rr_top > 3.79) and -prop98 (> 4.6) on the v11l
+  base, paired against v11l 0.320 on Oct 23 (trigger trig_01QErcbkQuHu8w8aASQef1hB), with the re-ranked channel probe
+  and the two COCONUT-restricted probes.
 
 ## Kernel status (Oct 21, 09:50 UTC)
 - casmi26-enam-only v1 complete (400 / 400 lists, channel on every molecule, 91 min) -> Oct 22 probe.

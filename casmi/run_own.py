@@ -175,7 +175,8 @@ def pc_channel(lists, frames, procs):
     Full tier: PC_POP=<pop.npy>, PC_N1 (pass-1 survivors), PC_POP_UNION (best-documented rows added to pass 2)."""
     from .metric import key14
     from .pcchannel import insert
-    slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(','))
+    # PC_SLOTS='' = no default insertion: proposals enter only through the promotion triggers (rank 1)
+    slots = tuple(int(x) for x in os.environ.get('PC_SLOTS', '4,8,12,16,20').split(',') if x.strip())
     hi = None                 # PC_POTHER=<model>: lists likely missing the answer get the proposals at PC_SLOTS_HI
     if os.environ.get('PC_POTHER'):
         import lightgbm as lgb
@@ -214,7 +215,16 @@ def pc_channel(lists, frames, procs):
                         or (rr_promo is not None and rrt is not None and rrt > rr_promo)
                         or (s_promo is not None and float(pr.pc_score.iloc[0]) > s_promo and float(pr['pop'].iloc[0]) >= pop_promo)):
                     sl = (1,) + tuple(x for x in sl if x > 1)       # PC #1 promoted to rank 1
-                    n_promo += 1
+                    n_promo += 1; promoted = True
+                else:
+                    promoted = False
+                if not slots:        # promotion-only mode: exactly the channel's #1 moves / enters at rank 1, if triggered
+                    if promoted:
+                        kk = key14(pr.smiles.iloc[0])
+                        if kk is not None:
+                            lists[m] = ([[pr.smiles.iloc[0], float('nan'), kk]] + [r for r in lists[m] if r[2] != kk])[:25]
+                    n += 1
+                    continue
                 lists[m] = insert(lists[m], pr, sl, len(sl), key14)
             n += 1
     print('PubChem channel: gated', len(todo), 'of', len(lists), 'lists with proposals', n,
