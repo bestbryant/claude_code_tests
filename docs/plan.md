@@ -65,6 +65,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-21 | casmi26-own-s2v10 v1 | v10: full-library matching + alpha 0.5, stage 2 GLACIER | 0.314 |
 | 10-21 | casmi26-own-s2v11l v1 | v11l: v10 + PeakFormer features (local), alpha 1 | 0.320 |
 | 10-21 | casmi26-own-s2v11lpc-ad v1 | v11l + PubChem channel, adaptive slots (list confidence > 0.7: 1,3,5,7,9 else 4,8,..,20) | 0.307 |
+| 10-22 | casmi26-enam-only v1 | PROBE: Enamine tier only (4.56M Enamine-deposited compounds outside train + COCONUT), PeakFormer order | **0.037** |
+| 10-22 | casmi26-pcfull-only2 v1 | PROBE: full PubChem tier only (110M, two-pass, train + COCONUT excluded) | 0.003 |
+| 10-22 | casmi26-own-s2v12 v1 | v12: v11l + depositor features + vendor-target class-2 weights | 0.312 |
+| 10-22 | casmi26-own-s2v12purch v1 | v12 + purchasable-tier channel (slots 4..20, 2..10 if rel > 15, #1 promoted if rel > 60) | 0.294 |
+| 10-22 | casmi26-own-s2v12purchrr v1 | same + channel re-ranker | 0.296 |
 
 ## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
 The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
@@ -90,6 +95,20 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 (the documented full tier's median window is 12.8k at test masses: same truths, ~15x more decoys). Probe kernel
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
+
+## Lessons from the Oct 22 submissions
+- The Enamine restriction is right: the Enamine-only list scores 0.037 (= the public lineage's PubChem-only list) where
+  the full 110M tier scores 0.003 and the documented tier 0.006. With an offline PeakFormer-only channel MRR of ~0.6 on
+  Enamine truths, roughly 5-7% of the hidden molecules are Enamine compounds outside train + COCONUT.
+- Inserting the proposals COSTS: v12 0.312 -> v12purch 0.294 / v12purchrr 0.296 (paired: the lists differ only by the
+  inserted proposals, so -0.018 is far less noisy than an unpaired A/B). The policy simulation predicted +0.014 at
+  pi = 0.05. Its error: the simulated main lists hold their answers at rank 1 (MRR 0.78), the hidden lists (MRR ~0.31)
+  hold them at ranks 2-20, exactly where slots 2,4,6,.. / 4,8,.. push them down. Weaker lists make displacement MORE
+  costly, not less (my earlier assumption was backwards). The re-ranker adds +0.002 (noise-level).
+- v12 (vendor features + vendor-target weights) 0.312 vs v11l 0.320: no gain from the purchasable prior on the full LB
+  (inside noise); the COCONUT-restricted probes (probe11-coco vs probe12-coco) isolate it next.
+- Next channel policy: precision over recall -- at most one or two proposals, only on high re-ranker confidence, never
+  in the 2..10 band by default.
 
 ## Kernel status (Oct 21, 09:50 UTC)
 - casmi26-enam-only v1 complete (400 / 400 lists, channel on every molecule, 91 min) -> Oct 22 probe.
