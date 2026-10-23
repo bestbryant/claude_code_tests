@@ -194,9 +194,17 @@ HL_PRIOR=1 results (rankers trained on their own rows; penalty C: pf_bern 15.8 t
 | v15a1 / ret15 (token 1 + PMI) | .3250 | .875 | .531 | .452 |
 | v13a1 / ret13 (token 3) | **.3385** | .907 | .547 | .556 |
 (cross: v15a1 on tok3 rows .3294, v13a1 on kernel rows .3226.) -> PMI null under the prior emulation too (fp_bern carries
-little ranker weight) -> not deployed. The emulation moves the kernel HL-LB to .3255 vs LB .320 (closure offset +.018
--> ~+.006). Token-3-trained stage 1 leads by +.013 (T +.033 incl. ranker-training variance, C +.019) -> pipeline T=v13
-(ret13 rows, v11l recipe) started Oct 23 11:20 for the Oct 24/25 LB if the token-3 override wins.
+little ranker weight; v14a1 vs v15a1 share the recipe) -> not deployed.
+CONFOUND: v13a1 = v13 used the pipeline recipe (63 leaves, min_data 50, doc weights alpha 1) while v14a1 / v15a1 / v16a1
+were trained with the script defaults (31 leaves, no doc weights) -> the "+.013 for token 3" mixes recipe and token
+(the recipe alone moves T by ~.03). Fixed-ranker comparison (v11l weights, rows under each token policy) and v13:
+| ranker | token 0 rows | token 3 rows |
+|---|---|---|
+| v11l (the Oct 24 override kernels) | .3379 | .3361 |
+| v13 (pipeline recipe on ret13 rows; kernel casmi26-own-s2v13) | .3393 | .3385 |
+| v16a1 (31 leaves, ret16 = token-0 rows) | .3296 | .3274 |
+-> retraining on token-3 rows adds ~+.002 over the override; token 0 vs 3 within noise (sd over draws ~.002).
+Pipeline T=v13 (ret13 rows) built and kernel pushed Oct 23 11:40 (Oct 24 slot 5).
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
 FP_PMI must reach a kernel explicitly (casmi26-code fpscore.py + fp_bitprior.npy + FP_PMI env), not yet deployed.
 PeakFormer variant a (token dropout, old negatives) dropped from the Oct 24 GPU plan (shared quota): b ~8.5 h + FP b
