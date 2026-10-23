@@ -1,4 +1,9 @@
-"""Score candidates with a trained SparseDualEncoder: embedding cosine and fingerprint Bernoulli log-likelihood."""
+"""Score candidates with a trained SparseDualEncoder: embedding cosine and fingerprint Bernoulli log-likelihood.
+
+FP_PMI=<npy (2, N_BITS): log m, log(1 - m)> (scripts/fp_bitprior.py): the Bernoulli score becomes a PMI,
+log p(bits | spectrum) - FP_PMI_LAM * log p(bits | training-positive marginal). The bit head is trained by BCE on positives
+only, so its raw likelihood favours candidates that look like a typical training structure (docs/plan.md, Oct 23)."""
+import os
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -32,6 +37,8 @@ class FPScorer:
         self.m.eval()
         self.pool_fp = pool_fp          # packed Morgan 2048 per pool row (MACCS added on the fly)
         self._mac = {}
+        pmi = os.environ.get('FP_PMI')
+        self.prior = np.load(pmi) * float(os.environ.get('FP_PMI_LAM', '1')) if pmi else None
 
     def _maccs(self, pid, smiles):
         v = self._mac.get(pid)
@@ -75,5 +82,7 @@ class FPScorer:
             m = self.m.encode_mol(torch.from_numpy(ids), torch.from_numpy(bo))
             cos = (e @ m.T).squeeze(0).numpy()
         bits = np.unpackbits(packed, axis=1)[:, :N_BITS].astype(np.float32)
+        if self.prior is not None:
+            lp, lq = lp - self.prior[0], lq - self.prior[1]
         bern = bits @ lp + (1 - bits) @ lq
         return cos, bern

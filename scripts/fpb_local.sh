@@ -23,7 +23,7 @@ M = M[(M.formula == M.tf) & ((M.label == 1) | (M.tr0 == 1) | (M.in_coco == 1))].
 M.to_parquet(f'{W}/fpb_local/sub.parquet'); print('subset', len(M), M.qid.nunique())
 PY
 for m in own_models/fp_model base b nt; do
-  w=$O/$(basename $m).pt; [ $m = own_models/fp_model ] && w=/home/user/work/own_models/fp_model.pt
+  w=$O/fp_$(basename $m).pt; [ $m = own_models/fp_model ] && w=/home/user/work/own_models/fp_model.pt
   for tok in 1 0; do
     OWN_PF_INST=$tok python scripts/add_fp_feats.py $O/sub.parquet $w $O/sub_$(basename $m)_t$tok.parquet /home/user/work/pool4 > /dev/null
     echo "== $(basename $m) token $tok"; python scripts/eval_pf_neutral.py $O/sub_$(basename $m)_t$tok.parquet fp_bern,fp_cos | tail -2

@@ -146,6 +146,27 @@ scripts/train_fp.py (baseline fp_bern excess +0.109, fp_cos +0.143 under token 1
 recomputed on the class-2 COCONUT same-formula subset of ret14 val rows (620 queries), scored by
 scripts/eval_pf_neutral.py under token 1 and 0. Note the training-script val MRR is not comparable across variants
 (variant b validates against its own restricted negatives).
+Result (620 queries; win rate vs training decoys / vs COCONUT decoys / excess; near-analog excess):
+| model | token | fp_cos | fp_bern |
+|---|---|---|---|
+| deployed (30k steps) | 1 | .644 / .786 / +.143 (+.183) | .599 / .709 / +.109 (+.144) |
+| deployed | 0 | .692 / .842 / +.150 (+.237) | .655 / .752 / +.097 (+.158) |
+| base (2k steps) | 1 | .676 / .789 / +.112 (+.157) | .566 / .673 / +.107 (+.122) |
+| base | 0 | .716 / .834 / +.118 (+.208) | .602 / .705 / +.103 (+.146) |
+| **b** (2k steps) | 1 | **.743** / .782 / **+.039** (+.100) | .616 / .712 / +.096 (+.137) |
+| **b** | 0 | **.743** / .784 / **+.041** (+.106) | .611 / .711 / +.100 (+.140) |
+-> training-structure negatives remove most of the contrastive embedding's prior and raise its prior-free win rate
+(.716 -> .743) without losing vs COCONUT decoys; the token no longer matters. The Bernoulli head (BCE on positives only,
+never sees negatives) keeps its prior: it favours bits typical of training structures. (negtrain-only run stopped: the
+token is irrelevant once dropped, and the GPU decision is clear.)
+PMI fix for the Bernoulli score (scripts/eval_bern_pmi.py, casmi/fpscore.py FP_PMI = scripts/fp_bitprior.py output):
+bern - lam * log p(bits | spectrum-weighted training-structure marginal). Deployed model, token 1: lam 0.5 .634 / .732
+/ +.098, **lam 1 .690 / .761 / +.071**; token 0: lam 1 **.717 / .773 / +.055** (raw .655 / .752) -> both win rates
+rise, an inference-time change. Same on the 2k-step models (b lam 1: .706 / .742 / +.035). NOT for the PeakFormer
+(scripts/eval_pf_pmi.py): its f.z is trained contrastively against window negatives and PMI destroys discrimination
+(lam 1: .599 / .555; lam 0.5 .633 / .644 vs raw .667 / .804) -> PeakFormer prior only via retraining (GPU variant b).
+Ranker test: ret15 rows = ret14 with fp_* from the PMI scorer (/home/user/work/v15_rows.sh), rankers v14a1 / v15a1
+(v13a1 recipe), HL-val + stage-1 CV a1+pf (/home/user/work/v15_eval.sh).
 
 ## Hidden-like validation (scripts/hlval.py, Oct 23)
 Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every
