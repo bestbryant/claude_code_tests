@@ -16,7 +16,7 @@ with Enamine chemistry, so the token became a chemistry prior that hurts timsTOF
 import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); sys.path.insert(0, '/kaggle/working/pkg')
-from casmi.peakformer import K, PeakFormer, csr_rows, embed_query, fz_scores, meta_matrix, ADD
+from casmi.peakformer import K, PeakFormer, csr_rows, embed_query, fz_scores, meta_matrix, ADD, N_ADD, N_INST
 
 data, fpx_p, out = sys.argv[1:4]
 EPOCHS = int(sys.argv[4]) if len(sys.argv) > 4 else 10
@@ -113,6 +113,7 @@ def set_lr(step):
 scaler = torch.amp.GradScaler('cuda', enabled=amp)
 P_MERGE = float(os.environ.get('PF_MERGE', '0.35'))
 INST_DROP = float(os.environ.get('PF_INST_DROP', '0'))
+NOREP = os.environ.get('PF_NEG_NOREP') == '1'      # window negatives drawn without replacement (short lists: no repeats)
 W_BCE = float(os.environ.get('PF_BCE', '5'))
 print('model params', sum(p.numel() for p in model.parameters()), cfg, 'device', dev, 'threads', torch.get_num_threads(),
       flush=True)
@@ -187,7 +188,17 @@ def cand_scores(e, z, rows_s, rows_n):
     return cos.cpu().numpy(), fz.cpu().numpy()
 
 
+def tie_inst():
+    """INST_DROP >= 1: instrument tokens 1-5 never reach training -> copy token 0's weights so that every token behaves
+    as token 0 at validation and inference."""
+    if INST_DROP >= 1:
+        with torch.no_grad():
+            c = N_ADD + 4
+            model.meta_proj.weight[:, c + 1:c + N_INST] = model.meta_proj.weight[:, c:c + 1]
+
+
 def validate(max_structs=int(os.environ.get('PF_VAL_N', '1500'))):
+    tie_inst()
     model.eval()
     by = {}
     for i in np.where(split == 1)[0]:
@@ -198,6 +209,8 @@ def validate(max_structs=int(os.environ.get('PF_VAL_N', '1500'))):
     with torch.no_grad(), torch.autocast(dev, enabled=amp):
         for s in list(by)[:max_structs]:
             ng = negs[s][negs[s] >= 0].astype(np.int64)
+            if len(ng) == 0:        # no window negatives left: nothing to rank against
+                continue
             e, z = embed_query(model, spectra_dicts(by[s][:3]), dev)
             cos, fz = cand_scores(e, z, np.array([s]), ng)
             res['cos'].append(rr(cos)); res['fz'].append(rr(fz)); res['sum'].append(rr(zs(cos) + zs(fz)))
@@ -210,6 +223,7 @@ def validate(max_structs=int(os.environ.get('PF_VAL_N', '1500'))):
 
 
 def save():
+    tie_inst()
     sd = model.state_dict(); sd['_cfg'] = cfg; sd['_keep'] = torch.from_numpy(keep.astype(np.int64))
     torch.save(sd, out)
 
@@ -225,8 +239,12 @@ for ep in range(EPOCHS):
             idx[:nb] = so[s_first[j] + (rng.random(nb) * s_len[j]).astype(np.int64)]
         s = sidx[idx].astype(np.int64)
         nl = negs[s]; cnt = (nl >= 0).sum(1)
-        pick_pos = np.minimum((rng.random((B, NNEG)) * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)
-        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[cnt == 0] = -1
+        if NOREP:       # random order of the valid prefix first, slots beyond the row's count masked
+            pick_pos = np.argsort(rng.random(nl.shape) + (np.arange(nl.shape[1]) >= cnt[:, None]), 1)[:, :NNEG]
+            pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[pick_pos >= cnt[:, None]] = -1
+        else:
+            pick_pos = np.minimum((rng.random((B, NNEG)) * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)
+            pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[cnt == 0] = -1
         okn = pick >= 0
         owner = np.repeat(np.arange(B), NNEG)[okn.reshape(-1)]
         i1, o1, r1 = bits_of('s', s)

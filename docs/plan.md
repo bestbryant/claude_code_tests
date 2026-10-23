@@ -155,8 +155,11 @@ Result (620 queries; win rate vs training decoys / vs COCONUT decoys / excess; n
 | base | 0 | .716 / .834 / +.118 (+.208) | .602 / .705 / +.103 (+.146) |
 | **b** (2k steps) | 1 | **.743** / .782 / **+.039** (+.100) | .616 / .712 / +.096 (+.137) |
 | **b** | 0 | **.743** / .784 / **+.041** (+.106) | .611 / .711 / +.100 (+.140) |
--> training-structure negatives remove most of the contrastive embedding's prior and raise its prior-free win rate
-(.716 -> .743) without losing vs COCONUT decoys; the token no longer matters. The Bernoulli head (BCE on positives only,
+-> training-structure negatives remove most of the contrastive embedding's prior (excess -0.073..-0.077, paired
+bootstrap CI excludes 0 at both tokens). Token 1: win vs training decoys +0.066 [+.038, +.096], vs COCONUT decoys
+-0.007 (n.s.); token 0: +0.027 [-.002, +.056] and -0.050 [-.075, -.024] -> at token 0 most of the excess reduction comes
+from losing vs COCONUT decoys (the prior removed), the discrimination gain is not significant. The token no longer
+matters for b. The Bernoulli head (BCE on positives only,
 never sees negatives) keeps its prior: it favours bits typical of training structures. (negtrain-only run stopped: the
 token is irrelevant once dropped, and the GPU decision is clear.)
 PMI fix for the Bernoulli score (scripts/eval_bern_pmi.py, casmi/fpscore.py FP_PMI = scripts/fp_bitprior.py output):
@@ -166,7 +169,27 @@ rise, an inference-time change. Same on the 2k-step models (b lam 1: .706 / .742
 (scripts/eval_pf_pmi.py): its f.z is trained contrastively against window negatives and PMI destroys discrimination
 (lam 1: .599 / .555; lam 0.5 .633 / .644 vs raw .667 / .804) -> PeakFormer prior only via retraining (GPU variant b).
 Ranker test: ret15 rows = ret14 with fp_* from the PMI scorer (/home/user/work/v15_rows.sh), rankers v14a1 / v15a1
-(v13a1 recipe), HL-val + stage-1 CV a1+pf (/home/user/work/v15_eval.sh).
+(v13a1 recipe), HL-val + stage-1 CV a1+pf (/home/user/work/v15_eval.sh): NULL. Val cls2 .920 -> .927, cls1 .812 ->
+.813; HL-LB .3374 -> .3372; CV all .8819 -> .8828, cls2w .6714 -> .6718 (se .018). But neither CV nor HL-val can credit
+a debiasing: their class-2 truths are held-out training structures that do not suffer the prior. -> scripts/hlval.py
+HL_PRIOR=1 (Oct 23): per condition and spectral column, penalty = mean score of held-out training decoys (never
+positives) minus COCONUT-not-train (resp. other non-train) decoys in matched (query, Tanimoto bin) cells; class-2
+truths shifted down by it inside the draws, derived rank / gap / within-formula features recomputed.
+Review wf_362c305b-918 (3 lenses + skeptics, Oct 23) before the GPU runs; fixed:
+- FP training was CPU-bound on GPU (per-step numpy unpacking of ~32k fingerprints, ~0.7-1.4 s/step -> ~8 h of GPU
+  idling): molecule bits now a device CSR gathered with torch (identical ids / offsets, verified), FP_HOURS guard.
+- negtrain flagged ALL in_train rows, incl. held-out validation (split 1) and ranker (split 2) structures -> they stayed
+  negative-only in b (the eval truths drawn ~3x more often as negatives than in base): negtrain v2 keeps only split-0
+  positives (258,932 rows; dataset v2). Held-out truths are now unseen, like hidden answers.
+- short restricted lists made sampling with replacement the norm (b: 96% of structures < 63 negatives, +1.1 nats
+  logit offset from repeats): FP_NEG_NOREP / PF_NEG_NOREP draw without replacement and mask the rest.
+- INST_DROP=1.0 left tokens 1-5 at random init while validation / inference feed real tokens: token columns tied to
+  token 0 before validation and save (any token = token 0).
+- PeakFormer validation scored a phantom empty candidate for structures with no negatives (93 / 1500 in b): skipped.
+Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
+FP_PMI must reach a kernel explicitly (casmi26-code fpscore.py + fp_bitprior.npy + FP_PMI env), not yet deployed.
+PeakFormer variant a (token dropout, old negatives) dropped from the Oct 24 GPU plan (shared quota): b ~8.5 h + FP b
+~1.5-2 h.
 
 ## Hidden-like validation (scripts/hlval.py, Oct 23)
 Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every

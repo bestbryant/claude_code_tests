@@ -7,7 +7,7 @@ window negatives -> MRR and top-1 (class-2-like retrieval among same-mass candid
 import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
 sys.path.insert(0, '/home/user/claude_code_tests'); sys.path.insert(0, '/kaggle/working/pkg')
-from casmi.fpmodel import SparseDualEncoder, sparse_spec, sparse_bits, unpack_bits
+from casmi.fpmodel import SparseDualEncoder, sparse_spec, unpack_bits, N_BITS, N_ADD, N_INST
 
 data, out = sys.argv[1], sys.argv[2]
 epochs = int(sys.argv[3]) if len(sys.argv) > 3 else 3
@@ -27,6 +27,8 @@ if os.environ.get('FP_NEG_TRAIN'):      # window negatives restricted to trainin
     negs = np.where(np.take_along_axis(km, o_, 1), np.take_along_axis(negs, o_, 1), -1).astype(negs.dtype)
     print('window negatives restricted to training structures: mean per structure', round(float((negs >= 0).sum(1).mean()), 1), flush=True)
 INST_DROP = float(os.environ.get('FP_INST_DROP', '0'))     # share of training spectra with the instrument token set to 0
+NOREP = os.environ.get('FP_NEG_NOREP') == '1'      # window negatives drawn without replacement (short lists: no repeats)
+HOURS = float(os.environ.get('FP_HOURS', '0'))     # wall-clock guard: stop, validate and save after this many hours
 mz, it, off = S['mz'], S['it'], S['off']
 prec, ce, add_id, inst_id, pol, sidx, split = S['prec'], S['ce'], S['add_id'], S['inst_id'], S['pol'], S['sidx'], S['split']
 sfp = T['fp']
@@ -55,9 +57,36 @@ def spec_inputs(idx, train=False):
     return T_(ids), T_(bo), T_(wts), T_(meta)
 
 
-def mol_inputs(packed):
-    ids, bo = sparse_bits(packed)
-    return T_(ids), T_(bo)
+def bits_csr(packed, chunk=50000):
+    """Packed fingerprints -> on-bit CSR (ptr int64, ids int16) on the device, built once: no per-step numpy unpacking
+    (that made GPU steps CPU-bound, ~0.7-1.4 s each)."""
+    lens, ids = [], []
+    for a in range(0, len(packed), chunk):
+        r, c = np.nonzero(np.unpackbits(packed[a:a + chunk], axis=1)[:, :N_BITS])
+        lens.append(np.bincount(r, minlength=len(packed[a:a + chunk]))); ids.append(c.astype(np.int16))
+    return T_(np.r_[0, np.cumsum(np.concatenate(lens))].astype(np.int64)), T_(np.concatenate(ids))
+
+
+MOL_P, MOL_I = bits_csr(np.concatenate([sfp, negfp], 0))      # CSR rows: structures, then negative rows
+NS = len(sfp)
+
+
+def mol_rows(rows):
+    """EmbeddingBag inputs (on-bit ids, bag offsets) of CSR rows (numpy int array)."""
+    rows = T_(np.ascontiguousarray(rows, dtype=np.int64))
+    st = MOL_P[rows]; ln = MOL_P[rows + 1] - st
+    off = torch.cumsum(ln, 0) - ln
+    pos = torch.repeat_interleave(st - off, ln) + torch.arange(int(ln.sum()), device=dev)
+    return MOL_I[pos].long(), off
+
+
+def tie_inst():
+    """INST_DROP >= 1: instrument tokens 1-5 never reach training -> copy token 0's weights so that every token behaves
+    as token 0 at validation and inference."""
+    if INST_DROP >= 1:
+        with torch.no_grad():
+            c = N_ADD + 3
+            model.meta.weight[:, c + 1:c + N_INST] = model.meta.weight[:, c:c + 1]
 
 
 def validate(max_structs=1500):
@@ -71,7 +100,7 @@ def validate(max_structs=1500):
     with torch.no_grad():
         for s in keys:
             ng = negs[s][negs[s] >= 0]
-            m = model.encode_mol(*mol_inputs(np.concatenate([sfp[s:s + 1], negfp[ng]], 0)))
+            m = model.encode_mol(*mol_rows(np.r_[s, NS + ng]))
             ti = [i for i in by[s] if inst_id[i] == 1][:3]
             for ii, acc in ((by[s][:3], rr), (ti, rt)):
                 if not ii:
@@ -86,7 +115,7 @@ def validate(max_structs=1500):
     return rr.mean(), (rr == 1).mean(), len(rr)
 
 
-t0 = time.time(); step = 0
+t0 = time.time(); step = 0; stop = False
 for ep in range(epochs):
     for _ in range(steps):
         idx = rng.choice(tr, size=B, p=w)
@@ -94,12 +123,17 @@ for ep in range(epochs):
         nl = negs[s]
         cnt = (nl >= 0).sum(1)
         # sample NNEG negatives per row from the valid prefix (lists are left-packed)
-        r = rng.random((B, NNEG))
-        pick_pos = np.minimum((r * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)
-        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64)
-        pick[cnt == 0] = -1
+        if NOREP:       # random order of the valid prefix first, slots beyond the row's count masked
+            pick_pos = np.argsort(rng.random(nl.shape) + (np.arange(nl.shape[1]) >= cnt[:, None]), 1)[:, :NNEG]
+            pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64)
+            pick[pick_pos >= cnt[:, None]] = -1
+        else:
+            r = rng.random((B, NNEG))
+            pick_pos = np.minimum((r * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)
+            pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64)
+            pick[cnt == 0] = -1
         e_s, logits = model.encode_spec(*spec_inputs(idx, True))
-        e_pos = model.encode_mol(*mol_inputs(sfp[s]))
+        e_pos = model.encode_mol(*mol_rows(s))
         pos_bits = T_(unpack_bits(sfp[s]))
         tau = model.log_tau.exp().clamp(0.01, 1.0)
         sim_b = e_s @ e_pos.T / tau
@@ -107,7 +141,7 @@ for ep in range(epochs):
         sim_b = sim_b.masked_fill(same & ~torch.eye(B, dtype=torch.bool, device=dev), -1e4)
         loss_b = F.cross_entropy(sim_b, torch.arange(B, device=dev))
         valid = T_(pick >= 0)
-        e_neg = model.encode_mol(*mol_inputs(negfp[np.maximum(pick, 0).reshape(-1)])).view(B, NNEG, -1)
+        e_neg = model.encode_mol(*mol_rows(NS + np.maximum(pick, 0).reshape(-1))).view(B, NNEG, -1)
         s_pos = (e_s * e_pos).sum(-1, keepdim=True) / tau
         s_neg = torch.einsum('bd,bnd->bn', e_s, e_neg) / tau
         s_neg = s_neg.masked_fill(~valid, -1e4)
@@ -118,6 +152,11 @@ for ep in range(epochs):
         if step % 200 == 0:
             print(f'step {step}/{total} loss {loss.item():.3f} (b {loss_b.item():.2f} h {loss_h.item():.2f} fp {loss_fp.item():.3f}) '
                   f'tau {tau.item():.3f} {time.time()-t0:.0f}s', flush=True)
+        if HOURS and time.time() - t0 > HOURS * 3600:
+            print(f'FP_HOURS reached at step {step}', flush=True); stop = True; break
+    tie_inst()
     mrr, top1, n = validate()
     print(f'EPOCH {ep} val MRR {mrr:.4f} top1 {top1:.4f} (n={n}) {time.time()-t0:.0f}s', flush=True)
     torch.save(model.state_dict(), out)
+    if stop:
+        break
