@@ -9,7 +9,9 @@ adduct, top 64 of the union), peak dropout, intensity and ppm jitter.
 Loss = f.z and cosine scores, each against in-batch and same-mass window negatives (negs.npy), + fingerprint BCE.
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
-Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS.
+Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS,
+PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
+with Enamine chemistry, so the token became a chemistry prior that hurts timsTOF natural products).
 """
 import os, sys, time
 import numpy as np, torch, torch.nn.functional as F
@@ -100,6 +102,7 @@ def set_lr(step):
         g['lr'] = max(lr, LR * 1e-3)
 scaler = torch.amp.GradScaler('cuda', enabled=amp)
 P_MERGE = float(os.environ.get('PF_MERGE', '0.35'))
+INST_DROP = float(os.environ.get('PF_INST_DROP', '0'))
 W_BCE = float(os.environ.get('PF_BCE', '5'))
 print('model params', sum(p.numel() for p in model.parameters()), cfg, 'device', dev, 'threads', torch.get_num_threads(),
       flush=True)
@@ -151,7 +154,10 @@ def batch_inputs(idx, train=True):
     it = torch.where(valid, it, torch.zeros_like(it))
     it = it / it.amax(1, keepdim=True).clamp_min(1e-6)
     mz = torch.where(valid, mz, torch.zeros_like(mz))
-    meta = meta_matrix(add_id[idx], pol[idx], ce_b, inst_id[idx], prec[idx].astype(np.float64), nm)
+    ib = inst_id[idx]
+    if train and INST_DROP > 0:
+        ib = np.where(np.random.random(len(ib)) < INST_DROP, 0, ib)
+    meta = meta_matrix(add_id[idx], pol[idx], ce_b, ib, prec[idx].astype(np.float64), nm)
     return mz, it.float(), valid, pr, D(meta)
 
 

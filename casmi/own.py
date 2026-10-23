@@ -3,6 +3,7 @@
 Shared by offline validation (scripts/add_fp_feats.py) and the Kaggle inference runner (casmi/run_own.py), so the
 features are computed identically in both places.
 """
+import os
 import numpy as np
 import pandas as pd
 
@@ -62,8 +63,12 @@ def add_dreams(df, R, dreams, g):
     return df
 
 
-def query_from_rows(g):
-    """Test rows of one molecule -> (cleaned query spectra for retrieval, raw spectra for the FP model, M)."""
+def query_from_rows(g, inst=None):
+    """Test rows of one molecule -> (cleaned query spectra for retrieval, raw spectra for the FP model, M).
+    inst: instrument token for the FP / PeakFormer models instead of the rows' own (OWN_PF_INST in stage1 / predict):
+    both models learned "timsTOF => Enamine chemistry" (enveda-180 is 99.9% of timsTOF training spectra), so natural
+    products measured on timsTOF score far better under the generic TOF / unknown token (validation NP queries:
+    PeakFormer f.z MRR 0.314 timsTOF vs 0.482 TOF / 0.480 unknown; Enamine queries the reverse, 0.826 vs 0.635 / 0.688)."""
     Q, raw, nms = [], [], []
     for r in g.itertuples():
         mz = np.asarray(r.ms2_mzs, np.float64); it = np.asarray(r.ms2_normalized_intensities, np.float64)
@@ -74,7 +79,8 @@ def query_from_rows(g):
             Q.append(dict(mz=a, it=b, pol=0 if pos else 1))
         ce = r.collision_energy_ev
         ce = float(np.mean(ce)) if ce is not None and len(ce) else -1.0
-        raw.append(dict(mz=mz, it=it, prec=prec, adduct=r.adduct, ce=ce, inst=inst_family(r.instrument_type)))
+        raw.append(dict(mz=mz, it=it, prec=prec, adduct=r.adduct, ce=ce,
+                        inst=inst_family(r.instrument_type) if inst is None else int(inst)))
         nms.append(neutral_mass(prec, r.adduct))
     M = float(np.nanmedian(nms)) if len(nms) else np.nan
     return Q, raw, M
@@ -86,7 +92,7 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None, second=None):
     channel (casmi/dreams_feats.py); pfs = PeakFormer scorer (casmi/peakformer.py) adds the pf_* columns;
     second = (ranker, feats) of a second (source-blind) ranker: its top-1 is flagged r2_top = 1 (and appended when
     outside the top k) for the rank-2 insertion in casmi/run_own.py."""
-    Q, raw, M = query_from_rows(g)
+    Q, raw, M = query_from_rows(g, os.environ.get('OWN_PF_INST'))
     if not Q or not np.isfinite(M):
         return None
     df = R.features(Q, M)
@@ -134,7 +140,7 @@ def stage1(R, fps, ranker, feats, g, k=30, dreams=None, pfs=None, second=None):
 
 def predict(R, fps, ranker, feats, g, n=25, pfs=None):
     """One molecule: ranked list of (smiles, score, key14)."""
-    Q, raw, M = query_from_rows(g)
+    Q, raw, M = query_from_rows(g, os.environ.get('OWN_PF_INST'))
     if not Q or not np.isfinite(M):
         return []
     df = R.features(Q, M)

@@ -96,6 +96,22 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
 
+## Instrument token = chemistry prior (Oct 23; design-panel strategist "sim2real", reproduced)
+PeakFormer and the binned FP model take an instrument one-hot; timsTOF training spectra are 99.9% enveda-180 (Enamine), so
+the token learned "timsTOF => Enamine chemistry". Every hidden spectrum is timsTOF. scripts/eval_inst_token.py
+(PeakFormer f.z MRR of the truth in its pool window):
+| validation queries | true token | token 1 (timsTOF) | token 3 (TOF) | token 0 (unknown) |
+|---|---|---|---|---|
+| npx NP (246; 206 timsTOF) | 0.326 | 0.314 | **0.482** | 0.480 |
+| enveda-180 Enamine (120) | 0.828 | 0.826 | 0.635 | 0.688 |
+Strategist's stage-1 check (npx class 2 with hidden-like documentation transplanted from purchasable COCONUT-not-train
+decoys, 10 paired draws): v11l 0.622 -> 0.713 with token 3 (+0.091 +- 0.010), class 1 neutral. It also explains the
+channel insertion cost: rel > 15 fires on 29% of gated timsTOF NP present queries vs 8% non-timsTOF (present cost
+-0.036 to -0.041 per timsTOF molecule = the LB-implied -0.039). Estimated hidden mix: train ~0.18, COCONUT ~0.29,
+Enamine ~0.056, other ~0.03, ~0.44 unreachable. Actions: OWN_PF_INST override in casmi/own.query_from_rows (main-pool
+FP / PeakFormer scoring only; the channel keeps the true token); kernels casmi26-own-s2v11ltok0 / -tok3 (v11l +
+override) for Oct 24, paired against v11l 0.320; GPU PeakFormer (Oct 24) trains with PF_INST_DROP=0.5 token dropout.
+
 ## Lessons from the Oct 22 submissions
 - The Enamine restriction is right: the Enamine-only list scores 0.037 (= the public lineage's PubChem-only list) where
   the full 110M tier scores 0.003 and the documented tier 0.006. With an offline PeakFormer-only channel MRR of ~0.6 on
