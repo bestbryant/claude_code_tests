@@ -140,6 +140,12 @@ scripts/train_pf.py keeps only those -> GPU variant b (kernels/casmi26-pf-train-
 on a membership-neutral metric: the truth's matched win rate vs same-formula TRAINING decoys (pf_bern now 0.663 kernel /
 0.731 token 3) and the CO-TR excess (should shrink), not on raw within-formula MRR (which rewards the prior).
 Ranker-side alternative (EVID_SHIFT: train stage 1 with class-2 truths' pf / fp shifted down) kept in reserve.
+FP model variant b (kernels/casmi26-fp-train-b, GPU Oct 24): FP_NEG_TRAIN + FP_INST_DROP=1.0 + FP_TIMS_W=1.0 in
+scripts/train_fp.py (baseline fp_bern excess +0.109, fp_cos +0.143 under token 1). Paired CPU pre-test
+(scripts/fpb_local.sh, Oct 23): base / b / negtrain-only on an identical short schedule (1 x 2000 steps), fp features
+recomputed on the class-2 COCONUT same-formula subset of ret14 val rows (620 queries), scored by
+scripts/eval_pf_neutral.py under token 1 and 0. Note the training-script val MRR is not comparable across variants
+(variant b validates against its own restricted negatives).
 
 ## Hidden-like validation (scripts/hlval.py, Oct 23)
 Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every
