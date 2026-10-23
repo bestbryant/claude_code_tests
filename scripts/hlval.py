@@ -79,13 +79,13 @@ def evaluate(model_p):
         D = load(p)
         if not all(f in D.columns for f in feats):
             out[cond] = None; continue
-        S = strata(D)
         plain = rr(D, bst.predict(D[feats].astype(float).values))
+        S = strata(D).reindex(plain.index).fillna('x')
         draws = []
         for k in range(NDRAW):
             Dk = transplant(D, np.random.default_rng(k))
             draws.append(rr(Dk, bst.predict(Dk[feats].astype(float).values)))
-        hl = pd.concat(draws, axis=1).mean(1)
+        hl = pd.concat(draws, axis=1).mean(axis=1)
         m = {s: (float(plain[S == s].mean()), float(hl[S == s].mean()), int((S == s).sum())) for s in MIX}
         per_draw = [sum(MIX[s] * (d[S == s].mean() if s != 'T' else plain[S == s].mean()) for s in MIX) for d in draws]
         out[cond] = dict(strata=m, hl_lb=float(np.mean(per_draw)), hl_sd=float(np.std(per_draw)))

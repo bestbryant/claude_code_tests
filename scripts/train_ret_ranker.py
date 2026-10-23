@@ -35,6 +35,26 @@ def load(p):
 
 
 TR, VA = load(tr_p), load(va_p)
+if os.environ.get('DOC_TRANSPLANT'):
+    # hidden-like class-2 truths: a simulated truth is a training structure, far better documented than a hidden
+    # answer; its documentation / depositor columns are replaced by those of a random non-training candidate of the
+    # same source (scripts/hlval.py uses the same transplant to evaluate). DOC_TRANSPLANT=<copies> adds that many
+    # transplanted copies of every class-2 query (the original stays unless DOC_TRANSPLANT_KEEP=0).
+    from casmi.retrieval import PRIOR_COLS as _P, PCL_COLS as _L, PC_COLS as _C, LT_COLS as _T, VEND_COLS as _V
+    cols = [c for c in _P + _L + _C + _T + ['in_bio'] + _V if c in TR.columns]
+    don = {k: TR[(TR.label == 0) & (TR.in_train == 0) & (TR.in_coco == k)][cols].values for k in (0, 1)}
+    c2 = TR[TR.cls == 2]
+    parts = [TR] if os.environ.get('DOC_TRANSPLANT_KEEP', '1') == '1' else [TR[TR.cls != 2]]
+    for k in range(int(os.environ['DOC_TRANSPLANT'])):
+        rng = np.random.default_rng(100 + k)
+        X = c2.copy(); X['qid'] = X.qid + 20_000_000 * (k + 1)
+        tr = np.flatnonzero(X.label.values == 1)
+        coco = X.in_coco.values[tr] == 1
+        vals = np.where(coco[:, None], don[1][rng.integers(0, len(don[1]), len(tr))], don[0][rng.integers(0, len(don[0]), len(tr))])
+        X.iloc[tr, [X.columns.get_loc(c) for c in cols]] = vals
+        parts.append(X)
+    TR = pd.concat(parts, ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
+    print('documentation transplant: class-2 copies', os.environ['DOC_TRANSPLANT'], 'rows', len(TR), flush=True)
 # class-1 queries twice: the simulation is 30% class 1 while the test mix is closer to 45:55 (better on validation)
 c1 = TR[TR.cls == 1]
 TR = pd.concat([TR, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
