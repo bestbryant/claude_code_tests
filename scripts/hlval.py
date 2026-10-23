@@ -132,9 +132,18 @@ def rr(D, score):
     return pd.Series(np.where(r <= 25, 1.0 / r, 0.0), index=r.index)
 
 
+class Bag:
+    """Comma-separated ranker files -> mean of the per-model scores (seed bagging)."""
+    def __init__(self, paths):
+        self.ms = [lgb.Booster(model_file=p) for p in paths.split(',')]
+
+    def predict(self, X):
+        return np.mean([m.predict(X) for m in self.ms], axis=0)
+
+
 def evaluate(model_p):
-    bst = lgb.Booster(model_file=model_p)
-    feats = open(model_p.replace('.txt', '_feats.txt')).read().split()
+    bst = Bag(model_p)
+    feats = open(model_p.split(',')[0].replace('.txt', '_feats.txt')).read().split()
     out = {}
     for cond, p in CONDS.items():
         D = load(p)
