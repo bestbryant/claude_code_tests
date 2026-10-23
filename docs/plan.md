@@ -101,6 +101,28 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
 
+## Hidden-like validation (scripts/hlval.py, Oct 23)
+Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every
+query, ret14 rows; tok3 = the override, ret13 rows; true = own tokens), class-2 truths given the documentation of a random
+non-training candidate of the same source (10 draws) -- combined with the LB-implied mix (class 1 0.18, COCONUT 0.29,
+other reachable 0.03; Enamine / unreachable score 0 in the main lists). Closure against the LB (stage 2):
+| ranker | HL-LB kernel | HL-LB tok3 | LB |
+|---|---|---|---|
+| v11l | 0.3386 | 0.3546 | 0.320 |
+| v10 | 0.3346 | 0.3388 | 0.314 |
+| v12 | 0.3296 | 0.3453 | 0.312 |
+Same order as the LB with a near-constant +0.018 offset (the plain simulation ranked v12 above v11l). Predicted token-3
+gain for v11l: +0.016 (COCONUT stratum 0.549 -> 0.594); the ranker retrained on token-3 rows (v13a1) adds nothing
+(0.3552 vs 0.3546) -> the override alone suffices.
+Documentation-transplant TRAINING (DOC_TRANSPLANT in train_ret_ranker.py) scores HL-LB 0.411 (COCONUT stratum 0.829) but
+is partly an artifact: scripts/hl_transplant_artifact.py shows the model ranks a transplanted DECOY first in 9.2% of
+queries vs 1.9% untransplanted (v13a1: 0.3% / 0.3%), i.e. it detects documentation inconsistent with the structure. With
+every non-training candidate transplanted (documentation uninformative) it still beats v13a1 (0.661 vs 0.608): it leans
+more on spectral evidence. But the LB says documentation matters on hidden answers (no-prior ranker 0.245 vs 0.315,
+Oct 18), the opposite of the full-transplant assumption -> not shipped; HL-val is used for token / feature decisions
+(documentation treatment held fixed), not for documentation-weighting decisions until a partial-transplant version
+reproduces the 0.07 no-prior LB gap.
+
 ## Lessons from the Oct 23 submissions
 - The channel re-ranker does not transfer: re-ranked purchasable-only list 0.034 vs PeakFormer-order Enamine-only 0.037
   (offline +0.18 MRR on simulated / Zenodo-proxy truths). Even confident promotions cost: v11l 0.320 -> 0.310 (p95) /
