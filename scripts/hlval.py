@@ -12,6 +12,13 @@ Differences addressed here:
   truth's documentation / depositor columns are replaced by those of a random candidate of the same source that is not a
   training structure (COCONUT-not-train for COCONUT truths), 10 paired draws; HL_TRANSPLANT_P = share of truths
   transplanted (calibrated against the LB no-prior gap, scripts/hl_calib_doc.sh).
+- population prior (HL_PRIOR=1): the spectral models score structures that were never training positives lower
+  (COCONUT-not-train only ever appeared as window negatives), while a simulated class-2 truth is a held-out training
+  structure. Per scoring condition and column (pf_bern, pf_cos, fp_bern, fp_cos) the penalty = mean score of held-out
+  training decoys (in_train, no split-0 spectra in casmi26-fp-data: never positives) minus that of COCONUT-not-train
+  (resp. other non-train) decoys, matched within (query, Morgan-Tanimoto-to-truth bin) cells of same-formula decoys of
+  class-2 queries; class-2 truths are shifted down by it inside the draws and rank / gap / within-formula features
+  recomputed. Debiased models / scores (token policy, FP_PMI, training-structure negatives) shrink their own penalty.
 - mix: strata weighted by the hidden mix implied by the LB probes (Oct 23 design panel): class 1 0.18, COCONUT 0.29,
   other reachable 0.03; Enamine (0.056) and unreachable (~0.44) answers score 0 in the main lists.
 Strata: T = class-1 queries (truth spectra partly in the library), C = class-2 COCONUT truths, O = class-2 PubChemLite /
@@ -31,6 +38,18 @@ NDRAW = int(os.environ.get('HL_DRAWS', '10'))
 P_TRANS = float(os.environ.get('HL_TRANSPLANT_P', '1'))   # share of class-2 truths given transplanted documentation
 qset = pd.read_parquet(f'{W}/ret10pl_val_reach_c.parquet', columns=['qid']).qid.unique()
 V = pd.read_parquet(f'{W}/pool4/vendor.parquet') if os.path.exists(f'{W}/pool4/vendor.parquet') else None
+PRIOR = os.environ.get('HL_PRIOR') == '1'
+SPEC = ['pf_bern', 'pf_cos', 'fp_bern', 'fp_cos']
+if PRIOR:
+    from casmi.own import formula_rel, PF_FREL_SRC, FREL_SRC
+    _P = pd.read_parquet(f'{W}/pool4/pool.parquet', columns=['key', 'formula'])
+    FORMULA = _P.formula.to_numpy(dtype=object)
+    _T = np.load('/home/user/ds/casmi26-fp-data/structs.npz'); _S = np.load('/home/user/ds/casmi26-fp-data/spectra.npz')
+    _seen = _T['key'][np.bincount(_S['sidx'][_S['split'] == 0], minlength=len(_T['key'])) > 0]
+    SEEN = np.isin(_P.key.values, _seen)           # pool4 pid -> structure was a training positive of the FP / PF models
+    POOLFP = np.load(f'{W}/pool4/pool_fp.npy', mmap_mode='r')
+    POP8 = np.array([bin(i).count('1') for i in range(256)], np.uint8)
+    del _P, _T, _S, _seen
 
 
 def load(p):
@@ -51,6 +70,45 @@ def strata(D):
     s[(t.cls == 2) & (t.in_coco == 1)] = 'C'
     s[(t.cls == 2) & (t.in_coco == 0)] = 'O'
     return s
+
+
+def penalties(D):
+    """{'C': {col: pen}, 'O': {col: pen}}: score gap of held-out training decoys over non-train decoys (see docstring)."""
+    cols = [c for c in SPEC if c in D.columns]
+    t = D[(D.label == 1) & (D.cls == 2)][['qid', 'pid']].drop_duplicates('qid').set_index('qid').pid
+    d = D[(D.label == 0) & D.qid.isin(t.index)]
+    d = d[FORMULA[d.pid.values] == FORMULA[t.reindex(d.qid.values).values]]
+    held = (d.in_train.values == 1) & ~SEEN[d.pid.values]
+    a = np.asarray(POOLFP[t.reindex(d.qid.values).values]); b = np.asarray(POOLFP[d.pid.values])
+    tan = POP8[a & b].sum(1) / np.maximum(POP8[a | b].sum(1), 1)
+    d = d.assign(typ=np.where(held, 'held', np.where(d.in_train.values == 1, 'seen', np.where(d.in_coco.values == 1, 'C', 'O'))),
+                 bin=np.digitize(tan, [0.2, 0.3, 0.4, 0.55, 0.7]))
+    out = {}
+    for grp in ('C', 'O'):
+        x = d[d.typ.isin(['held', grp])].groupby(['qid', 'bin', 'typ'])[cols].mean().unstack('typ').dropna()
+        out[grp] = {c: float((x[(c, 'held')] - x[(c, grp)]).mean()) for c in cols} if len(x) else {c: 0.0 for c in cols}
+        out[grp]['cells'] = len(x)
+    return out
+
+
+def apply_prior(D, pen):
+    """Shift class-2 truths' spectral scores down by the population penalty, then recompute derived features."""
+    cols = [c for c in SPEC if c in D.columns]
+    for grp, m in (('C', (D.label == 1) & (D.cls == 2) & (D.in_coco == 1)), ('O', (D.label == 1) & (D.cls == 2) & (D.in_coco == 0))):
+        for c in cols:
+            D.loc[m, c] = D.loc[m, c] - pen[grp][c]
+    g = D.groupby('qid', sort=False)
+    for c in cols:
+        if c + '_r' in D.columns:
+            D[c + '_r'] = g[c].rank(ascending=False, method='min')
+        if c + '_gap' in D.columns:
+            D[c + '_gap'] = D[c] - g[c].transform('max')
+    src = [c for c in PF_FREL_SRC + FREL_SRC if c in cols and c + '_fz' in D.columns]
+    if src:
+        D['formula'] = FORMULA[D.pid.values]
+        formula_rel(D, src)
+        D.drop(columns='formula', inplace=True)
+    return D
 
 
 def transplant(D, rng):
@@ -84,15 +142,21 @@ def evaluate(model_p):
             out[cond] = None; continue
         plain = rr(D, bst.predict(D[feats].astype(float).values))
         S = strata(D).reindex(plain.index).fillna('x')
+        pen = PEN.setdefault(p, penalties(D)) if PRIOR else None
         draws = []
         for k in range(NDRAW):
             Dk = transplant(D, np.random.default_rng(k))
+            if PRIOR:
+                Dk = apply_prior(Dk, pen)
             draws.append(rr(Dk, bst.predict(Dk[feats].astype(float).values)))
         hl = pd.concat(draws, axis=1).mean(axis=1)
         m = {s: (float(plain[S == s].mean()), float(hl[S == s].mean()), int((S == s).sum())) for s in MIX}
         per_draw = [sum(MIX[s] * (d[S == s].mean() if s != 'T' else plain[S == s].mean()) for s in MIX) for d in draws]
-        out[cond] = dict(strata=m, hl_lb=float(np.mean(per_draw)), hl_sd=float(np.std(per_draw)))
+        out[cond] = dict(strata=m, hl_lb=float(np.mean(per_draw)), hl_sd=float(np.std(per_draw)), pen=pen)
     return out
+
+
+PEN = {}
 
 
 if __name__ == '__main__':
@@ -104,3 +168,5 @@ if __name__ == '__main__':
                 print(f'  {cond:7s} (features missing)'); continue
             st = '  '.join(f'{s}: sim {a:.3f} -> HL {b:.3f} (n {n})' for s, (a, b, n) in r['strata'].items())
             print(f'  {cond:7s} HL-LB {r["hl_lb"]:.4f} (sd over draws {r["hl_sd"]:.4f}) | {st}')
+            if r['pen'] and mp == sys.argv[1]:
+                print('          prior penalty ' + ' | '.join(f'{g}: ' + ' '.join(f'{c} {v:.3g}' for c, v in r['pen'][g].items()) for g in ('C', 'O')))
