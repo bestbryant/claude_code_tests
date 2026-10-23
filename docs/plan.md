@@ -205,6 +205,8 @@ were trained with the script defaults (31 leaves, no doc weights) -> the "+.013 
 | v16a1 (31 leaves, ret16 = token-0 rows) | .3296 | .3274 |
 -> retraining on token-3 rows adds ~+.002 over the override; token 0 vs 3 within noise (sd over draws ~.002).
 Pipeline T=v13 (ret13 rows) built and kernel pushed Oct 23 11:40 (Oct 24 slot 5).
+Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
+.3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
 FP_PMI must reach a kernel explicitly (casmi26-code fpscore.py + fp_bitprior.npy + FP_PMI env), not yet deployed.
 PeakFormer variant a (token dropout, old negatives) dropped from the Oct 24 GPU plan (shared quota): b ~8.5 h + FP b
