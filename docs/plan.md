@@ -101,6 +101,30 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
 
+## COCONUT gap study (workflow wf_4186feca-c4e, Oct 23)
+Public lineage, read for ideas only: engine 1 = train + COCONUT pool, 160-feature LightGBM with NO documentation /
+source features and FPNets WITHOUT an instrument input (4 models incl. a DreaMS fine-tune), learned fragment LLR,
+analog-structure families; then z(score) + 0.15 pop re-rank of the top 60 (+0.010 LB per their notes); engine 2 =
+COCONUT (prvsiyan) + ChEBI/LMSD + train, doc-blind HistGB rankers on different evidence, fused by one-vote rank fusion
+(+0.015 / +0.018 LB in their history); GLACIER slot-keeping re-order within formula groups; PubChem channel does not
+touch COCONUT ordering.
+Our losses (620 class-2 COCONUT validation queries, kernel token, stage 1 / stage 2, MRR): documentation kept 0.919 /
+0.917; random-donor documentation 0.551 / 0.591; purchasable-donor 0.652 / 0.685. On the probe's own restricted metric
+(stage 2): 0.934 / 0.650 / 0.741 vs LB-implied 0.655 (random-donor matches; the public lineage ~0.87). Loss buckets:
+same-formula COCONUT isomers 58-68% of the lost MRR (not near-duplicates: median Tanimoto 0.34; they win on PeakFormer
+and analog evidence), training-structure isomers 21-31% (their own library spectra match, lib ~0.8 -> largely
+irreducible), PubChemLite / other < 10%. Truth in the full top 25 for 96.6% -> reach is not the problem.
+Within-formula PeakFormer MRR 0.38 (token 1) / 0.49 (token 3) vs the public f.z 0.639; win rate vs COCONUT decoys 0.84 /
+0.91 vs public 0.95. Parity emulation: raising the win rate to 0.965-0.977 lifts restricted MRR to 0.83-0.87.
+Documentation handling (learned vs public-style additive pop, transplant-trained, reweighting) moves it by <= +-0.03; post-hoc
+counterfactuals (doc weight, training-isomer demotion, formula normalisation) <= +0.003 HL-LB (COCONUT gains paid ~1:1
+by class 1). GLACIER: COCONUT +0.033 / +0.040 (+0.048 on covered queries), class 1 -0.014, HL-LB +0.009 (= the LB's
++0.010). Fusing two of OUR rankers adds nothing (same evidence).
+-> Levers in order: (1) the token-3 override (Oct 24 LB); (2) within-formula spectral discrimination: an instrument-free
+or token-dropout PeakFormer (GPU Oct 24, PF_INST_DROP=0.5), more / better FP models, ensembles judged on within-formula
+COCONUT MRR; (3) GLACIER coverage; (4) a second engine on genuinely different evidence (candidate set, FP model,
+analog construction), fused by rank.
+
 ## Hidden-like validation (scripts/hlval.py, Oct 23)
 Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every
 query, ret14 rows; tok3 = the override, ret13 rows; true = own tokens), class-2 truths given the documentation of a random
