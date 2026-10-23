@@ -205,6 +205,22 @@ were trained with the script defaults (31 leaves, no doc weights) -> the "+.013 
 | v16a1 (31 leaves, ret16 = token-0 rows) | .3296 | .3274 |
 -> retraining on token-3 rows adds ~+.002 over the override; token 0 vs 3 within noise (sd over draws ~.002).
 Pipeline T=v13 (ret13 rows) built and kernel pushed Oct 23 11:40 (Oct 24 slot 5).
+Fixed-ranker closure: v11l on token-1 rows (= the LB 0.320 kernel) HL-LB **.3179** with HL_PRIOR (plain HL overshot by
++.018) -> pre-registered Oct 24 predictions: tok3 +.018, tok0 +.020, v13 +.021 over 0.320.
+EVID_SHIFT (scripts/train_ret_ranker.py PRIOR_SHIFT=lam, casmi/hlprior.py; penalty estimated on the reachable training
+queries: C pf_bern 13.2 pf_cos .010 fp_bern 8.3 fp_cos .020, O 9.6 / .008 / 2.4 / .010; v13 recipe on ret13 rows):
+| ranker | HL-LB with prior emulation | without |
+|---|---|---|
+| v13 | .3385 (C .547) | .3555 (C .598) |
+| v13p1 (lam 1) | .3453 (C .573) | .3328 |
+| v13p05 (lam 0.5) | **.3473** (C .577) | .3451 |
+-> lam 0.5 = hedge (+.009 if the prior is real, -.010 if not; the closure says it is). Penalty robustness: C stable on
+COCONUT-truth windows (train 13.2 / val 13.9 pf_bern, fp_bern 8.1 both); the O penalty is small on O-truth windows (1.3
+/ 0.6, 118 / 18 queries) but ~10-14 in COCONUT windows; unfiltered rows (incl. unreachable synthetic queries) give C 9.7
+/ O -0.7 -> the penalty depends on the window chemistry; estimate it on the matching query population.
+Pipeline T=v13p05 (ret13p05 rows = ret13 with class-2 truths shifted by 0.5 x the reachable-train penalty): val (shifted)
+stage 1 .8948 / stage 2 .8975; kernel casmi26-own-s2v13p05 pushed Oct 23 15:35 (candidate for Oct 25; review
+wf_b897a7fd-fd5 running).
 Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
 .3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).

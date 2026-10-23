@@ -1,0 +1,23 @@
+{
+  "id": "bryantyu/casmi26-own-s2v13p05",
+  "title": "casmi26-own-s2v13p05",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-pool4",
+    "bryantyu/casmi26-models",
+    "metric/rdkit-2026-3-3-wheel",
+    "bryantyu/casmi26-glacier"
+  ],
+  "competition_sources": [
+    "enveda-CASMI26-molecule-id-mass-spectra"
+  ],
+  "kernel_sources": [],
+  "model_sources": []
+}
