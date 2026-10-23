@@ -10,7 +10,7 @@ Loss = f.z and cosine scores, each against in-batch and same-mass window negativ
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
 Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS,
-PF_TIMS_W (sampling weight of timsTOF spectra, default 2), PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
+PF_TIMS_W (sampling weight of timsTOF spectra, default 2), PF_NEG_TRAIN (negatives restricted to training structures), PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
 with Enamine chemistry, so the token became a chemistry prior that hurts timsTOF natural products).
 """
 import os, sys, time
@@ -43,6 +43,16 @@ X = np.load(fpx_p)
 keep, s_ptr, s_idx, n_ptr, n_idx = X['keep'], X['s_ptr'], X['s_idx'], X['n_ptr'], X['n_idx']
 NB = len(keep)
 negs = np.load(f'{data}/negs.npy')
+if os.environ.get('PF_NEG_TRAIN'):
+    # window negatives restricted to training structures (PF_NEG_TRAIN = bool per negative row, scripts/
+    # pf_negtrain.py): COCONUT-not-train structures are never positives, so as negatives they teach a population prior
+    # "COCONUT-not-train is never the answer" -- exactly where hidden COCONUT answers come from. Kept negatives stay
+    # left-aligned in their original order (same formula first); the batch sampler draws from the first cnt entries.
+    nt = np.load(os.environ['PF_NEG_TRAIN'])
+    km = (negs >= 0) & nt[np.maximum(negs, 0)]
+    o_ = np.argsort(~km, axis=1, kind='stable')
+    negs = np.where(np.take_along_axis(km, o_, 1), np.take_along_axis(negs, o_, 1), -1).astype(negs.dtype)
+    print('window negatives restricted to training structures: mean per structure', round(float((negs >= 0).sum(1).mean()), 1), flush=True)
 if os.environ.get('FP_EXCLUDE'):
     ex = set(open(os.environ['FP_EXCLUDE']).read().split())
     split = split.copy(); split[(split == 0) & np.isin(sidx, np.where(np.isin(T['key'], list(ex)))[0])] = 2

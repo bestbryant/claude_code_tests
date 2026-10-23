@@ -11,7 +11,8 @@
   "dataset_sources": [
     "bryantyu/casmi26-code",
     "bryantyu/casmi26-fp-data",
-    "bryantyu/casmi26-pf-data"
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pf-negtrain"
   ],
   "competition_sources": [],
   "kernel_sources": [],

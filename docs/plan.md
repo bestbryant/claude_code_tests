@@ -125,6 +125,22 @@ or token-dropout PeakFormer (GPU Oct 24, PF_INST_DROP=0.5), more / better FP mod
 COCONUT MRR; (3) GLACIER coverage; (4) a second engine on genuinely different evidence (candidate set, FP model,
 analog construction), fused by rank.
 
+## Population prior in our spectral models (Oct 23, COCONUT-study synthesis)
+Within the truth's formula group at matched Tanimoto, a simulated class-2 COCONUT truth beats COCONUT-not-train decoys
+far more often than training-structure decoys: excess win rate pf_bern +0.137 (token 3 +0.141), fp_bern +0.107, an_best
++0.070 (partly legitimate), frag +0.013, GLACIER +0.019. Not memorisation (PeakFormer-unseen training structures show
++0.105). Likely cause: the PeakFormer / FP window negatives come from pool v1, whose COCONUT-not-train structures (30% of
+negative entries) are never positives -> the models learn "COCONUT-not-train is never the answer", exactly the hidden
+COCONUT population. Shifting the truths' pf / fp scores to remove the prior reproduces the LB-implied COCONUT MRR (0.660
+vs 0.655), reconciling "hidden answers are well documented" (no-prior gap) with the 0.190 probe; the Zenodo proxy
+(PeakFormer-only 0.275 on true non-training structures) agrees. Fix in training: scripts/pf_negtrain.py flags training-
+structure negative rows (43% of rows, 70% of entries; 35 negatives per structure remain), PF_NEG_TRAIN in
+scripts/train_pf.py keeps only those -> GPU variant b (kernels/casmi26-pf-train-b, Oct 24): instrument-free
+(PF_INST_DROP=1.0), PF_TIMS_W=1.0, PF_NEG_TRAIN; variant a keeps the old negatives with token dropout 0.5. Judge them
+on a membership-neutral metric: the truth's matched win rate vs same-formula TRAINING decoys (pf_bern now 0.663 kernel /
+0.731 token 3) and the CO-TR excess (should shrink), not on raw within-formula MRR (which rewards the prior).
+Ranker-side alternative (EVID_SHIFT: train stage 1 with class-2 truths' pf / fp shifted down) kept in reserve.
+
 ## Hidden-like validation (scripts/hlval.py, Oct 23)
 Stage-1 MRR on validation strata made hidden-like -- features under the token the kernel sees (kernel = token 1 for every
 query, ret14 rows; tok3 = the override, ret13 rows; true = own tokens), class-2 truths given the documentation of a random
