@@ -39,17 +39,8 @@ P_TRANS = float(os.environ.get('HL_TRANSPLANT_P', '1'))   # share of class-2 tru
 qset = pd.read_parquet(f'{W}/ret10pl_val_reach_c.parquet', columns=['qid']).qid.unique()
 V = pd.read_parquet(f'{W}/pool4/vendor.parquet') if os.path.exists(f'{W}/pool4/vendor.parquet') else None
 PRIOR = os.environ.get('HL_PRIOR') == '1'
-SPEC = ['pf_bern', 'pf_cos', 'fp_bern', 'fp_cos']
 if PRIOR:
-    from casmi.own import formula_rel, PF_FREL_SRC, FREL_SRC
-    _P = pd.read_parquet(f'{W}/pool4/pool.parquet', columns=['key', 'formula'])
-    FORMULA = _P.formula.to_numpy(dtype=object)
-    _T = np.load('/home/user/ds/casmi26-fp-data/structs.npz'); _S = np.load('/home/user/ds/casmi26-fp-data/spectra.npz')
-    _seen = _T['key'][np.bincount(_S['sidx'][_S['split'] == 0], minlength=len(_T['key'])) > 0]
-    SEEN = np.isin(_P.key.values, _seen)           # pool4 pid -> structure was a training positive of the FP / PF models
-    POOLFP = np.load(f'{W}/pool4/pool_fp.npy', mmap_mode='r')
-    POP8 = np.array([bin(i).count('1') for i in range(256)], np.uint8)
-    del _P, _T, _S, _seen
+    from casmi.hlprior import penalties, apply_prior
 
 
 def load(p):
@@ -70,45 +61,6 @@ def strata(D):
     s[(t.cls == 2) & (t.in_coco == 1)] = 'C'
     s[(t.cls == 2) & (t.in_coco == 0)] = 'O'
     return s
-
-
-def penalties(D):
-    """{'C': {col: pen}, 'O': {col: pen}}: score gap of held-out training decoys over non-train decoys (see docstring)."""
-    cols = [c for c in SPEC if c in D.columns]
-    t = D[(D.label == 1) & (D.cls == 2)][['qid', 'pid']].drop_duplicates('qid').set_index('qid').pid
-    d = D[(D.label == 0) & D.qid.isin(t.index)]
-    d = d[FORMULA[d.pid.values] == FORMULA[t.reindex(d.qid.values).values]]
-    held = (d.in_train.values == 1) & ~SEEN[d.pid.values]
-    a = np.asarray(POOLFP[t.reindex(d.qid.values).values]); b = np.asarray(POOLFP[d.pid.values])
-    tan = POP8[a & b].sum(1) / np.maximum(POP8[a | b].sum(1), 1)
-    d = d.assign(typ=np.where(held, 'held', np.where(d.in_train.values == 1, 'seen', np.where(d.in_coco.values == 1, 'C', 'O'))),
-                 bin=np.digitize(tan, [0.2, 0.3, 0.4, 0.55, 0.7]))
-    out = {}
-    for grp in ('C', 'O'):
-        x = d[d.typ.isin(['held', grp])].groupby(['qid', 'bin', 'typ'])[cols].mean().unstack('typ').dropna()
-        out[grp] = {c: float((x[(c, 'held')] - x[(c, grp)]).mean()) for c in cols} if len(x) else {c: 0.0 for c in cols}
-        out[grp]['cells'] = len(x)
-    return out
-
-
-def apply_prior(D, pen):
-    """Shift class-2 truths' spectral scores down by the population penalty, then recompute derived features."""
-    cols = [c for c in SPEC if c in D.columns]
-    for grp, m in (('C', (D.label == 1) & (D.cls == 2) & (D.in_coco == 1)), ('O', (D.label == 1) & (D.cls == 2) & (D.in_coco == 0))):
-        for c in cols:
-            D.loc[m, c] = D.loc[m, c] - pen[grp][c]
-    g = D.groupby('qid', sort=False)
-    for c in cols:
-        if c + '_r' in D.columns:
-            D[c + '_r'] = g[c].rank(ascending=False, method='min')
-        if c + '_gap' in D.columns:
-            D[c + '_gap'] = D[c] - g[c].transform('max')
-    src = [c for c in PF_FREL_SRC + FREL_SRC if c in cols and c + '_fz' in D.columns]
-    if src:
-        D['formula'] = FORMULA[D.pid.values]
-        formula_rel(D, src)
-        D.drop(columns='formula', inplace=True)
-    return D
 
 
 def transplant(D, rng):

@@ -55,6 +55,13 @@ if os.environ.get('DOC_TRANSPLANT'):
         parts.append(X)
     TR = pd.concat(parts, ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
     print('documentation transplant: class-2 copies', os.environ['DOC_TRANSPLANT'], 'rows', len(TR), flush=True)
+if os.environ.get('PRIOR_SHIFT'):
+    # hidden-like spectral scores for class-2 truths (casmi/hlprior.py): a hidden COCONUT / other non-train answer carries
+    # the population prior of the PeakFormer / FP models (never a training positive), a simulated truth does not
+    from casmi.hlprior import penalties, apply_prior
+    _pen = penalties(TR)
+    apply_prior(TR, _pen, float(os.environ['PRIOR_SHIFT']))
+    print('prior shift', os.environ['PRIOR_SHIFT'], {g: {c: round(v, 4) for c, v in d.items()} for g, d in _pen.items()}, flush=True)
 # class-1 queries twice: the simulation is 30% class 1 while the test mix is closer to 45:55 (better on validation)
 c1 = TR[TR.cls == 1]
 TR = pd.concat([TR, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 'pid']).reset_index(drop=True)
