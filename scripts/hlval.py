@@ -10,7 +10,8 @@ Differences addressed here:
   (token 1 for every query: ret14 rows), 'tok3' = the OWN_PF_INST=3 override (ret13 rows), 'true' = the rows' own tokens.
 - documentation: a simulated class-2 truth is a training structure, far better documented than a hidden answer. The
   truth's documentation / depositor columns are replaced by those of a random candidate of the same source that is not a
-  training structure (COCONUT-not-train for COCONUT truths), 10 paired draws.
+  training structure (COCONUT-not-train for COCONUT truths), 10 paired draws; HL_TRANSPLANT_P = share of truths
+  transplanted (calibrated against the LB no-prior gap, scripts/hl_calib_doc.sh).
 - mix: strata weighted by the hidden mix implied by the LB probes (Oct 23 design panel): class 1 0.18, COCONUT 0.29,
   other reachable 0.03; Enamine (0.056) and unreachable (~0.44) answers score 0 in the main lists.
 Strata: T = class-1 queries (truth spectra partly in the library), C = class-2 COCONUT truths, O = class-2 PubChemLite /
@@ -27,6 +28,7 @@ DOC = PRIOR_COLS + PCL_COLS + PC_COLS + LT_COLS + ['in_bio'] + VEND_COLS
 CONDS = {c[len('HL_ROWS_'):]: p for c, p in os.environ.items() if c.startswith('HL_ROWS_')} or {
     'kernel': f'{W}/ret14_val_fp.parquet', 'tok3': f'{W}/ret13_val_fp.parquet', 'true': f'{W}/ret10pl_val_fp.parquet'}
 NDRAW = int(os.environ.get('HL_DRAWS', '10'))
+P_TRANS = float(os.environ.get('HL_TRANSPLANT_P', '1'))   # share of class-2 truths given transplanted documentation
 qset = pd.read_parquet(f'{W}/ret10pl_val_reach_c.parquet', columns=['qid']).qid.unique()
 V = pd.read_parquet(f'{W}/pool4/vendor.parquet') if os.path.exists(f'{W}/pool4/vendor.parquet') else None
 
@@ -58,6 +60,7 @@ def transplant(D, rng):
     don_c = D[(D.label == 0) & (D.in_train == 0) & (D.in_coco == 1)][cols].values
     don_o = D[(D.label == 0) & (D.in_train == 0) & (D.in_coco == 0)][cols].values
     tr = np.flatnonzero(((D.label == 1) & (D.cls == 2)).values)
+    tr = tr[rng.random(len(tr)) < P_TRANS]
     coco = D.in_coco.values[tr] == 1
     vals = np.where(coco[:, None], don_c[rng.integers(0, len(don_c), len(tr))], don_o[rng.integers(0, len(don_o), len(tr))])
     D.iloc[tr, [D.columns.get_loc(c) for c in cols]] = vals
