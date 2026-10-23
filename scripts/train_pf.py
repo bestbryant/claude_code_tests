@@ -10,7 +10,7 @@ Loss = f.z and cosine scores, each against in-batch and same-mass window negativ
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
 Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS,
-PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
+PF_TIMS_W (sampling weight of timsTOF spectra, default 2), PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
 with Enamine chemistry, so the token became a chemistry prior that hurts timsTOF natural products).
 """
 import os, sys, time
@@ -49,7 +49,7 @@ if os.environ.get('FP_EXCLUDE'):
 tr = np.where(split == 0)[0]
 print('train spectra', len(tr), 'val', int((split == 1).sum()), 'held out', int((split == 2).sum()), 'bits', NB,
       f'{time.time() - t0:.0f}s', flush=True)
-w = np.where(inst_id[tr] == 1, 2.0, 1.0); cw = np.cumsum(w); cw /= cw[-1]
+w = np.where(inst_id[tr] == 1, float(os.environ.get('PF_TIMS_W', '2.0')), 1.0); cw = np.cumsum(w); cw /= cw[-1]   # timsTOF spectra (99.9% enveda-180) up-weighted
 S_BAL = float(os.environ.get('PF_SBAL', '0'))       # share of each batch drawn structure-uniformly
 so = tr[np.argsort(sidx[tr], kind='stable')]; ss = sidx[so]
 s_first = np.r_[0, np.where(np.diff(ss) != 0)[0] + 1]; s_len = np.diff(np.r_[s_first, len(ss)])
