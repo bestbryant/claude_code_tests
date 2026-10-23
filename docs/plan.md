@@ -234,6 +234,11 @@ the v13p05 pipeline's OOF / stage 2 did see shifted rows) BUT EVID_SHIFT NOT ADO
 - LB power: paired se of v13p05 vs v13 ~.007-.010 on the public 124 -> adopt only if >= +.010 over v13; slot only if spare.
 -> the prior is removed at its source instead (PF-b / FP-b GPU retrain, Oct 24); HL_PRIOR stays a diagnostic with
 known identification limits. Pre-registered Oct 24 token predictions remain (they test p=1, lam=1).
+Adoption chain scripts/adopt_spectral_models.sh <pf> <fp> <tag> [token] (neutral eval -> rows -> v13-recipe ranker ->
+HL-val with / without prior vs v13 -> full pipeline) validated on the current models at token 0 (tag v16r): PeakFormer d
+under token 0 pf_bern .744 / .876 / +.132 (token 1 .667 / .804 / +.137, token 3 .734 / .871 / +.137); v16r HL-LB .3378
+(prior) / .3559 (no prior) vs v13 .3385 / .3555 -> token 0 = token 3 at matched recipe; val stage 1 .9008 / stage 2 .8964.
+Kernel casmi26-own-s2v16r pushed Oct 23 16:45 (insurance if token 0 wins on Oct 24); v13 v2 and v13p05 COMPLETE.
 Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
 .3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
