@@ -20,6 +20,13 @@ dev = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(0); rng = np.random.default_rng(0)
 S = np.load(f'{data}/spectra.npz'); T = np.load(f'{data}/structs.npz')
 negs = np.load(f'{data}/negs.npy'); negfp = np.load(f'{data}/negfp.npy')
+if os.environ.get('FP_NEG_TRAIN'):      # window negatives restricted to training structures (scripts/pf_negtrain.py)
+    nt = np.load(os.environ['FP_NEG_TRAIN'])
+    km = (negs >= 0) & nt[np.maximum(negs, 0)]
+    o_ = np.argsort(~km, axis=1, kind='stable')
+    negs = np.where(np.take_along_axis(km, o_, 1), np.take_along_axis(negs, o_, 1), -1).astype(negs.dtype)
+    print('window negatives restricted to training structures: mean per structure', round(float((negs >= 0).sum(1).mean()), 1), flush=True)
+INST_DROP = float(os.environ.get('FP_INST_DROP', '0'))     # share of training spectra with the instrument token set to 0
 mz, it, off = S['mz'], S['it'], S['off']
 prec, ce, add_id, inst_id, pol, sidx, split = S['prec'], S['ce'], S['add_id'], S['inst_id'], S['pol'], S['sidx'], S['split']
 sfp = T['fp']
@@ -28,7 +35,7 @@ if os.environ.get('FP_EXCLUDE'):        # extra held-out structures (e.g. the te
     split = split.copy(); split[(split == 0) & np.isin(sidx, np.where(np.isin(T['key'], list(ex)))[0])] = 2
 tr = np.where(split == 0)[0]
 print('train spectra', len(tr), 'val', int((split == 1).sum()), 'held out', int((split == 2).sum()), flush=True)
-w = np.where(inst_id[tr] == 1, 2.0, 1.0); w /= w.sum()          # timsTOF spectra sampled twice as often
+w = np.where(inst_id[tr] == 1, float(os.environ.get('FP_TIMS_W', '2.0')), 1.0); w /= w.sum()   # timsTOF spectra up-weighted
 FINE = os.environ.get('FP_FINE') == '1'          # add 0.1 Da peak / neutral-loss bins
 D_MODEL = int(os.environ.get('FP_D', '768'))
 model = SparseDualEncoder(d=D_MODEL, fine=FINE).to(dev)
@@ -40,8 +47,11 @@ sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=1e-3, total_steps=total,
 T_ = lambda a: torch.from_numpy(a).to(dev)
 
 
-def spec_inputs(idx):
-    ids, bo, wts, meta = sparse_spec(mz, it, off, idx, prec, ce, add_id, inst_id, pol, fine=FINE)
+def spec_inputs(idx, train=False):
+    ii = inst_id
+    if train and INST_DROP > 0:          # instrument-token dropout (the timsTOF token is an Enamine-chemistry prior)
+        ii = inst_id.copy(); ii[idx[rng.random(len(idx)) < INST_DROP]] = 0
+    ids, bo, wts, meta = sparse_spec(mz, it, off, idx, prec, ce, add_id, ii, pol, fine=FINE)
     return T_(ids), T_(bo), T_(wts), T_(meta)
 
 
@@ -88,7 +98,7 @@ for ep in range(epochs):
         pick_pos = np.minimum((r * np.maximum(cnt, 1)[:, None]).astype(np.int64), 63)
         pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64)
         pick[cnt == 0] = -1
-        e_s, logits = model.encode_spec(*spec_inputs(idx))
+        e_s, logits = model.encode_spec(*spec_inputs(idx, True))
         e_pos = model.encode_mol(*mol_inputs(sfp[s]))
         pos_bits = T_(unpack_bits(sfp[s]))
         tau = model.log_tau.exp().clamp(0.01, 1.0)
