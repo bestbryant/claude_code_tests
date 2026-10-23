@@ -122,6 +122,13 @@ more on spectral evidence. But the LB says documentation matters on hidden answe
 Oct 18), the opposite of the full-transplant assumption -> not shipped; HL-val is used for token / feature decisions
 (documentation treatment held fixed), not for documentation-weighting decisions until a partial-transplant version
 reproduces the 0.07 no-prior LB gap.
+Calibration (scripts/hl_calib_doc.sh; stage-1 rankers on kernel-token rows, alpha 0, with / without priors): HL gap
+prior - no-prior = +0.028 / +0.022 / +0.015 / +0.010 / +0.002 at transplant share p = 0 / 0.25 / 0.5 / 0.75 / 1, against
++0.070 on the LB (Oct 18). Even without any transplant the simulation under-states how much documentation helps on the
+hidden test -> hidden answers are at least as documented as simulated truths (consistent with purchased, known
+compounds), the opposite of the documentation-shift premise. Caveat: the LB gap was measured with the pool-v2 rankers,
+whose spectral evidence was weaker. Documentation treatment stays as in v11l (the alpha A/Bs were LB noise); HL-val
+decides token / feature questions only.
 
 ## Lessons from the Oct 23 submissions
 - The channel re-ranker does not transfer: re-ranked purchasable-only list 0.034 vs PeakFormer-order Enamine-only 0.037
