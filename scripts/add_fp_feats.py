@@ -2,7 +2,8 @@
 
 Usage: python scripts/add_fp_feats.py <rows.parquet> <weights.pt> <out.parquet> [pool_dir|-] [shard nshards]
 A PeakFormer checkpoint (casmi/peakformer.py, has '_cfg'; comma-separated = ensemble) adds pf_* columns instead
-of fp_*; RICHFP_CACHE = scripts/cache_richfp.py output.
+of fp_*; RICHFP_CACHE = scripts/cache_richfp.py output. OWN_PF_INST=<token>: score every query with this instrument token
+(test-time policy, casmi/own.query_from_rows) instead of its own.
 """
 import os, sys, time
 import numpy as np, pandas as pd, torch
@@ -26,6 +27,7 @@ if PF:                  # comma-separated checkpoints -> ensemble
 else:
     sc = FPScorer(wpath, np.load(f'{POOL}/pool_fp.npy', mmap_mode='r'))
 st = Store('/home/user/work/train_store'); meta = st.meta
+INST = os.environ.get('OWN_PF_INST')
 parts = []
 t0 = time.time()
 for n, (qid, g) in enumerate(D.groupby('qid', sort=False)):
@@ -34,7 +36,8 @@ for n, (qid, g) in enumerate(D.groupby('qid', sort=False)):
         mz, it = st.peaks(i); r = meta.loc[i]
         ce = r.collision_energy_ev
         spectra.append(dict(mz=mz, it=it, prec=float(r.precursor_mz), adduct=r.adduct,
-                            ce=float(np.mean(ce)) if ce is not None and len(ce) else -1.0, inst=inst_family(r.instrument_type)))
+                            ce=float(np.mean(ce)) if ce is not None and len(ce) else -1.0,
+                            inst=inst_family(r.instrument_type) if INST is None else int(INST)))
     pids = g.pid.values
     cos, bern = sc.score(spectra, pids, P.smiles.values[pids])
     parts.append(fp_feats(g.copy(), cos, bern, 'pf' if PF else 'fp'))
