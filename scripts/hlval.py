@@ -103,7 +103,9 @@ def evaluate(model_p):
             out[cond] = None; continue
         plain = rr(D, bst.predict(D[feats].astype(float).values))
         S = strata(D).reindex(plain.index).fillna('x')
-        pen = PEN.setdefault(p, penalties(D)) if PRIOR else None
+        if PRIOR and p not in PEN:
+            PEN[p] = penalties(D)
+        pen = PEN.get(p) if PRIOR else None
         draws = []
         for k in range(NDRAW):
             Dk = transplant(D, np.random.default_rng(k))

@@ -221,6 +221,19 @@ COCONUT-truth windows (train 13.2 / val 13.9 pf_bern, fp_bern 8.1 both); the O p
 Pipeline T=v13p05 (ret13p05 rows = ret13 with class-2 truths shifted by 0.5 x the reachable-train penalty): val (shifted)
 stage 1 .8948 / stage 2 .8975; kernel casmi26-own-s2v13p05 pushed Oct 23 15:35 (candidate for Oct 25; review
 wf_b897a7fd-fd5 running).
+Review wf_b897a7fd-fd5 (3 lenses + skeptics, Oct 23): implementation correct (lam 0 reproduces every stored feature;
+the v13p05 pipeline's OOF / stage 2 did see shifted rows) BUT EVID_SHIFT NOT ADOPTED:
+- artifact (confirmed): PRIOR_SHIFT rankers learned the shifted-truth pattern, mainly through fp_bern -> shifting a
+  same-formula COCONUT decoy DOWN raises its ranker score (lam 1: v13 -0.324, v13p05 -0.054, v13p1 +0.196; rank-1 share
+  v13p1 .0125 -> .0202) -- the DOC_TRANSPLANT failure again (scripts/check_decoy_shift.py);
+- circular evidence: HL_PRIOR scores the transform the rankers were trained on; at other (transplant p, lam_eval)
+  settings v13p05 - v13 is -0.009..+0.008 (p=0: -.006 / +.001 / +.003 at lam 0 / .5 / 1);
+- the v11l closure (.3179 vs .320) fixes the transplant p and lam only jointly (p=1, lam 0: .3380; p=0: ~.44); the
+  analog features (an_*) show a held-minus-COCONUT gap as large as the spectral one (in within-query sd) that HL_PRIOR does
+  not emulate; vs PURCHASABLE COCONUT decoys the penalty is 35-75% smaller;
+- LB power: paired se of v13p05 vs v13 ~.007-.010 on the public 124 -> adopt only if >= +.010 over v13; slot only if spare.
+-> the prior is removed at its source instead (PF-b / FP-b GPU retrain, Oct 24); HL_PRIOR stays a diagnostic with
+known identification limits. Pre-registered Oct 24 token predictions remain (they test p=1, lam=1).
 Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
 .3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
