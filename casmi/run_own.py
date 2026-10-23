@@ -2,7 +2,7 @@
 
 python -m casmi.run_own <test.parquet> <train.parquet> <pool_dir> <model_dir> <out.json> [workdir] [procs]
 pool_dir holds pool.parquet, pool_fp.npy, coconut_prior.parquet; model_dir holds ret_ranker.txt, feats.txt and
-optionally fp_model.pt.
+optionally fp_model.pt (OWN_FP=<name> selects another FP checkpoint).
 """
 import json, os, sys, time
 os.environ.setdefault('NUMBA_NUM_THREADS', '1')
@@ -248,7 +248,7 @@ def main(argv):
     from .fpscore import FPScorer
     R = Retrieval(res, AnalogLib(f'{work}/analog_lib.npz'), f'{res}/coconut_prior.parquet',
                   lib_full=AnalogLib(f'{work}/lib10.npz'))
-    fpw = f'{mdir}/fp_model.pt'
+    fpw = f"{mdir}/{os.environ.get('OWN_FP', 'fp_model.pt')}"          # OWN_FP: FP checkpoint name in the models dataset
     FPS = FPScorer(fpw, np.load(f'{res}/pool_fp.npy', mmap_mode='r')) if os.path.exists(fpw) else None
     rk = os.environ.get('OWN_RANKER', 'ret_ranker')        # which ranker variant in the models dataset
     RK = lgb.Booster(model_file=f'{mdir}/{rk}.txt')
