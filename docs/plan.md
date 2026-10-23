@@ -186,6 +186,17 @@ Review wf_362c305b-918 (3 lenses + skeptics, Oct 23) before the GPU runs; fixed:
 - INST_DROP=1.0 left tokens 1-5 at random init while validation / inference feed real tokens: token columns tied to
   token 0 before validation and save (any token = token 0).
 - PeakFormer validation scored a phantom empty candidate for structures with no negatives (93 / 1500 in b): skipped.
+HL_PRIOR=1 results (rankers trained on their own rows; penalty C: pf_bern 15.8 tok1 / 14.0 tok3, fp_bern 8.46 raw /
+3.44 PMI, fp_cos .022, pf_cos .018 / .012):
+| ranker / rows | HL-LB | T | C | O |
+|---|---|---|---|---|
+| v14a1 / ret14 (token 1 = kernel) | .3255 | .874 | .528 | .506 |
+| v15a1 / ret15 (token 1 + PMI) | .3250 | .875 | .531 | .452 |
+| v13a1 / ret13 (token 3) | **.3385** | .907 | .547 | .556 |
+(cross: v15a1 on tok3 rows .3294, v13a1 on kernel rows .3226.) -> PMI null under the prior emulation too (fp_bern carries
+little ranker weight) -> not deployed. The emulation moves the kernel HL-LB to .3255 vs LB .320 (closure offset +.018
+-> ~+.006). Token-3-trained stage 1 leads by +.013 (T +.033 incl. ranker-training variance, C +.019) -> pipeline T=v13
+(ret13 rows, v11l recipe) started Oct 23 11:20 for the Oct 24/25 LB if the token-3 override wins.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
 FP_PMI must reach a kernel explicitly (casmi26-code fpscore.py + fp_bitprior.npy + FP_PMI env), not yet deployed.
 PeakFormer variant a (token dropout, old negatives) dropped from the Oct 24 GPU plan (shared quota): b ~8.5 h + FP b
