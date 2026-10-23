@@ -70,6 +70,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-22 | casmi26-own-s2v12 v1 | v12: v11l + depositor features + vendor-target class-2 weights | 0.312 |
 | 10-22 | casmi26-own-s2v12purch v1 | v12 + purchasable-tier channel (slots 4..20, 2..10 if rel > 15, #1 promoted if rel > 60) | 0.294 |
 | 10-22 | casmi26-own-s2v12purchrr v1 | same + channel re-ranker | 0.296 |
+| 10-23 | casmi26-purch-only-rr v1 | PROBE: purchasable tier only, channel re-ranker order | 0.034 |
+| 10-23 | casmi26-own-s2v11lprop95 v1 | v11l + promotion only (re-ranked #1 to rank 1 if rr_top > 3.79) | 0.310 |
+| 10-23 | casmi26-own-s2v11lprop98 v1 | v11l + promotion only (rr_top > 4.6) | 0.316 |
+| 10-23 | casmi26-probe11-coco v1 | PROBE: v11l lists restricted to COCONUT-not-train | 0.190 |
+| 10-23 | casmi26-probe12-coco v1 | PROBE: v12 lists restricted to COCONUT-not-train | 0.187 |
 
 ## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
 The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
@@ -95,6 +100,15 @@ PC_NOREACH=1, 236 unreachable Enamine truths placed into their window, local Pea
 (the documented full tier's median window is 12.8k at test masses: same truths, ~15x more decoys). Probe kernel
 casmi26-enam-only (lists = the Enamine tier's top 25, train / COCONUT keys excluded, lam 0) for Oct 22; policy
 simulation scripts/sim_enam_policy.py (present vs other populations, rel / lib gate) for the combined kernel.
+
+## Lessons from the Oct 23 submissions
+- The channel re-ranker does not transfer: re-ranked purchasable-only list 0.034 vs PeakFormer-order Enamine-only 0.037
+  (offline +0.18 MRR on simulated / Zenodo-proxy truths). Even confident promotions cost: v11l 0.320 -> 0.310 (p95) /
+  0.316 (p98). -> no channel insertions in the main lists; the channel stays a probe.
+- The vendor prior does nothing on COCONUT answers either: COCONUT-restricted v12 0.187 vs v11l 0.190 -> retired.
+- Our COCONUT component is 0.190 (public lineage 0.252): the target of the instrument-token fix. Oct 24: v11l tok0 /
+  tok3 full lists plus paired restricted probes (probe11tok3-coco vs probe11-coco 0.190; probe11-train vs
+  probe11tok3-train for the class-1 cost of the override).
 
 ## Instrument token = chemistry prior (Oct 23; design-panel strategist "sim2real", reproduced)
 PeakFormer and the binned FP model take an instrument one-hot; timsTOF training spectra are 99.9% enveda-180 (Enamine), so
