@@ -100,18 +100,17 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   repeat. Deploy debiased models only as ADDITIONAL features next to the token-1 ones, or for COCONUT candidates only,
   and judge by the COCONUT-restricted probe plus the full list.
 
-## Kaggle docker image drift (found Oct 24 04:10 by the v5w drift check)
-Our kernels did not pin the docker image. The default image changed between Oct 22 and Oct 23: s2v4 / v10 / v11l / v12 /
-probe11-coco ran on gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0... ("Oct 20 image"); s2v11ltok3 / v13 /
-probe11-train (and the Oct 24 v5w re-runs) on sha256:17b2fc7f27c2.... Same code + models, new image: the v5w lists keep
-the top-1 on 399 / 400 molecules but only 122 / 400 lists keep their full order (16% of candidate scores move > 0.01,
-top-5 changes on 46 molecules) -> FP model / GLACIER numerics shift, near-tied ranks flip. The three Oct 24 v5w runs on
-the new image are bit-identical to each other (deterministic per image). CONSEQUENCE: the Oct 24 token pairs (tok3 /
-tok0 / v13 on the new image vs v11l 0.320 on the old image; probe11tok3-coco vs probe11-coco) are CONFOUNDED with the
-image change; "token override ~ -0.005" is not a clean reading. FIX: scripts/make_own_kernel.py pins the Oct 20 image
-(docker_image + docker_image_pinning_type 'original'; KERNEL_IMAGE overrides); probe5w-coco / -train v2, s2v5w-olast
-v2 and s2v17 v3 re-pushed pinned at 04:12. Every future kernel is pinned; a clean token re-test (tok3 pinned) is an
-option for a spare slot.
+## v5w drift check (Oct 24): current code reproduces the Oct 20 lists only approximately
+The Oct 24 v5w re-runs (probe5w-coco / -train / olast, current casmi26-code, same models and pool) keep the Oct 20 top-1
+on 399 / 400 molecules, but only 122 / 400 lists keep their full order (16% of candidate scores move > 0.01; top-5
+differs on 46 molecules). NOT the Kaggle image: the default image did change between Oct 22 and 23 (s2v4 / v10 / v11l /
+v12 / probe11-coco ran on sha256:81b1e7c4b4f0..., tok3 / v13 / probe11-train on sha256:17b2fc7f27c2...), but re-runs pinned
+to the Oct 20 image are bit-identical to the unpinned ones. Models (ret_ranker_v5w, stage2_v5w, fp_model.pt), pool4 and
+the competition data are unchanged and every new run_own / own / retrieval / fpscore knob defaults to off; the cause
+is an unidentified code-path change since the Oct 19 code the v5w kernel ran on. With the top-1 identical on 99.75% of
+molecules, the effect on MRR is expected to be well below LB noise (|d| <~ 0.003) -> new kernels are compared with v5w
+0.332 directly, and the Oct 24 token readings are NOT confounded by the image. Kernels stay pinned to the Oct 20 image
+(scripts/make_own_kernel.py) so that future default-image changes cannot move results.
 
 ## Plan from design panel wf_f100d853-7f9 (Oct 24, after the token results)
 Facts verified by the judge: the lib10 family (direct library matching capped at 10 spectra per structure: s2v4 0.330,
