@@ -16,6 +16,7 @@ slug, rk1, rk2 = sys.argv[1:4]
 env = dict(a.split('=', 1) for a in sys.argv[4:])
 src = os.path.join(root, 'kernels', 'casmi26-own-s2v10')
 dst = os.path.join(root, 'kernels', slug); os.makedirs(dst, exist_ok=True)
+IMAGE_OCT20 = 'gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0f2a7e0a33943c95754b1b7af6b30d65221633a284b6b601cd84a'
 meta = json.load(open(os.path.join(src, 'kernel-metadata.json')))
 meta['id'] = f'bryantyu/{slug}'; meta['title'] = slug
 if env.get('PC_TIER') == 'full':             # full PubChem tier = output of kernels/casmi26-pc-full-build
@@ -34,6 +35,10 @@ if env.get('VEND'):                          # depositor columns per pool struct
     meta['dataset_sources'] = sorted(set(meta['dataset_sources'] + ['bryantyu/casmi26-vendor']))
 if env.get('PC_EXCLUDE'):                    # probe source key sets (train / coco)
     meta['dataset_sources'] = sorted(set(meta['dataset_sources'] + ['bryantyu/casmi26-srckeys']))
+# pin the Kaggle docker image of the reference runs (s2v4 / v5w / v10 / v11l / v12, Oct 19-22): the default image changed
+# on ~Oct 23 and shifted FP / GLACIER numerics (v5w lists: identical order 122 / 400), confounding LB pairs
+meta['docker_image'] = os.environ.get('KERNEL_IMAGE', IMAGE_OCT20)
+meta['docker_image_pinning_type'] = 'original'
 json.dump(meta, open(os.path.join(dst, 'kernel-metadata.json'), 'w'), indent=2)
 nb = open(os.path.join(src, 'notebook.py')).read()
 nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replace("OWN_STAGE2 = 'stage2_v10'", f"OWN_STAGE2 = {rk2!r}")

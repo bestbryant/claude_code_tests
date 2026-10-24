@@ -100,6 +100,19 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   repeat. Deploy debiased models only as ADDITIONAL features next to the token-1 ones, or for COCONUT candidates only,
   and judge by the COCONUT-restricted probe plus the full list.
 
+## Kaggle docker image drift (found Oct 24 04:10 by the v5w drift check)
+Our kernels did not pin the docker image. The default image changed between Oct 22 and Oct 23: s2v4 / v10 / v11l / v12 /
+probe11-coco ran on gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0... ("Oct 20 image"); s2v11ltok3 / v13 /
+probe11-train (and the Oct 24 v5w re-runs) on sha256:17b2fc7f27c2.... Same code + models, new image: the v5w lists keep
+the top-1 on 399 / 400 molecules but only 122 / 400 lists keep their full order (16% of candidate scores move > 0.01,
+top-5 changes on 46 molecules) -> FP model / GLACIER numerics shift, near-tied ranks flip. The three Oct 24 v5w runs on
+the new image are bit-identical to each other (deterministic per image). CONSEQUENCE: the Oct 24 token pairs (tok3 /
+tok0 / v13 on the new image vs v11l 0.320 on the old image; probe11tok3-coco vs probe11-coco) are CONFOUNDED with the
+image change; "token override ~ -0.005" is not a clean reading. FIX: scripts/make_own_kernel.py pins the Oct 20 image
+(docker_image + docker_image_pinning_type 'original'; KERNEL_IMAGE overrides); probe5w-coco / -train v2, s2v5w-olast
+v2 and s2v17 v3 re-pushed pinned at 04:12. Every future kernel is pinned; a clean token re-test (tok3 pinned) is an
+option for a spare slot.
+
 ## Plan from design panel wf_f100d853-7f9 (Oct 24, after the token results)
 Facts verified by the judge: the lib10 family (direct library matching capped at 10 spectra per structure: s2v4 0.330,
 v5w-a05 0.323, v5w 0.332; mean 0.328) beats every full-library kernel (v10 0.314, v11l 0.320, v12 0.312, tok3 0.315, tok0
