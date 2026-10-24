@@ -247,7 +247,10 @@ the config had never run on GPU). The owner's own GPU jobs (ntl-c-lora-aug6a / 6
 slots ("Maximum batch GPU session count of 2 reached" for FP-b and the PF-b retry). Quota at 01:10: 1.63 h used of 30.
 Re-plan (shared quota, owner first): FP-b first (~1.5-2 h); PF-b resized to the deployed model-d config (d=192 x 4,
 6 heads, d_mol 256, no dropout, batch 512) so that b vs d isolates the training-data change, PF_HOURS 5; pushed only
-when a slot frees and >= 8 h quota remain.
+when a slot frees and >= 8 h quota remain. Fallback started 01:10 on local CPU (no GPU quota): PF-b in the exact model-d recipe (PF_D=192 PF_LAYERS=4
+PF_HEADS=6 PF_DMOL=256 PF_DROP=0 PF_SBAL=0.5 PF_SEED=3, 40 x 1500 x batch 256 x 23 negatives, 3 threads, PF_HOURS=9)
++ PF_INST_DROP=1 PF_TIMS_W=1 PF_NEG_TRAIN=negtrain v2 PF_NEG_NOREP=1 -> /home/user/work/pf_local_b/pf_model_b.pt
+(~10:10 UTC); paired with d for the neutral metric and scripts/adopt_spectral_models.sh.
 Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
 .3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
