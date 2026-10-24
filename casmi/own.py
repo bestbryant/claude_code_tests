@@ -156,7 +156,10 @@ def predict(R, fps, ranker, feats, g, n=25, pfs=None):
         formula_rel(df)
     if PF_FREL[0] in feats:
         formula_rel(df, PF_FREL_SRC)
-    df['z'] = ranker.predict(df[feats].astype(float).values)
+    spec = os.environ.get('OWN_SPEC_ONLY')      # LB probe: order by one spectral score (e.g. pf_bern), no ranker
+    df['z'] = df[spec].astype(float).values if spec else ranker.predict(df[feats].astype(float).values)
+    if os.environ.get('OWN_SPEC_SRC') == 'coco':  # keep COCONUT-not-train candidates only (pool flags)
+        df = df[(df.in_coco == 1) & (df.in_train == 0)]
     df = df.sort_values('z', ascending=False)
     out, seen = [], set()
     for s, z in zip(df.smiles.values, df.z.values):
