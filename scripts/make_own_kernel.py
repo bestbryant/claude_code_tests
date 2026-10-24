@@ -41,6 +41,8 @@ meta['docker_image'] = os.environ.get('KERNEL_IMAGE', IMAGE_OCT20)
 meta['docker_image_pinning_type'] = 'original'
 json.dump(meta, open(os.path.join(dst, 'kernel-metadata.json'), 'w'), indent=2)
 nb = open(os.path.join(src, 'notebook.py')).read()
+nb = nb.replace("# stage-1 ranker (full-library matching, doc-shift weights alpha 0.5)",
+                "# stage-1 ranker (library mode = LIB_CAP below; extra env at the end of the run_own call)")
 nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replace("OWN_STAGE2 = 'stage2_v10'", f"OWN_STAGE2 = {rk2!r}")
 extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE', 'VEND')}
 pc = ("'PC_TIER': os.path.dirname(first('tier_full/mass.npy')), " if env.get('PC_TIER') == 'full'
