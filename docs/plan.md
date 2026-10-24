@@ -242,6 +242,12 @@ Kernel casmi26-own-s2v16r pushed Oct 23 16:45 (insurance if token 0 wins on Oct 
 Pre-submission check (Oct 23 21:30, output endpoint recovered from 429): v13 v2 / v13p05 / v16r all clean (own lists 400
 of 400, no Traceback, 0 fallback rows, GLACIER 371 / 400, 50-61 min); placeholder top-1 agreement v13 vs v16r .96,
 v13 vs v13p05 .975.
+GPU Oct 24: PF-b (d=384 x 6, batch 512) died at step 1 with CUDA OOM on the T4 (11.8 GB in use + 3.1 GB requested;
+the config had never run on GPU). The owner's own GPU jobs (ntl-c-lora-aug6a / 6b, from 00:20) hold both batch GPU
+slots ("Maximum batch GPU session count of 2 reached" for FP-b and the PF-b retry). Quota at 01:10: 1.63 h used of 30.
+Re-plan (shared quota, owner first): FP-b first (~1.5-2 h); PF-b resized to the deployed model-d config (d=192 x 4,
+6 heads, d_mol 256, no dropout, batch 512) so that b vs d isolates the training-data change, PF_HOURS 5; pushed only
+when a slot frees and >= 8 h quota remain.
 Seed bagging (v13 recipe, ret13 rows, HL_PRIOR): seed default .3385, seed 1 .3353, seed 2 .3363, 3-seed mean-score bag
 .3379 -> seed sd ~.002, bagging +.001 over the average single model -> not worth 3x OOF / kernel cost.
 Not changed: filtering after the 64-entry cap (sk2: refiltering the full window barely changes empty / short lists).
