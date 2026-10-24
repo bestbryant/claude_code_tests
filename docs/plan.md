@@ -128,6 +128,11 @@ Later (conditional): slot-keeping with a COCONUT order donor (when the donor's C
 0.010); RRF fusion only of engines with different spectral evidence (v5w + v17b, k = 3) as the pick-#2 hedge;
 spectral-only COCONUT probes (PeakFormer d vs b vs the public f.z) to locate the COCONUT gap; spectral scaling
 (FP-b, larger instrument-free PeakFormer, DreaMS fine-tune) when GPU windows open (the owner's jobs hold both slots).
+v17 built Oct 24 02:25 (pipeline_v8d.sh T=v17 ROWS=ret17 ALPHA=1 RANKER_PARAMS='{"num_threads": 1}' GL_THREADS=1, i.e. the
+v5w recipe; features = v5w's 45 + 12 PeakFormer d columns): OOF stage 1 .8816; val stage 1 .8864 (cls1 .829 / cls2
+.917), stage 2 .8949 (.838 / .925) vs v5w stage 2 .893 (.852 / .914); GLACIER: 62 of 101,211 train rows in covered
+queries without a score (0.06%, no truth; v16r had 5.1%) -> GL_GLOB fix works. Kernel casmi26-own-s2v17 (LIB_CAP 10,
+OWN_PF pf_local_final.pt) pushed 02:35.
 Compliance to-dos: reproducible build script for casmi_probe_srckeys.parquet (needed if olast / slot-keeping enter a
 final pick); an open-source LICENSE file is still missing (owner's decision, needed for prize eligibility).
 
