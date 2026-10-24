@@ -164,7 +164,9 @@ spectral score, no ranker; OWN_SPEC_SRC=coco keeps COCONUT-not-train candidates)
 token 1 = deployed) and casmi26-specpfb-coco (PeakFormer b) pushed 13:35 for Oct 26 -> measure the spectral models
 directly on the hidden COCONUT answers (compare: v11l COCONUT probe 0.190, public lineage 0.252). specpfb COMPLETE 14:27
 (394 / 400 rows, mean list length 16.7; sampled candidates 2,997 / 2,997 COCONUT-not-train by the probe key sets);
-specpfd still running.
+specpfd COMPLETE 16:43 (queued long, ran 20 min; 394 / 400 rows, 1,997 / 1,997 sampled COCONUT-not-train). Top-1
+agreement PeakFormer d vs b on these lists: 0.62 -> the two models order COCONUT candidates quite differently; the
+Oct 26 pair (specpfd vs specpfb) measures which is right on the hidden COCONUT answers.
 FP-b GPU (Oct 24 03:11-04:25, 30k steps, 0.135 s/step after the CSR fix; val MRR .756 vs its own restricted
 negatives) -> own_models/fp_model_b.pt. Neutral metric (620 queries, token 0 = tied): fp_cos .749 / .822 / +.073 (deployed
 token 1 .644 / .786 / +.143, token 0 .692 / .842 / +.150); fp_bern .674 / .767 / +.093, with PMI .745 / .800 / +.054.
