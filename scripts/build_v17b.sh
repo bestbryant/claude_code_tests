@@ -38,6 +38,7 @@ cp $PF $M/pf_model_b.pt
 cp $W/own_models/ret_ranker_v17b.txt $W/own_models/ret_ranker_v17b_feats.txt $W/own_models/stage2_v17b.txt $W/own_models/stage2_v17b_feats.txt $M/
 kaggle datasets version -p $M -m "v17b: PeakFormer b (training-structure negatives, instrument-free) + v17b rankers" -q 2>&1 | grep -v Warning | tail -1
 for i in $(seq 1 30); do n=$(kaggle datasets files bryantyu/casmi26-models --page-size 200 2>&1 | grep -c "_v17b\|pf_model_b.pt"); [ "$n" -ge 5 ] && break; sleep 30; done
+sleep 120          # kernels pushed right after a dataset version have failed at startup (v13 v1, v17 v1)
 python3 scripts/make_own_kernel.py casmi26-own-s2v17b ret_ranker_v17b stage2_v17b OWN_PF=pf_model_b.pt LIB_CAP=10 | tail -1
 kaggle kernels push -p kernels/casmi26-own-s2v17b 2>&1 | grep -v Warning | tail -1
 echo V17B_DONE
