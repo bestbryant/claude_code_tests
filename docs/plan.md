@@ -175,8 +175,8 @@ v5w recipe; features = v5w's 45 + 12 PeakFormer d columns): OOF stage 1 .8816; v
 .917), stage 2 .8949 (.838 / .925) vs v5w stage 2 .893 (.852 / .914); GLACIER: 62 of 101,211 train rows in covered
 queries without a score (0.06%, no truth; v16r had 5.1%) -> GL_GLOB fix works. Kernel casmi26-own-s2v17 (LIB_CAP 10,
 OWN_PF pf_local_final.pt) pushed 02:35.
-Compliance to-dos: reproducible build script for casmi_probe_srckeys.parquet (needed if olast / slot-keeping enter a
-final pick); an open-source LICENSE file is still missing (owner's decision, needed for prize eligibility).
+Compliance: casmi_probe_srckeys.parquet is reproducible with scripts/build_srckeys.py (Oct 24: identical to the deployed
+file, 726,198 keys); an open-source LICENSE file is still missing (owner's decision, needed for prize eligibility).
 
 ## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
 The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
