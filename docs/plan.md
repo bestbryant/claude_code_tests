@@ -142,6 +142,11 @@ spectral-only COCONUT probes (PeakFormer d vs b vs the public f.z) to locate the
 (FP-b, larger instrument-free PeakFormer, DreaMS fine-tune) when GPU windows open (the owner's jobs hold both slots).
 GPU Oct 24 03:11: quota 5.34 h used / 24.66 h left; FP-b pushed (one slot freed); PF-b refused again (the owner holds the
 other slot) -> PF-b relies on the local CPU run; GPU retry after FP-b.
+FP-b GPU (Oct 24 03:11-04:25, 30k steps, 0.135 s/step after the CSR fix; val MRR .756 vs its own restricted
+negatives) -> own_models/fp_model_b.pt. Neutral metric (620 queries, token 0 = tied): fp_cos .749 / .822 / +.073 (deployed
+token 1 .644 / .786 / +.143, token 0 .692 / .842 / +.150); fp_bern .674 / .767 / +.093, with PMI .745 / .800 / +.054.
+-> clearly better prior-free discrimination; one change at a time: v17bb (= v17b + FP-b replacing the FP model, OWN_FP)
+after v17b, for Oct 26.
 v17 built Oct 24 02:25 (pipeline_v8d.sh T=v17 ROWS=ret17 ALPHA=1 RANKER_PARAMS='{"num_threads": 1}' GL_THREADS=1, i.e. the
 v5w recipe; features = v5w's 45 + 12 PeakFormer d columns): OOF stage 1 .8816; val stage 1 .8864 (cls1 .829 / cls2
 .917), stage 2 .8949 (.838 / .925) vs v5w stage 2 .893 (.852 / .914); GLACIER: 62 of 101,211 train rows in covered
