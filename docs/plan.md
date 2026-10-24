@@ -156,7 +156,9 @@ not only the debiasing; v17b vs v17 measures the replacement as a whole.
 v17b / v17bb built 11:47 (scripts/build_v17b.sh, build_v17bb.sh): val (unshifted sim, cannot see debiasing) v17 stage 1
 .8864 / stage 2 .8949 (.838 / .925); v17b .8895 / .8940 (.843 / .921); v17bb (+ FP-b) .8869 / .8967 (.846 / .924); v17b
 stage-1 gain now led by pf_cos_gap (PeakFormer b's cosine head). Kernels casmi26-own-s2v17b (Oct 25 slot 5) and
-casmi26-own-s2v17bb (Oct 26) pushed, pinned to the Oct 20 image.
+casmi26-own-s2v17bb (Oct 26) pushed, pinned to the Oct 20 image. v17b COMPLETE 12:08 (400 / 400 lists, GLACIER 371 / 400,
+no fallback rows; placeholder top-1 agreement with v17 .953). Probe kernels casmi26-probe17b-coco / -train (pinned)
+pushed 11:55 for Oct 26.
 FP-b GPU (Oct 24 03:11-04:25, 30k steps, 0.135 s/step after the CSR fix; val MRR .756 vs its own restricted
 negatives) -> own_models/fp_model_b.pt. Neutral metric (620 queries, token 0 = tied): fp_cos .749 / .822 / +.073 (deployed
 token 1 .644 / .786 / +.143, token 0 .692 / .842 / +.150); fp_bern .674 / .767 / +.093, with PMI .745 / .800 / +.054.
