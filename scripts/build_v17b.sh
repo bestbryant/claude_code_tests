@@ -1,12 +1,12 @@
 #!/bin/bash
 # v17b = v17 (v5w recipe + PeakFormer features on lib10 rows) with the debiased PeakFormer b replacing PeakFormer d.
-# scripts/build_v17b.sh [pf_model.pt]   (default: the local CPU run /home/user/work/pf_local_b/pf_model_b.pt)
+# scripts/build_v17b.sh [pf_model.pt]   (default: the GPU run kernels/casmi26-pf-train-b, downloaded to /home/user/work/kout/pfb_gpu)
 # 1. neutral gate on the 620-query class-2 COCONUT subset (design panel wf_f100d853-7f9): pf_bern win rate vs same-formula
 #    training decoys >= 0.70 and excess (COCONUT - training) <= +0.087 (PeakFormer d: .667 / +.137 at token 1);
 # 2. ret17b rows = ret17 with pf_* (+ within-formula pf columns) rescored by PeakFormer b (instrument-free: token tied);
 # 3. pipeline (v5w recipe), 4. models upload + kernel casmi26-own-s2v17b (LIB_CAP 10, OWN_PF = the b checkpoint).
 set -e
-PF=${1:-/home/user/work/pf_local_b/pf_model_b.pt}
+PF=${1:-/home/user/work/kout/pfb_gpu/pf_model.pt}
 W=/home/user/work; R=/home/user/claude_code_tests; cd $R
 export RICHFP_CACHE=$W/richfp_ret10.npz
 O=$W/v17b; mkdir -p $O

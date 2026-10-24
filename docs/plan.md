@@ -142,6 +142,12 @@ spectral-only COCONUT probes (PeakFormer d vs b vs the public f.z) to locate the
 (FP-b, larger instrument-free PeakFormer, DreaMS fine-tune) when GPU windows open (the owner's jobs hold both slots).
 GPU Oct 24 03:11: quota 5.34 h used / 24.66 h left; FP-b pushed (one slot freed); PF-b refused again (the owner holds the
 other slot) -> PF-b relies on the local CPU run; GPU retry after FP-b.
+CONTAINER RESTARTS (Oct 23-24): the session container is reclaimed when idle / restarted every few hours (uptime reset
+at ~09:07 Oct 23, ~01:29, ~02:31 and ~05:30 Oct 24); detached local jobs die with it (the local PF-b CPU run stopped at
+step 1600, ~02:31, after one epoch). Rule: long training only on Kaggle (GPU / CPU kernels); locally only jobs < ~1-2 h
+under a harness-tracked background waiter; every chain must be restartable (skip finished parts).
+PF-b GPU (model-d config, PF_HOURS 5) pushed 05:31 (quota 7.5 h used) -> v17b now uses it (scripts/build_v17b.sh
+default /home/user/work/kout/pfb_gpu/pf_model.pt), ready ~10:40.
 FP-b GPU (Oct 24 03:11-04:25, 30k steps, 0.135 s/step after the CSR fix; val MRR .756 vs its own restricted
 negatives) -> own_models/fp_model_b.pt. Neutral metric (620 queries, token 0 = tied): fp_cos .749 / .822 / +.073 (deployed
 token 1 .644 / .786 / +.143, token 0 .692 / .842 / +.150); fp_bern .674 / .767 / +.093, with PMI .745 / .800 / +.054.
