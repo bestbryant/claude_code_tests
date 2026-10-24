@@ -75,6 +75,30 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-23 | casmi26-own-s2v11lprop98 v1 | v11l + promotion only (rr_top > 4.6) | 0.316 |
 | 10-23 | casmi26-probe11-coco v1 | PROBE: v11l lists restricted to COCONUT-not-train | 0.190 |
 | 10-23 | casmi26-probe12-coco v1 | PROBE: v12 lists restricted to COCONUT-not-train | 0.187 |
+| 10-24 | casmi26-own-s2v11ltok3 v1 | v11l + instrument token 3 (TOF) for main-pool PeakFormer / FP scoring | 0.315 |
+| 10-24 | casmi26-own-s2v11ltok0 v1 | v11l + instrument token 0 (unknown) | 0.316 |
+| 10-24 | casmi26-probe11tok3-coco v1 | PROBE: v11l tok3 lists restricted to COCONUT-not-train | 0.200 |
+| 10-24 | casmi26-probe11-train v1 | PROBE: v11l lists restricted to training structures | 0.149 |
+| 10-24 | casmi26-own-s2v13 v2 | stage 1 / stage 2 retrained on token-3 features + token-3 override | 0.313 |
+
+## Lessons from the Oct 24 submissions
+- The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
+  0.313. Within COCONUT it helps (tok3 COCONUT-restricted probe 0.200 vs 0.190), so the rest of the list loses ~0.015:
+  most likely class-1 / Enamine-like answers, for which the true timsTOF token is genuinely informative (the hidden
+  class-1 molecules are Enveda timsTOF measurements of training-like chemistry). All deltas are ~1 paired se (~0.01),
+  and the three kernels share one perturbation -> effectively one observation: "token override ~ -0.005".
+- The pre-registered HL-val predictions (HL_PRIOR, p=1 lam=1) were +0.018 / +0.020 / +0.021 -> they FAILED by ~0.02.
+  HL-val does not model the hidden class-1 / timsTOF behaviour (its T stratum mixes instruments and applies the token
+  to every spectrum) and its prior emulation is not identified (review wf_b897a7fd-fd5). HL-val is NOT a decision tool
+  for token / spectral-model changes; only LB A/Bs with restricted probes are.
+- Our class-1 component is near parity: probe11-train 0.149 vs the public lineage 0.155. The gaps are COCONUT (0.190 -
+  0.200 vs 0.252) and "other" (~0.01 vs 0.057).
+- Reminder from the table: the best eligible LB is still s2v5w (alpha 1, Oct 20) at 0.332; v10 (full-library
+  matching, alpha 0.5) 0.314, v11l (+PeakFormer, alpha 1) 0.320, v12 0.312 -- the Oct 21+ feature additions did not
+  beat it (alpha 1 > 0.5 in both pairs: +0.009 / +0.006; full-library matching v10 vs v5w-a05: -0.009).
+- Consequence for variant b (instrument-free PeakFormer / FP): it removes the token like tok0 -> the class-1 cost may
+  repeat. Deploy debiased models only as ADDITIONAL features next to the token-1 ones, or for COCONUT candidates only,
+  and judge by the COCONUT-restricted probe plus the full list.
 
 ## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
 The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
