@@ -153,6 +153,10 @@ negatives). NEUTRAL GATE PASSED (620 queries, token tied): pf_bern .791 vs train
 +.044 (d: .667 / .804 / +.137 at token 1, .744 / .876 / +.132 at token 0); pf_cos .810 / .831 / +.022 -> v17b build
 (scripts/build_v17b.sh) running 10:47 under a harness-tracked waiter, then v17bb. Part of the gain is the 11x training,
 not only the debiasing; v17b vs v17 measures the replacement as a whole.
+v17b / v17bb built 11:47 (scripts/build_v17b.sh, build_v17bb.sh): val (unshifted sim, cannot see debiasing) v17 stage 1
+.8864 / stage 2 .8949 (.838 / .925); v17b .8895 / .8940 (.843 / .921); v17bb (+ FP-b) .8869 / .8967 (.846 / .924); v17b
+stage-1 gain now led by pf_cos_gap (PeakFormer b's cosine head). Kernels casmi26-own-s2v17b (Oct 25 slot 5) and
+casmi26-own-s2v17bb (Oct 26) pushed, pinned to the Oct 20 image.
 FP-b GPU (Oct 24 03:11-04:25, 30k steps, 0.135 s/step after the CSR fix; val MRR .756 vs its own restricted
 negatives) -> own_models/fp_model_b.pt. Neutral metric (620 queries, token 0 = tied): fp_cos .749 / .822 / +.073 (deployed
 token 1 .644 / .786 / +.143, token 0 .692 / .842 / +.150); fp_bern .674 / .767 / +.093, with PMI .745 / .800 / +.054.
