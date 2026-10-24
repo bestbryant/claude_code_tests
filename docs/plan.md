@@ -100,6 +100,37 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
   repeat. Deploy debiased models only as ADDITIONAL features next to the token-1 ones, or for COCONUT candidates only,
   and judge by the COCONUT-restricted probe plus the full list.
 
+## Plan from design panel wf_f100d853-7f9 (Oct 24, after the token results)
+Facts verified by the judge: the lib10 family (direct library matching capped at 10 spectra per structure: s2v4 0.330,
+v5w-a05 0.323, v5w 0.332; mean 0.328) beats every full-library kernel (v10 0.314, v11l 0.320, v12 0.312, tok3 0.315, tok0
+0.316, v13 0.313; mean 0.315; ordering p = 1/84); v10 also switched stage 1 to 63 leaves / min_data 50 -> the family gap
+= library mode + trees (+ code date), dropped together by returning to the v5w recipe. Bugs: pipeline_v8d.sh stage 2
+loaded only fwd dirs up to fwd_v10 while the job builders skip pairs scored in ANY fwd dir -> v12 / v13 / v13p05 / v16r
+stage 2 saw NaN GLACIER on already-scored decoys (fixed Oct 24: every fwd dir loaded); make_own_kernel.py writes LIB_CAP
+100000 -> pass LIB_CAP=10 for lib10 kernels.
+Builds (Oct 24): thin kernels casmi26-probe5w-coco / -train (v5w lists restricted by source) and casmi26-own-s2v5w-olast
+(v5w lists, train / COCONUT candidates first, others after, nothing dropped); v17 = ret4 rows + PeakFormer d columns
+(ret17), v5w recipe (31 leaves, alpha 1), kernel with LIB_CAP=10; v17b = v17 with PeakFormer b replacing d after a
+neutral gate (win vs same-formula training decoys >= 0.70 and excess <= +0.087 on the 620-query subset).
+Adoption rules (pre-registered): post-processing on identical base lists (se ~0.005): adopt at >= +0.005, reject <= 0,
+replicate in between; retrain / feature changes vs the matched parent (se ~0.008-0.010): adopt at >= +0.008 with the
+targeted restricted probe moving >= +0.005 the same way, else a second consistent point; a new pick #1 needs >= 0.336 or
+a paired post-processing gain >= +0.005 on v5w's lists; an adopted change may not cost > 0.006-0.008 on its train probe.
+Final selection: pick #1 = v5w + adopted layers unless a retrain base cleared its rule; pick #2 = best adopted config
+with different spectral evidence within 0.008 of #1; never a v10-family config. Do not select by the max public score
+(0.332 is the max of ~20 related kernels; winner's curse ~0.003-0.005).
+Stop: v16r / v13p05 submissions; v10-family builds; token micro-variants (incl. per-candidate mixed token); debiased
+models as EXTRA columns (replace, or use as a COCONUT order donor via slot-keeping); channel insertions / promotions;
+fusion of rankers with shared evidence; alpha / vendor / PMI / seed / DreaMS / LOTUS / formula-relative variants; CV /
+HL-val / HL_PRIOR as decision tools for sim2real-sensitive changes; reading single LB deltas < 0.008 (retrain) or
+< 0.005 (post-processing) as signal; class-3 generation until the main score is > ~0.40.
+Later (conditional): slot-keeping with a COCONUT order donor (when the donor's COCONUT probe beats the base's by >=
+0.010); RRF fusion only of engines with different spectral evidence (v5w + v17b, k = 3) as the pick-#2 hedge;
+spectral-only COCONUT probes (PeakFormer d vs b vs the public f.z) to locate the COCONUT gap; spectral scaling
+(FP-b, larger instrument-free PeakFormer, DreaMS fine-tune) when GPU windows open (the owner's jobs hold both slots).
+Compliance to-dos: reproducible build script for casmi_probe_srckeys.parquet (needed if olast / slot-keeping enter a
+final pick); an open-source LICENSE file is still missing (owner's decision, needed for prize eligibility).
+
 ## Enamine tier (Oct 21): Enveda's library is Enamine's catalogue
 The test is 100% timsTOF = Enveda's instrument (training: enveda-180 1.15M spectra / 183k structures, enveda-np-examples).
 PubChem depositors (scripts/pc_sid_sources.py streams SID-Map: 335M deposits with a CID, 893 sources), share of keys
