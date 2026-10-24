@@ -29,11 +29,13 @@ python3 $R/scripts/build_fwd_jobs.py ${ROWS}_val_reach_c.parquet own_models/ret_
 cd $R
 for f in train val; do
   python3 -m casmi.fwdrun $W/fwd_$T/$f.jobs_0.json $W/fwd_$T/$f.jobs_0.gl.json --src /home/user/ext/mspred_src/ms-pred/src \
-    --ckpt /home/user/ext/glacier_orig/best.ckpt --site /home/user/ext/fwd_site --threads 4 > $W/fwd_$T/$f.fwdrun.log 2>&1
+    --ckpt /home/user/ext/glacier_orig/best.ckpt --site /home/user/ext/fwd_site --threads ${GL_THREADS:-4} > $W/fwd_$T/$f.fwdrun.log 2>&1
 done
 cd $W
 G=""; GV=""
-for d in fwd2 fwd3 fwd4 fwd_v5w fwd_v7w fwd_v5w_a0.5 fwd_v8d fwd_v8e fwd_v10 fwd_$T; do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
+# every fwd dir: the job builders above skip pairs already scored in ANY $W/fwd[_234]* dir, so stage 2 must load them all
+# (a hard-coded list left already-scored decoys without GLACIER features in v12 / v13 / v13p05 / v16r, review Oct 24)
+for d in $(cd $W && ls -d fwd[_234]*); do G="$G,$W/$d/train.jobs_*.gl.json"; GV="$GV,$W/$d/val.jobs_*.gl.json"; done
 GL_GLOB="${G#,}" GL_GLOB_VAL="${GV#,}" \
   python3 $R/scripts/train_stage2.py fit fwd_$T/train own_models/ret_ranker_${T}_feats.txt own_models/stage2_$T.txt fwd_$T/val
 echo ${T}_DONE
