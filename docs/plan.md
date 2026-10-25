@@ -156,6 +156,13 @@ Others: LightGBM determinism and version pinning (G3); fp_model.pt / pf_model_b.
 (G4/G5: FP_STOP_EPOCH, PF_STEPS); missing scripts for split keys, pool v1, COCONUT tables, train_meta, PubChemLite,
 pool2->pool4 chain, ret4 dump, ret17 build (G6-G14); gate inputs (G15); code dataset packaging and version pinning
 (G16); fpx / richfp logs (G17/G18); LICENSE (owner) and dataset licences (G19); stale docs (G20).
+G1 done (Oct 25): scripts/build_bio_structures.py on ChEBI rel255 chebi.sdf.gz (md5 4adcf594; 2/3-star) + LMSD.sdf.zip
+(downloaded 2026-10-25, md5 505ec732): 250,207 records -> 235,655 standardised -> 162,195 unique keys (third-party set:
+162,180; same drop counts) -> 80,232 outside our COCONUT 2026-10. Versus the third-party set: 80,197 shared, its
+18,236 extra keys are ALL in our COCONUT (already pool rows), 35 new -> pool5 = pool4 with in_bio = 0 for 18k COCONUT
+rows (+35 rows): the eligibility fix barely changes the candidate set. G3 done: deterministic row-wise LightGBM
+everywhere, requirements-pipeline.txt. scripts/build_v18c.sh (+ make_gl_gpu_kernel.py) scripts the whole chain;
+stages A-B (pool5, row dumps) running.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
