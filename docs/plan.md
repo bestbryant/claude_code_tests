@@ -343,6 +343,13 @@ Kernels: casmi26-tpu-probe (framework / speed probe, queued since 01:24 -- Kaggl
 (PF-x: variant-b data, d=384 x 6 layers, 8 heads, d_mol 512, dropout 0.1, batch 256 per core x 8, 63 negatives, LR
 5e-4, 8 h budget). When PF-x exists: neutral gate + v17x via scripts/build_pfswap.sh <pf_model.pt> v17x (generic
 build_v17b.sh), compared with v17b 0.339 on the LB (retrain rule: adopt at >= +0.008).
+CPU fallback measured (Oct 25 16:40, kernels/casmi26-pf-cpu-cal, scripts/make_pf_cpu_pilot.py): a Kaggle CPU kernel runs
+the pilot model at ~5.0 s/step (batch 256, both arms; this container 2.3 s/step) -> ~8k steps in 11.5 h = 2M samples,
+~0.7 exposures per synthetic spectrum (TPU pilot: 41M samples, ~14 exposures) -> too small for the pre-registered gate;
+CPU pilot dropped. (150-step smoke: syn arm loss 2.93 -> 2.42, real-only val cos .870 -> .845 on 94 structures, ctl
+unchanged; noise-level.) If the Oct 26 specpfb - specpfd reading keeps PF-syn alive and the TPU is still queued: T4
+pilot (2 arms x ~3 h, batch 256, ~35k steps each, ~3 exposures per synthetic spectrum), only when the owner's
+kernels are not on the GPU.
 
 ## v5w drift check (Oct 24): current code reproduces the Oct 20 lists only approximately
 The Oct 24 v5w re-runs (probe5w-coco / -train / olast, current casmi26-code, same models and pool) keep the Oct 20 top-1
