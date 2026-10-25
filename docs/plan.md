@@ -182,6 +182,18 @@ incl. truths, 100k train, 100k COCONUT-not-train) x CE 20/40/60 = 714k GLACIER p
 (kernels/casmi26-simw-0..3, scripts/make_sim_workers.py) -> kernels/casmi26-syn-prep (scripts/prep_syn_data.py) ->
 TPU pilot kernels/casmi26-pf-train-syn vs matched control casmi26-pf-train-ctl (both 4 h fine-tunes of PF-b);
 design under adversarial review (workflow wf_4f2803ec-ac0) before any TPU hour is spent.
+PF-syn review (wf_4f2803ec-ac0, 3 lenses, 17 findings -> 4 confirmed, all fixed): (1) the 620 evaluation windows were
+16% of synthetic draws with complete windows (~3% in a full-pool run) -> pilot gain inflated: PF_SYN_NEUTRAL_W 0.18
+(full-pool density) and half B of the windows held out (scripts/syn_ab_split.py: 19,104 B-only structures dropped
+via PF_SYN_DROP; half A = decision half, half B = generalisation check); (2) the gate was the pre-critic +0.03 ->
+now pre-registered in the kernel docstrings: half A pf_cos delta win vs training decoys >= +0.06 with the 95%
+paired-bootstrap interval > 0, delta vs COCONUT decoys >= -0.01, excess_syn <= excess_ctl and >= -0.02;
+(3) stage 2 already has GLACIER, so PF-syn must add beyond it: pf_cos_gl = z(pf_cos) + z(GLACIER) delta > 0 on
+covered A queries (scripts/add_gl_feats.py computes the GLACIER column from the simulations); (4) arms step-matched
+(PF_STEPS; set PILOT_STEPS from the PF-x v5e step time before pushing). scripts/eval_pf_pair.py reproduces the known
+PF-d -> PF-b numbers exactly (pf_bern +0.124 [+0.095, +0.154], = +0.005 LB).
+TPU: Tpu1VmV38 queued 2 h without starting; current Kaggle docs list TpuV5E8 -> all TPU kernels moved to v5e-8, PF-x
+re-pushed as casmi26-pf-train-x5 (04:39).
 
 ## TPU training of the PeakFormer (Oct 25)
 Why: PeakFormer b is the only spectral change that moved the LB since Oct 20 (v17b +0.005 over v17), its validation
