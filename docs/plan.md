@@ -175,6 +175,11 @@ hexose, deoxyhexose, pentose, glucuronide, CH2O, acetyl, C2H4, H2O, malonyl, sul
 threshold, but the set is a curated example list (the hidden test may be denser: "natural molecules and their
 analogs" from one isolation platform). Build after items 1-4; offline evaluation needs a pseudo-test of held-out
 timsTOF families.
+Verified Oct 25: casmi26-own-s2v17bpop v1 (400/400 lists, GLACIER 371/400, 400/400 rows with candidates, no
+Traceback; from the execution log while the output endpoint returned 429 for ~4 h, later also from the output) and
+casmi26-probe17-coco v1 (393/400 rows, GLACIER 371; placeholder top-1 agreement with probe17b-coco only 0.42 -> PF-d
+and PF-b order the COCONUT candidates very differently). scripts/safe_submit.sh now falls back to the execution log
+('rows with candidates N of M' >= 90%, no Traceback) when the output download fails.
 Oct 27 candidates: casmi26-own-s2v17bpop, casmi26-zen-probe, casmi26-probe17-coco (matched control, only if the
 Oct 26 probe17b-coco reading is ambiguous), plus whatever the Oct 26 rules trigger.
 PF-syn pilot (started 03:20): scripts/build_sim_jobs.py -> 238,055 structures (38,055 neutral-set window members
