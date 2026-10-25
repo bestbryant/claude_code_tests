@@ -168,6 +168,10 @@ mean predicted-spectrum entropy similarity 0.995 (min 0.889, identical 33%), CPU
 0.988 (min 0.885); batch 1 costs 2.6x on CPU (too slow for the 4 h inference budget). So exact equality between the
 GPU training pass and CPU inference is not attainable; the v18c pass is one scripted GPU run with a fixed batch policy
 (bs 128, jobs sorted by SMILES length, 8 + 2 files), reproducible run to run, documented device / batch noise ~0.99.
+v18c stage A (08:24): pool_v18c = pool2 + own bio set: 1,160,133 rows (pool4 + 15), in_bio 71,589 (pool4 89,054;
+17,520 rows changed, 17,400 of them COCONUT) -- a stale $W/pool5 from Oct 19 was first picked up by mistake (now: tag-named
+directory + completion marker). Stage B (row dumps, seeds 12 / 11) running; stage C waits for the Oct 26 v17bb reading
+(FP model: FP-b from its GPU kernel if v17bb >= v17b, else a recorded retrain of the v1 FP model, G4).
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
