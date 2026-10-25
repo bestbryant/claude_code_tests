@@ -186,6 +186,11 @@ MANIFEST with sha256), atomic fpx write, docs/ATTRIBUTION.md and corrected docs.
 committed (competition-derived); pool2 half of build_pool4.sh needs ~12 GB RAM to verify end to end. Six stray empty
 error logs /ret17b_{train,val}_fp.parquet.part{0,1,2}.log in the filesystem root (left by an agent's shell heredoc)
 could not be removed by the session (root-path safety check) -- harmless.
+G4 resolved (13:13): the recorded FP-v1 retrain (kernels/casmi26-fp-train-v1, Kaggle CPU, FP_STOP_EPOCH=3, same
+command as the deployed fp_model.pt) gives val MRR .5109 / .5395 / .5569 at epochs 0 / 1 / 2 vs the original
+.5118 / .5346 / .5461 -> equivalent (not bit-identical: CPU nondeterminism). Its checkpoint (own_models/fp_model_v1r.pt,
+md5 a9748a4a) is the FP model of v18c, which is therefore a clean replica of v17b (FP-b variant after the Oct 26 reading).
+v18c stages C2-E launched 13:20 (E = 4 GLACIER CPU worker kernels).
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
