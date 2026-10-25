@@ -10,7 +10,7 @@
   "code_file": "notebook.py",
   "enable_gpu": false,
   "enable_tpu": true,
-  "machine_shape": "Tpu1VmV38",
+  "machine_shape": "TpuV5E8",
   "dataset_sources": [
     "bryantyu/casmi26-code",
     "bryantyu/casmi26-fp-data",

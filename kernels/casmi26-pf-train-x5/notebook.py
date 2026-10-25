@@ -1,5 +1,5 @@
-"""PeakFormer training on a Kaggle TPU v3-8 (scripts/train_pf_xla.py: static shapes, host-side batches, data parallel
-over the 8 cores). Variant b data (instrument-free, window negatives restricted to training POSITIVES, drawn without
+"""PeakFormer training on a Kaggle TPU v5e-8 (scripts/train_pf_xla.py: static shapes, host-side batches, data parallel
+over the 8 chips). Variant b data (instrument-free, window negatives restricted to training POSITIVES, drawn without
 replacement, no timsTOF up-weighting; see kernels/casmi26-pf-train-b) with a larger model than the deployed b
 (d=384 x 6 layers, 8 heads, molecule embedding 512 vs 192 x 4 / 256): the b run's validation plateaued after ~7 of
 its 20 epochs, i.e. the d=192 x 4 model is capacity-bound. The TPU quota (20 h / week) is separate from the GPU

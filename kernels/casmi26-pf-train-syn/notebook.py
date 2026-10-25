@@ -1,5 +1,5 @@
 """PF-syn pilot (synthetic): fine-tune PeakFormer b (same config: d=192 x 4, 6 heads, d_mol 256, no dropout, variant-b data)
-for 4 h on a TPU v3-8 (scripts/train_pf_xla.py, batch 256 per core x 8, 63 negatives) with 25% GLACIER-simulated rows (PF_SYN, kernels/casmi26-syn-prep). Decision (docs/plan.md):
+for 4 h on a TPU v5e-8 (scripts/train_pf_xla.py, batch 256 per core x 8, 63 negatives) with 25% GLACIER-simulated rows (PF_SYN, kernels/casmi26-syn-prep). Decision (docs/plan.md):
 syn vs ctl on the 620-query neutral metric -- pf_bern / pf_cos win rate vs same-formula training decoys >= +0.03,
 win vs COCONUT decoys >= -0.01, excess <= PF-b's +0.044."""
 import glob, os, shutil, subprocess, sys
