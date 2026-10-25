@@ -142,7 +142,7 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
-## Reproducibility manifest (Oct 25, workflow wf_029f119e-b7e; docs/reproduce.md)
+## Reproducibility manifest (Oct 25, workflow wf_029f119e-b7e; [reproduce.md](reproduce.md), [ATTRIBUTION.md](ATTRIBUTION.md))
 44 agents traced every artifact of the v17b submission and verified each gap against the repo (several rebuilds run:
 pool4 from pool2 + build_pool_bio + add_pubchem_pop reproduces pool.parquet exactly; build_pool.py is deterministic).
 20 confirmed gaps, two of them blocking prize eligibility as the submission stands:
@@ -177,6 +177,15 @@ v18c stage B (09:42): ret18c dumps 7,788 queries / 980,913 rows and 1,463 / 182,
 ret17b's on the 182,177 matched validation rows (pf_bern identical, pf_cos <= 1.2e-7). C2-F wait for the FP choice
 (Oct 26 v17bb reading, or the recorded FP-v1 retrain kernels/casmi26-fp-train-v1 running on Kaggle CPU) so that the
 GPU GLACIER pass runs once.
+Scripted fixes G6-G20 (workflow wf_fd86ad46-d15, 7 implementers + 7 reviewers, all reviews ok; details in
+docs/reproduce.md section 5): make_split_keys.py (byte-identical key lists), build_pool_v1.py (byte-identical pool v1) +
+prep_fp_data.py arguments (all 16 fp-data arrays equal) + check_fp_data.py, build_coconut.py / build_train_meta.py /
+fetch_pubchemlite.py (md5-checked), streamed add_pubchem_pop.py + PubChem download manifest + build_pool4.sh,
+build_v17b.sh / build_pfswap.sh on ret4 rows with GATE=0 and a pool-checked richfp cache, push_code.sh (clean tree,
+MANIFEST with sha256), atomic fpx write, docs/ATTRIBUTION.md and corrected docs. Open: LICENSE (owner); key lists not
+committed (competition-derived); pool2 half of build_pool4.sh needs ~12 GB RAM to verify end to end. Six stray empty
+error logs /ret17b_{train,val}_fp.parquet.part{0,1,2}.log in the filesystem root (left by an agent's shell heredoc)
+could not be removed by the session (root-path safety check) -- harmless.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
@@ -428,7 +437,7 @@ scripts/eval_pf_neutral.py under token 1 and 0. Note the training-script val MRR
 Result (620 queries; win rate vs training decoys / vs COCONUT decoys / excess; near-analog excess):
 | model | token | fp_cos | fp_bern |
 |---|---|---|---|
-| deployed (30k steps) | 1 | .644 / .786 / +.143 (+.183) | .599 / .709 / +.109 (+.144) |
+| deployed (9k of 24k steps, reproduce.md G4) | 1 | .644 / .786 / +.143 (+.183) | .599 / .709 / +.109 (+.144) |
 | deployed | 0 | .692 / .842 / +.150 (+.237) | .655 / .752 / +.097 (+.158) |
 | base (2k steps) | 1 | .676 / .789 / +.112 (+.157) | .566 / .673 / +.107 (+.122) |
 | base | 0 | .716 / .834 / +.118 (+.208) | .602 / .705 / +.103 (+.146) |

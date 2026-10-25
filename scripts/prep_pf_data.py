@@ -9,7 +9,8 @@ Writes <out_dir>/fpx.npz: keep (raw bit ids kept), s_ptr / s_idx (structures, CS
 (the Oct 20 run hit ENOSPC in the final save) leaves no truncated file to be reused or published. Logs the input md5s,
 each array's dtype / shape / md5 and the file md5; with the reference inputs (casmi26-fp-data + pool v1) asserts the
 published casmi26-pf-data fpx.npz (md5 bdd0e338; np.savez output is byte-stable: fixed 1980 zip timestamps).
-A run from scratch writes ~3.6 GB (s_raw 0.5, n_raw 1.3, fpx 1.8).
+A run from scratch writes ~3.6 GB (s_raw 0.5, n_raw 1.3, fpx 1.8); replacing an existing fpx.npz needs 1.8 GB more
+while both copies exist.
 """
 import hashlib, os, shutil, sys
 from multiprocessing import Pool

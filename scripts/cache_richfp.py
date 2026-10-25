@@ -40,9 +40,13 @@ if __name__ == '__main__':
             ptrs.append(base + np.cumsum(l)); base += int(l.sum()); idxs.append(np.concatenate(part))
             print(c + len(part), 'of', len(smi), flush=True)
     tmp = out + '.tmp'
-    with open(tmp, 'wb') as f:        # file object: np.savez appends no suffix; replaced only when complete
-        np.savez(f, pid=pids.astype(np.int64), ptr=np.concatenate(ptrs),
-                 idx=np.concatenate(idxs) if idxs else np.zeros(0, np.uint16),
-                 pool_n=np.int64(pool_n), pool_md5=np.str_(pool_md5))
-    os.replace(tmp, out)
+    try:
+        with open(tmp, 'wb') as f:    # file object: np.savez appends no suffix; replaced only when complete
+            np.savez(f, pid=pids.astype(np.int64), ptr=np.concatenate(ptrs),
+                     idx=np.concatenate(idxs) if idxs else np.zeros(0, np.uint16),
+                     pool_n=np.int64(pool_n), pool_md5=np.str_(pool_md5))
+        os.replace(tmp, out)
+    finally:                          # no ~0.9 GB partial file left after e.g. ENOSPC
+        if os.path.exists(tmp):
+            os.remove(tmp)
     print('done', len(pids), 'pool', pool_n, pool_md5[:8])

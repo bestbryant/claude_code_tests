@@ -53,9 +53,9 @@ file yet. Choosing one is the owner's decision (reproduce.md G19).
   3.3.0 (2026-09-25). Zenodo. doi:10.5281/zenodo.22953038. File `PubChemLite_exposomics_20260925.csv`,
   200,142,750 B, md5 3023e89b (`scripts/fetch_pubchemlite.py`).
 - Licence: CC BY 4.0 (Zenodo record). It is derived from PubChem (1.5).
-- Used for: pool rows and `in_pcl` (467,093 rows of pool2 / pool4; 381,549 of them come from PubChemLite alone), and the
-  `pcl_*` annotation counts (PubMed, patent, annotation types, BioPathway, FoodRelated). Pool v1 does not contain
-  PubChemLite, so neither do the FP / PeakFormer training data.
+- Used for: pool rows and `in_pcl` (467,093 rows of pool2 / pool4; 381,549 of them neither training structures nor
+  COCONUT), and the `pcl_*` annotation counts (PubMed, patent, annotation types, BioPathway, FoodRelated). Pool v1 does
+  not contain PubChemLite, so neither do the FP / PeakFormer training data.
 - Cite: the dataset above, and Schymanski E.L., Kondić T., Neumann S., Thiessen P.A., Zhang J., Bolton E.E.
   "Empowering large chemical knowledge bases for exposomics: PubChemLite meets MetFrag." J. Cheminform. 13:19 (2021).
   doi:10.1186/s13321-021-00489-0
@@ -110,8 +110,8 @@ file yet. Choosing one is the owner's decision (reproduce.md G19).
   unmodified as `ckpt/best.ckpt` (md5 d7d3e3ec, sha256 5a47cecca707d3ab...). It comes with no separate licence file:
   the ms-pred README offers it as open-source MassSpecGym-trained weights. The hosts explicitly allow
   MassSpecGym-trained GLACIER (plan.md, "Rules").
-- MassSpecGym is the checkpoint's training data; we do not use it directly. Licence: MIT (Hugging Face card
-  `roman-bushuiev/MassSpecGym` and the paper's data statement).
+- MassSpecGym is the checkpoint's training data; we do not use it directly. Licence: MIT (Hugging Face dataset
+  `roman-bushuiev/MassSpecGym`, tag license:mit).
 - Used for: the `gl_*` stage-2 features, both at training time (fwd_* GLACIER scores behind stage2_v17b) and in the
   kernel.
 - Cite: Wang R.-X., Wang R., Coley C.W. "GLACIER: Rethinking Mass Spectrum Prediction as an Object Detection Problem."
@@ -129,6 +129,13 @@ file yet. Choosing one is the owner's decision (reproduce.md G19).
 - Not redistributed (Kaggle image / local environment): LightGBM 4.7.0 (MIT), PyTorch 2.14.1 (BSD-3-Clause), numpy and
   pandas (BSD-3-Clause), pyarrow (Apache-2.0), numba (BSD-2-Clause).
 
+### 1.11 Third-party runner glue behind the stage-2 training scores (G2)
+- `fuse.build_ice_input` of the ICEBERG / GLACIER runner glue by Kaggle user ahmedberatozer (`fuse.py`,
+  `ice_runner.py`, `gl_runner.py`; Kaggle licence "other"; plan.md "Forward models (Oct 18)"). It built the fwd2 / fwd3
+  / fwd4 GLACIER job inputs (fwd2: casmi26-gl-jobs, section 2) whose scores stage2_v17b was fit on. The s2v17b kernel
+  does not run it (own runner `casmi/fwdrun.py`), but our casmi26-fwd dataset still ships these files and its
+  LICENSE-NOTICE does not name their author. The clean-room stage 2 of reproduce.md G2 removes the dependence.
+
 ## 2. Contents of each dataset
 
 | Kaggle dataset | files | built by | third-party content | Kaggle licence now |
@@ -140,11 +147,16 @@ file yet. Choosing one is the owner's decision (reproduce.md G19).
 | bryantyu/casmi26-pf-negtrain | negtrain.npy | `scripts/pf_negtrain.py` | flags over the pool v1 negatives | CC0-1.0 |
 | bryantyu/casmi26-models | fp_model.pt, pf_model_b.pt, ret_ranker_v17b, stage2_v17b (+ `_feats.txt`), other variants | `train_fp.py`, `train_pf.py`, `train_ret_ranker.py`, `train_stage2.py` | weights we trained on the data above: FP / PeakFormer on fp-data and pf-data; rankers on pool4 features and GLACIER scores. No third-party weights. | Apache 2.0 |
 | bryantyu/casmi26-glacier | mspred/, ckpt/best.ckpt, wheels/, fwdshim/, NOTICE.txt | copied unmodified (fwdshim/ is ours) | ms-pred, GLACIER checkpoint, wheels (1.9, 1.10) | other |
+| bryantyu/casmi26-gl-jobs | v2train.jobs_{0..5}.json, v2val.jobs_{0,1}.json | `build_fwd_jobs.py` @ea3a22f with third-party `fuse.build_ice_input` (1.11, G2) | competition spectra of the simulated queries and their pool2 candidate SMILES (training structures, COCONUT, PubChemLite); kernels casmi26-glw-* scored them into the fwd2 GLACIER scores behind stage2_v17b | other |
 | bryantyu/casmi26-code | casmi/*.py, train_fp_script.py, train_pf_script.py | hand copy (`scripts/push_code.sh`, G16) | none | Apache 2.0 in the local metadata, "unknown" on Kaggle |
 
 Other datasets published from this repository and not used by s2v17b: casmi26-zen-extra (Enveda-180 Zenodo spectra,
-1.2); casmi26-dreams (DreaMS embeddings; DreaMS weights are MIT); the PubChem-derived sets listed in 1.5;
-casmi26-pc-calib (competition spectra, 1.1).
+1.2); casmi26-dreams (the DreaMS TorchScript model of Bushuiev et al., MIT, unmodified, and our DreaMS embeddings of
+library spectra); casmi26-pool (an earlier pool, 3,231,644 rows: training structures, COCONUT, PubChemLite and
+PubMed-documented PubChem structures, `in_pc`; CC-BY-4.0); casmi26-fwd (earlier ICEBERG / GLACIER runners: ms-pred
+subset, MassSpecGym ICEBERG and GLACIER weights of the ms-pred authors, wheels, and the third-party glue of 1.11);
+casmi26-sim-jobs (forward-model simulation job lists); the PubChem-derived sets listed in 1.5; casmi26-pc-calib
+(competition spectra, 1.1).
 
 ## 3. Licence settings still open (owner, G19)
 - casmi26-pool4 / casmi26-pool2: proposed change from "other" to CC BY 4.0, with this file added to the dataset. The
@@ -154,7 +166,7 @@ casmi26-pc-calib (competition spectra, 1.1).
 - casmi26-code: the Kaggle licence should match the repository LICENSE once the owner has chosen one.
 - casmi26-models (Apache 2.0), casmi26-fp-data / casmi26-pf-data (CC BY 4.0): these are our weights and arrays, but
   the competition terms (1.1) apply to everything derived from `train.parquet`. That covers the spectra arrays in
-  fp-data (top-64 peaks of the training spectra) and every model trained on them. Check rule 2.4.b before making
-  these datasets public.
+  fp-data (top-64 peaks of the training spectra), the query spectra in casmi26-gl-jobs and every model trained on
+  them. Check rule 2.4.b before making these datasets public.
 - casmi26-glacier: keep "other". The content is mixed (MIT, Apache-2.0, BSD-3-Clause, and the ms-pred authors'
   checkpoint), and NOTICE.txt lists each part.

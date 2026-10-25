@@ -80,7 +80,9 @@ chk $P4/coconut_prior.parquet f8b83ce5512deabd27431a9ae8b48c87
 [ $built4 = 0 ] || run mv $P4/.building $P4/.built
 
 # documentation-shift weights (DOC_W of the rankers; not shipped in casmi26-pool4)
-[ -f $P4/doc_w.parquet ] || { log "doc_w"; run python3 -m casmi.docw $P4 $P4/doc_w.parquet; }
+if [ ! -f $P4/doc_w.parquet ]; then          # temp name + mv: an interrupted write is not taken for the output
+  log "doc_w"; run python3 -m casmi.docw $P4 $P4/doc_w.tmp.parquet; run mv $P4/doc_w.tmp.parquet $P4/doc_w.parquet
+fi
 chk $P4/doc_w.parquet 971fd3438326ec8dfdf5479d54c8b78a
 log "pool4 done; publish: copy pool.parquet, pool_fp.npy, coconut_prior.parquet to \$DS/casmi26-pool4, then"
 echo "  kaggle datasets version -p \$DS/casmi26-pool4 -m pool4"

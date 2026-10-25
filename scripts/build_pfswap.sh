@@ -11,12 +11,13 @@ set -e
 PF=$1; TAG=$2; FP=$3
 [ -n "$PF" ] && [ -n "$TAG" ] || { echo "usage: $0 <pf_model.pt> <tag> [fp_model.pt]"; exit 1; }
 W=/home/user/work; R=/home/user/claude_code_tests; cd $R
+[ "${GATE:-1}" = 0 ] || [ -f $W/fpb_local/sub.parquet ] \
+  || { echo "no $W/fpb_local/sub.parquet (input deleted, G15): GATE=0 skips the gate"; exit 1; }   # before the cache build
 export RICHFP_CACHE=${RICHFP_CACHE-$W/richfp_ret4.npz}
 [ -z "$RICHFP_CACHE" ] || python3 scripts/cache_richfp.py --check $W/pool4 $RICHFP_CACHE \
   || python3 scripts/cache_richfp.py $W/pool4 $RICHFP_CACHE $W/ret4_train_fp.parquet $W/ret4_val_fp.parquet > $RICHFP_CACHE.log
 O=$W/$TAG; mkdir -p $O
 if [ "${GATE:-1}" != 0 ]; then
-  [ -f $W/fpb_local/sub.parquet ] || { echo "no $W/fpb_local/sub.parquet (input deleted, G15): GATE=0 skips the gate"; exit 1; }
   python3 scripts/add_fp_feats.py $W/fpb_local/sub.parquet $PF $O/sub_pf.parquet $W/pool4 > /dev/null
   python3 scripts/eval_pf_neutral.py $O/sub_pf.parquet pf_bern,pf_cos | tee $O/gate.txt
   python3 - $O/gate.txt <<'EOF'

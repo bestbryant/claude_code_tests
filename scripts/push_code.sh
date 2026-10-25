@@ -42,7 +42,7 @@ done
 n_py=$(echo "$py" | wc -l); n_all=$(ls "$S" | wc -l)
 [ "$n_all" -eq $((n_py + $(echo $RENAME | wc -w))) ] || { echo "file count $n_all != $n_py + renamed"; exit 1; }
 
-# 2. manifest (deterministic for a given commit)
+# 2. manifest (deterministic for a given commit and remote-branch state; only the sha256 lines are checked)
 files=$(cd "$S" && ls | LC_ALL=C sort)
 {
   echo "# bryantyu/casmi26-code assembled by scripts/push_code.sh"
@@ -65,5 +65,7 @@ if [ $PUSH = 0 ]; then
 fi
 rm -rf "$DS/casmi.old"; [ ! -d "$DS/casmi" ] || mv "$DS/casmi" "$DS/casmi.old"; mv "$S" "$DS/casmi"; rm -rf "$DS/casmi.old"
 [ "$(ls -A "$DS" | tr '\n' ' ')" = "casmi dataset-metadata.json " ] || { echo "unexpected entries in $DS: $(ls -A "$DS")"; exit 1; }
-kaggle datasets version -p "$DS" -m "${1:-code @${C:0:7}}" --dir-mode zip -q 2>&1 | grep -v Warning | tail -2
+res=$(kaggle datasets version -p "$DS" -m "${1:-code @${C:0:7}}" --dir-mode zip -q 2>&1 | grep -v Warning || true)
+echo "$res" | tail -2
+grep -q "is being created" <<< "$res" || { echo "PUSH FAILED (no 'is being created' from kaggle; it exits 0 on a version error)"; exit 1; }
 echo "pushed ${C:0:7}; record the new version number (kaggle datasets status bryantyu/casmi26-code, Data tab)"

@@ -63,20 +63,27 @@ def stream(name):
         try:
             for b in iter(lambda: curl.stdout.read(1 << 22), b''):
                 h.update(b); size[0] += len(b); gz.stdin.write(b)
+        except BrokenPipeError:                       # gunzip stopped early; its exit status is checked below
+            pass
         finally:
-            gz.stdin.close(); curl.stdout.close()
+            curl.stdout.close()                       # curl then fails instead of blocking on a full pipe
+            try:
+                gz.stdin.close()
+            except BrokenPipeError:
+                pass
     th = threading.Thread(target=pump, daemon=True); th.start()
     yield from gz.stdout
     th.join()
     rc = curl.wait(), gz.wait()
-    assert rc == (0, 0), f'{name}: curl / gunzip exit {rc}'
     hd = {}
-    for line in open(hdr, encoding='latin-1'):        # keep the last response (a proxy's CONNECT reply comes first)
-        if line.startswith('HTTP/'):
-            hd = {}
-        elif ':' in line:
-            k, v = line.split(':', 1); hd[k.strip().lower()] = v.strip()
-    os.remove(hdr)
+    if os.path.exists(hdr):
+        for line in open(hdr, encoding='latin-1'):    # keep the last response (a proxy's CONNECT reply comes first)
+            if line.startswith('HTTP/'):
+                hd = {}
+            elif ':' in line:
+                k, v = line.split(':', 1); hd[k.strip().lower()] = v.strip()
+        os.remove(hdr)
+    assert rc == (0, 0), f'{name}: curl / gunzip exit {rc}'
     md5 = h.hexdigest()
     assert md5 == want, f'{name}: md5 {md5} != published {want}'
     assert int(hd.get('content-length', size[0])) == size[0], f'{name}: {size[0]} B != Content-Length'
@@ -155,6 +162,7 @@ if 'agg' in steps:
     g = df.groupby('key')
     pop = g.max()
     pop['n_cids'] = g.size()
-    pop.reset_index().to_parquet(f'{out}/key_pop.parquet')
-    saved('key_pop.parquet', rows=len(pop), columns=list(pop.reset_index().columns))
+    pop = pop.reset_index()
+    pop.to_parquet(f'{out}/key_pop.parquet')
+    saved('key_pop.parquet', rows=len(pop), columns=list(pop.columns))
     print('agg done', len(pop), f'{time.time()-t0:.0f}s', flush=True)
