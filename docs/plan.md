@@ -166,6 +166,15 @@ the next data build (no dedicated run). Also from the research: the public chain
 z(score) + 0.15 (ln SID + ln PMID) was worth +0.010 there; ours exists (POP_BOOST, never LB-tested; offline a
 cls1-up / cls2-down trade-off that HL-val cannot judge) -> kernel casmi26-own-s2v17bpop (v17b lists + POP_BOOST
 0.15, post-processing on identical lists: adopt >= +0.005, reject <= 0).
+Test-test networking density check (item 6, Oct 25) on enveda-np-examples (250 timsTOF natural products, "same
+pipeline as the test", 1,184 spectra): structures with a Tanimoto >= 0.7 neighbour in the set 19% (>= 0.5: 44%);
+with a spectral neighbour (direct entropy similarity, same polarity) >= 0.6: 36% (>= 0.7: 20%); with a neighbour that
+is both spectrally (>= 0.6) and structurally (>= 0.5) close 21%; with a transform-delta neighbour (CH2, O, H2,
+hexose, deoxyhexose, pentose, glucuronide, CH2O, acetyl, C2H4, H2O, malonyl, sulfate; 3 mDa) AND Tanimoto >= 0.5:
+28% (any transform delta: 62%, mostly coincidental); same-mass isomer in the set 7%. -> above the 15% build
+threshold, but the set is a curated example list (the hidden test may be denser: "natural molecules and their
+analogs" from one isolation platform). Build after items 1-4; offline evaluation needs a pseudo-test of held-out
+timsTOF families.
 Oct 27 candidates: casmi26-own-s2v17bpop, casmi26-zen-probe, casmi26-probe17-coco (matched control, only if the
 Oct 26 probe17b-coco reading is ambiguous), plus whatever the Oct 26 rules trigger.
 PF-syn pilot (started 03:20): scripts/build_sim_jobs.py -> 238,055 structures (38,055 neutral-set window members
