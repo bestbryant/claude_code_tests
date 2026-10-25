@@ -5,7 +5,7 @@
 #   G2: GLACIER scores for every stage-2 training / validation pair computed in ONE fresh pass (no --have, no merged
 #       history) on a Kaggle GPU kernel (casmi.fwdrun --device cuda); stage 2 reads only that pass.
 #   G13/G14: row dumps with recorded seeds, VENDOR_PATH disabled, stale part dirs removed; features added in one place.
-# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]
+# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool5 + row dumps only)
 # Stage E stops after pushing the GPU GLACIER kernel; run the script again when kernels/casmi26-gl<tag> is COMPLETE.
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
@@ -35,6 +35,8 @@ for s in train val; do
   log "B: dump $s"
   CASMI_POOL=$P5 VENDOR_PATH=/nonexistent python3 scripts/dump_ret_rows.py $args > $out.log 2>&1
 done
+
+[ "${STOP_AFTER:-}" = B ] && { log "STOP_AFTER=B"; exit 0; }
 
 # C. spectral features: FP model (fp_*), PeakFormer (pf_* + within-formula columns); no richfp cache (pool5 ids differ)
 for s in train val; do
