@@ -7,7 +7,8 @@ kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); PC_TIER=ena
 (bryantyu/casmi26-pc-enam, tier_enam.npz); PC_TIER=purch the purchasable tier (Enamine + bioactive vendors,
 bryantyu/casmi26-pc-purch); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH); PC_POP=1 the full-tier documentation
 prior; PC_EXCLUDE=1 the probe source key sets (bryantyu/casmi26-srckeys); VEND=1 the depositor columns
-(bryantyu/casmi26-vendor, VENDOR_PATH).
+(bryantyu/casmi26-vendor, VENDOR_PATH); POOL_DS=<dataset slug> mounts that candidate pool instead of casmi26-pool4
+(e.g. casmi26-pool-v18c, the clean-room pool of scripts/build_v18c.sh).
 The template's docstring (v10: full-library matching, alpha 0.5, "reproducible") is replaced by one written from the
 arguments (slug, rankers, LIB_CAP, FP / PF checkpoints); it points to docs/reproduce.md for the open gaps.
 """
@@ -35,6 +36,8 @@ if env.get('PC_POP'):                        # documentation prior aligned to th
     meta['dataset_sources'] = meta['dataset_sources'] + ['bryantyu/casmi26-pc-full-pop']
 if env.get('VEND'):                          # depositor columns per pool structure (scripts/build_vendor_feats.py)
     meta['dataset_sources'] = sorted(set(meta['dataset_sources'] + ['bryantyu/casmi26-vendor']))
+if env.get('POOL_DS'):                       # another candidate pool dataset in place of casmi26-pool4
+    meta['dataset_sources'] = [f"bryantyu/{env['POOL_DS']}" if d == 'bryantyu/casmi26-pool4' else d for d in meta['dataset_sources']]
 if env.get('PC_EXCLUDE'):                    # probe source key sets (train / coco)
     meta['dataset_sources'] = sorted(set(meta['dataset_sources'] + ['bryantyu/casmi26-srckeys']))
 # pin the Kaggle docker image of the reference runs (s2v4 / v5w / v10 / v11l / v12, Oct 19-22): the default image changed
@@ -49,7 +52,7 @@ nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replac
 # docstring from the arguments: the template's one describes v10 and claims full reproducibility (docs/reproduce.md G20)
 cap, fpm, pfm = env.get('LIB_CAP', '100000'), env.get('OWN_FP', 'fp_model.pt'), env.get('OWN_PF', 'pf_model.pt')
 doc = f'''"""CASMI26 own pipeline, kernel {slug} (written by scripts/make_own_kernel.py from the s2v10 template).
-Candidate pool (bryantyu/casmi26-pool4: train + COCONUT + PubChemLite + ChEBI / LIPID MAPS)
+Candidate pool (bryantyu/{env.get('POOL_DS', 'casmi26-pool4')}: train + COCONUT + PubChemLite + ChEBI / LIPID MAPS)
 -> features: library (LIB_CAP {cap} spectra per structure and polarity; 100000 = all), analog, fragment, prior,
    FP dual encoder ({fpm}), PeakFormer ({pfm}; used if the ranker has pf_* features)
 -> LambdaRank stage 1 ({rk1}) -> top 30 -> GLACIER predicted-spectrum similarity (own runner on ms-pred, MIT;
@@ -60,7 +63,7 @@ was trained (rows, doc-shift alpha) and the gaps that keep the chain from being 
 docs/reproduce.md; third-party data and models in docs/ATTRIBUTION.md."""'''
 assert nb.startswith('"""')
 nb = doc + nb[nb.index('"""', 3) + 3:]
-extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE', 'VEND')}
+extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE', 'VEND', 'POOL_DS')}
 pc = ("'PC_TIER': os.path.dirname(first('tier_full/mass.npy')), " if env.get('PC_TIER') == 'full'
       else "'PC_TIER': first('tier_enam.npz'), " if env.get('PC_TIER') == 'enam'
       else "'PC_TIER': first('tier_purch.npz'), " if env.get('PC_TIER') == 'purch'
