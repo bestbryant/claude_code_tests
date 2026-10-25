@@ -1,6 +1,6 @@
 # Reproducing the eligible submission (casmi26-own-s2v17b, LB 0.339)
 
-Status as of 2026-10-25. Host rule: every learned weight must be reproducible from public training code + permitted
+Status as of 2026-10-25 (the clean-room successor v18c, built by one script, is in section 6). Host rule: every learned weight must be reproducible from public training code + permitted
 data, including the code that generates the intermediates. Gap ids `G#` refer to section 3.
 
 Paths: `R=/home/user/claude_code_tests` (repo), `W=/home/user/work`, `EXT=/home/user/ext`, `DS=/home/user/ds`
@@ -732,3 +732,34 @@ What I checked myself:
 
 3. docs/ATTRIBUTION.md:
    - Section 1.4: "381,549 of them come from PubChemLite alone" was only true for pool2. In pool4, 13,017 of those rows are also in_bio. It now read
+
+## 6. The clean-room chain v18c (scripts/build_v18c.sh, built 2026-10-25)
+
+One restartable script from permitted raw inputs to the deployed models; it replaces sections 1.4-1.6 for every
+model from v18c on. `scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]` with PF = pf_model_b.pt (md5 560e194f),
+FP = own_models/fp_model_v1r.pt (md5 a9748a4a, the recorded retrain of G4: kernels/casmi26-fp-train-v1, Kaggle CPU,
+FP_STOP_EPOCH=3; val MRR .5109 / .5395 / .5569 per epoch vs the original .5118 / .5346 / .5461).
+
+| stage | what | output (md5) |
+|---|---|---|
+| A | scripts/build_bio_structures.py (ChEBI rel255 chebi.sdf.gz md5 4adcf594, LMSD.sdf.zip md5 505ec732, our COCONUT 2026-10) -> build_pool_bio.py on pool2 -> add_pubchem_pop.py -> COCONUT prior copy -> casmi.docw | bio_structures_own.parquet e5f80291; pool_v18c/pool.parquet 8afda40a, pool_fp.npy cef50fc5 (1,160,133 rows) |
+| B | dump_ret_rows.py on rank_keys / val_keys (seeds 12 / 11, VENDOR_PATH disabled, part dirs removed) | ret18c_train 7,788 queries / 980,913 rows; ret18c_val 1,463 / 182,179 |
+| C1, C2 | add_fp_feats.py: PeakFormer (pf_* + within-formula columns), then FP (fp_*); no richfp cache | ret18c_{train,val}_fp.parquet |
+| D | train_ret_ranker.py (31 leaves, DOC_ALPHA 1, deterministic row-wise), oof_stage1.py, val reach filter | ret_ranker_v18c.txt 3f12b795 |
+| E | build_fwd_jobs.py (top 30, no --have) -> ONE fresh GLACIER pass on 4 Kaggle CPU worker kernels (kernels/casmi26-glwv18c-0..3, dataset casmi26-gl-v18c) | fwd_v18c/*.gl.json (coverage train .783 / val .754) |
+| F | train_stage2.py on the fresh pass only (GL_GLOB / GL_GLOB_VAL) | stage2_v18c.txt 6af95879 |
+
+Validation: stage 1 .8197 (cls1 .8268 / cls2 .8159), stage 2 .8314 (.8301 / .8321). Lower than v17b (.894) by design:
+pool4's in_bio flag was a training-membership leak (docs/plan.md, "in_bio was a training-membership leak"); with the
+old in_bio column the same rows reproduce v17b's stage-1 numbers (.8432 / .9168 vs .8426 / .9145).
+Deployment: casmi26-models (ret_ranker_v18c*, stage2_v18c*, fp_model_v1r.pt), dataset casmi26-pool-v18c (pool.parquet,
+pool_fp.npy, coconut_prior.parquet of pool_v18c), casmi26-code pushed by scripts/push_code.sh at d6abeec, kernel
+casmi26-own-s2v18c (scripts/make_own_kernel.py ... OWN_PF=pf_model_b.pt OWN_FP=fp_model_v1r.pt LIB_CAP=10
+POOL_DS=casmi26-pool-v18c), probe kernel casmi26-probe18c-coco (scripts/make_probe_kernel.py).
+
+Gap status for v18c: G1 closed (own bio set; the third-party and CC-BY-NC-SA inputs are gone); G2 closed (one scripted
+GLACIER pass, CPU workers = the inference device type; batch / device noise ~0.99 similarity remains, documented); G3
+closed (deterministic LightGBM, requirements-pipeline.txt); G4 closed (fp_model_v1r.pt, equivalent not bit-identical:
+CPU training nondeterminism); G6-G18 scripted (section 5). Open: G5 -- pf_model_b.pt still comes from the 5 h
+wall-clock run (training code and data public; train_pf.py PF_STEPS now allows a step-exact rerun, ~57.3k steps on a
+T4); G19 LICENSE (owner's decision).
