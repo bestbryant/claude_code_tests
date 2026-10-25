@@ -142,6 +142,23 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
+## in_bio was a training-membership leak (found Oct 25 by the v18c clean rebuild)
+pool4's in_bio came from the third-party ChEBI/LMSD set, which removed the keys of prvsiyan/coconut-casmi26-candidates,
+a COCONUT-NOT-TRAIN candidate list. Result: among COCONUT structures in_bio = 1 for 60.75% of TRAINING structures
+(25,969) but 0.36% of COCONUT-not-train (450,388) -> in_bio is a hidden in_train flag. The class-2 simulation sets the
+truth's in_train to 0 to mimic hidden COCONUT answers, but in_bio still gives the truth away (label leak), and docw's
+documentation model (which uses in_bio) learned the same shortcut for the doc-shift weights. Since pool v4 (Oct 19)
+every stage-1 ranker learned "COCONUT + in_bio = truth" from simulation; on the hidden test, class-2 COCONUT answers
+never carry it (0.36%), while COCONUT-and-train decoys do (61%) -> a population prior against exactly the answers of
+our COCONUT gap (probe 0.208 vs public 0.252).
+Evidence: v18c rows (clean rebuild; own bio set = ChEBI/LMSD minus OUR COCONUT, so in_bio = 0 on all COCONUT) give
+stage-1 val cls1 .8268 / cls2 .8150 (OOF .8232); the SAME rows with pool4's in_bio and doc weights give .8432 / .9168
+= v17b's .8426 / .9145. So the clean pipeline reproduces v17b exactly and the whole simulated drop is the leak.
+Simulated validation cannot judge this change (its truths carry the leak's target); only the LB can: v18c vs v17b is
+a pre-registered A/B (difference = the leak removal + FP-v1 retrain + 15 pool rows). Prediction: v18c >= v17b - 0.008
+(class 2 freed from the shortcut; the pool-v4 +0.013 was mostly reach of the 52k new ChEBI/LMSD structures), with the
+COCONUT-restricted probe of v18c the mechanism check. v18c is the eligible base either way.
+
 ## Reproducibility manifest (Oct 25, workflow wf_029f119e-b7e; [reproduce.md](reproduce.md), [ATTRIBUTION.md](ATTRIBUTION.md))
 44 agents traced every artifact of the v17b submission and verified each gap against the repo (several rebuilds run:
 pool4 from pool2 + build_pool_bio + add_pubchem_pop reproduces pool.parquet exactly; build_pool.py is deterministic).
