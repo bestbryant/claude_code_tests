@@ -241,6 +241,10 @@ candidate for the pre-registered A/B above.
 v18cb (FP-b swap on the same pool and B / C1 rows: BASE=v18c STOP_AFTER=D scripts/build_v18c.sh ... fp_model_b.pt
 v18cb, 16:22): stage 1 val cls1 .8249 / cls2 .8212 (v18c .8268 / .8159), OOF .8204 (v18c .8232). Stage E (4 CPU GLACIER
 workers) waits until the v18c kernels free their CPU sessions; built only as far as the Oct 26 v17bb reading needs.
+v18cb DONE 22:41 (4 CPU GLACIER workers casmi26-glwv18cb-0..3, coverage train .783 / val .754): stage 1 .8231
+(.8249 / .8221), stage 2 .838 (cls1 .8389 / cls2 .8375) vs v18c .8314 (.8301 / .8321): +0.0066 on simulated val.
+Models ret_ranker_v18cb (md5 2cdb147d), stage2_v18cb (1dfd20fd), local only; upload + kernel casmi26-own-s2v18cb only if
+the Oct 26 v17bb reading is >= v17b (otherwise the val gain alone does not justify a slot).
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
