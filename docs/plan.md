@@ -248,6 +248,9 @@ kernels/casmi26-pf-pilot (ctl then syn, PF_STEPS 20,000 each, 3.5 h guard each),
 syn-prep done (09:00): syn.npz 704,636 synthetic spectra of 234,880 structures (all matched to pool ids, fingerprints
 computed in the kernel, ~1,037 on-bits), within-set window negatives per structure mean 31.9 (neutral 58.2, train 32.9,
 COCONUT 20.8; 9,810 without any). The pilot kernel waits for the single TPU slot (PF-x x5 queued since 04:39).
+Kaggle CPU kernels simulate GLACIER at ~6.5 predictions/s each (the 4 workers finished all 714k pilot predictions in
+~7.5 h; ~7x this container's CPU): CPU workers are a free alternative to the GPU for simulation and for v18c's
+GLACIER pass (stage E now defaults to 4 CPU worker kernels, GL_DEVICE=gpu optional; same device type as inference).
 TPU: Tpu1VmV38 queued 2 h without starting; current Kaggle docs list TpuV5E8 -> all TPU kernels moved to v5e-8, PF-x
 re-pushed as casmi26-pf-train-x5 (04:39).
 

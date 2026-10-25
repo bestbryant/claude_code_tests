@@ -82,26 +82,37 @@ D = D[((D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)) & ~D.qid.isin
 D.to_parquet(sys.argv[2]); print('val queries', D.qid.nunique())
 PY
 
-# E. GLACIER, one fresh pass for every top-30 pair (no --have), on a Kaggle GPU kernel
-F=$W/fwd_$T; GJ=$DS/casmi26-gl-$T; K=kernels/casmi26-gl$T
+# E. GLACIER, one fresh pass for every top-30 pair (no --have), on Kaggle: 4 CPU worker kernels by default (Kaggle CPU
+#    kernels run ~6.5 predictions/s each, free, and match the CPU device of the inference kernel), GL_DEVICE=gpu for one
+#    T4 x 2 kernel (scripts/make_gl_gpu_kernel.py; ~65 predictions/s per GPU, shared GPU quota)
+F=$W/fwd_$T; GJ=$DS/casmi26-gl-$T
 mkdir -p $F
-[ -f $F/train.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof $P5 30 $F/train 8)
+[ -f $F/train.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof $P5 30 $F/train 6)
 [ -f $F/val.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ${ROWS}_val_reach_c.parquet own_models/ret_ranker_$T.txt $P5 30 $F/val 2)
+if [ "${GL_DEVICE:-cpu}" = gpu ]; then KS="casmi26-gl$T"; else KS="casmi26-glw$T-0 casmi26-glw$T-1 casmi26-glw$T-2 casmi26-glw$T-3"; fi
 if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
-  if [ ! -f $K/kernel-metadata.json ]; then
-    log "E: upload GLACIER jobs + push GPU kernel"
+  if [ ! -f kernels/${KS%% *}/kernel-metadata.json ]; then
+    log "E: upload GLACIER jobs + push ${GL_DEVICE:-cpu} kernels"
     mkdir -p $GJ && cp $F/*.jobs_*.json $GJ/
     echo "{\"title\": \"casmi26-gl-$T\", \"id\": \"bryantyu/casmi26-gl-$T\", \"licenses\": [{\"name\": \"Apache 2.0\"}]}" > $GJ/dataset-metadata.json
     kaggle datasets create -p $GJ -q 2>&1 | grep -v Warning | tail -1
-    python3 scripts/make_gl_gpu_kernel.py casmi26-gl$T casmi26-gl-$T
+    if [ "${GL_DEVICE:-cpu}" = gpu ]; then
+      python3 scripts/make_gl_gpu_kernel.py casmi26-gl$T casmi26-gl-$T
+    else
+      GLW_DS=casmi26-gl-$T GLW_PREFIX=casmi26-glw$T python3 scripts/make_gl_workers.py \
+        0:train.jobs_0.json,train.jobs_4.json 1:train.jobs_1.json,train.jobs_5.json 2:train.jobs_2.json,val.jobs_0.json 3:train.jobs_3.json,val.jobs_1.json
+    fi
     for i in $(seq 1 30); do st=$(kaggle datasets status bryantyu/casmi26-gl-$T 2>&1 | grep -v Warning); [ "$st" = ready ] && break; sleep 20; done
     sleep 120
-    kaggle kernels push -p $K 2>&1 | grep -v Warning | tail -1
+    for k in $KS; do kaggle kernels push -p kernels/$k 2>&1 | grep -v Warning | tail -1; done
   fi
-  log "E: waiting for kernels/casmi26-gl$T; run this script again when it is COMPLETE"
-  st=$(kaggle kernels status bryantyu/casmi26-gl$T 2>&1 | grep -v Warning)
-  case "$st" in *COMPLETE*) kaggle kernels output bryantyu/casmi26-gl$T -p $F --file-pattern 'gl\.json$' 2>&1 | grep -v Warning | tail -1;;
-                *) echo "$st"; exit 0;; esac
+  done_all=1
+  for k in $KS; do
+    st=$(kaggle kernels status bryantyu/$k 2>&1 | grep -v Warning)
+    case "$st" in *COMPLETE*) ;; *) echo "$k: $st"; done_all=0;; esac
+  done
+  [ $done_all = 1 ] || { log "E: waiting for the GLACIER kernels; run this script again when they are COMPLETE"; exit 0; }
+  for k in $KS; do kaggle kernels output bryantyu/$k -p $F --file-pattern 'gl\.json$' 2>&1 | grep -v Warning | tail -1; done
 fi
 
 # F. stage 2 on the fresh GLACIER pass only
