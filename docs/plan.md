@@ -152,6 +152,8 @@ COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post
 | 5 | casmi26-own-s2v17bpop | v17b 0.339 | 0.342 +- 0.008 | post-processing rule: adopt >= +0.005 (then as v18cpop on the new base), reject <= 0 |
 Verified 19:45 (execution logs): casmi26-own-s2v18c v1 400 / 400 rows with candidates, GLACIER 371 / 400, no
 Traceback; casmi26-probe18c-coco v1 393 / 400 COCONUT rows; casmi26-probe18c-train v1 400 / 400 training rows.
+v18c vs v17b on the VISIBLE test (placeholder of training spectra, so not informative about the hidden mix): top-1
+identical 97.5%, top-5 overlap .74, top-1 a training structure 399 / 400 in both (by construction of the placeholder).
 If the Oct 26 trigger fills slots with conditional follow-ups (probe17-coco, v17bb second point), they take priority
 over slot 5; slots 1-3 are kept together (one mechanism reading).
 
