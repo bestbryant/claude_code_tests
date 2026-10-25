@@ -5,12 +5,15 @@
 #   G2: GLACIER scores for every stage-2 training / validation pair computed in ONE fresh pass (no --have, no merged
 #       history) on a Kaggle GPU kernel (casmi.fwdrun --device cuda); stage 2 reads only that pass.
 #   G13/G14: row dumps with recorded seeds, VENDOR_PATH disabled, stale part dirs removed; features added in one place.
-# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool + row dumps; C1: + PeakFormer features)
+# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool + row dumps; C1: + PeakFormer features; D: + stage 1)
+# BASE=<tag> reuses that build's pool and stage B / C1 rows (same PeakFormer) and rebuilds from C2 (e.g. an FP-model swap:
+#   BASE=v18c scripts/build_v18c.sh <pf_model_b.pt> <fp_model_b.pt> v18cb).
 # Stage E stops after pushing the GPU GLACIER kernel; run the script again when kernels/casmi26-gl<tag> is COMPLETE.
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
 W=/home/user/work; R=/home/user/claude_code_tests; EXT=/home/user/ext; DS=/home/user/ds
-P5=$W/pool_$T; ROWS=ret${T#v}          # e.g. pool_v18c, ret18c (fresh names: an old $W/pool5 from Oct 19 exists)
+B0=${BASE:-$T}
+P5=$W/pool_$B0; RB=ret${B0#v}; ROWS=ret${T#v}   # e.g. pool_v18c, ret18c (fresh names: an old $W/pool5 from Oct 19 exists)
 cd $R
 log() { echo "[$(date -u +%H:%M)] $*"; }
 
@@ -18,6 +21,7 @@ log() { echo "[$(date -u +%H:%M)] $*"; }
 BIO=$EXT/bio_raw/bio_structures_own.parquet
 [ -f $BIO ] || python3 scripts/build_bio_structures.py $EXT/bio_raw/chebi_rel255.sdf.gz $EXT/bio_raw/LMSD.sdf.zip \
     $EXT/coconut/coconut_2026_10.parquet $BIO 4
+[ -z "${BASE:-}" ] || [ -f $P5/.built ] || { echo "BASE=$BASE: $P5 is not a finished build"; exit 1; }
 if [ ! -f $P5/.built ]; then        # marker written only by this stage: never reuse a directory of unknown origin
   log "A: $P5"
   rm -rf $P5
@@ -31,7 +35,7 @@ md5sum $P5/pool.parquet $P5/pool_fp.npy $BIO | tee $W/$T.md5
 
 # B. retrieval rows (seeds as ret4: 12 train / 11 val; split keys $W/rank_keys.txt / val_keys.txt, G6)
 for s in train val; do
-  out=$W/${ROWS}_$s.parquet; [ -f $out ] && continue
+  out=$W/${RB}_$s.parquet; [ -f $out ] && continue
   rm -rf $out.parts
   [ $s = train ] && args="keys:$W/rank_keys.txt 8000 $out 12 4" || args="keys:$W/val_keys.txt 1500 $out 11 4"
   log "B: dump $s"
@@ -43,9 +47,9 @@ done
 # C. spectral features without a richfp cache (pool ids differ from pool4): C1 PeakFormer (pf_* + within-formula
 #    columns) on the raw rows, C2 FP model (fp_*) on top -- C1 does not depend on the FP choice
 for s in train val; do
-  out=$W/${ROWS}_${s}_pf.parquet; [ -f $out ] && continue
+  out=$W/${RB}_${s}_pf.parquet; [ -f $out ] && continue
   log "C1: PeakFormer features $s"
-  for i in 0 1 2; do RICHFP_CACHE= python3 scripts/add_fp_feats.py $W/${ROWS}_$s.parquet $PF $out.p$i $P5 $i 3 > $out.p$i.log 2>&1 & done; wait
+  for i in 0 1 2; do RICHFP_CACHE= python3 scripts/add_fp_feats.py $W/${RB}_$s.parquet $PF $out.p$i $P5 $i 3 > $out.p$i.log 2>&1 & done; wait
   python3 -c "
 import sys, pandas as pd
 sys.path.insert(0, '$R')
@@ -60,7 +64,7 @@ done
 for s in train val; do
   out=$W/${ROWS}_${s}_fp.parquet; [ -f $out ] && continue
   log "C2: FP features $s"
-  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${ROWS}_${s}_pf.parquet $FP $out.f$i $P5 $i 3 > $out.f$i.log 2>&1 & done; wait
+  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${RB}_${s}_pf.parquet $FP $out.f$i $P5 $i 3 > $out.f$i.log 2>&1 & done; wait
   python3 -c "
 import pandas as pd
 pd.concat([pd.read_parquet(f'$out.f{i}') for i in range(3)], ignore_index=True).to_parquet('$out')"
@@ -81,6 +85,8 @@ art = t.index[(t.cls == 1) & (t.lib_n == 0)]
 D = D[((D.cls == 1) | D.qid.map(reach).fillna(False).astype(bool)) & ~D.qid.isin(art)]
 D.to_parquet(sys.argv[2]); print('val queries', D.qid.nunique())
 PY
+
+[ "${STOP_AFTER:-}" = D ] && { log "STOP_AFTER=D"; exit 0; }
 
 # E. GLACIER, one fresh pass for every top-30 pair (no --have), on Kaggle: 4 CPU worker kernels by default (Kaggle CPU
 #    kernels run ~6.5 predictions/s each, free, and match the CPU device of the inference kernel), GL_DEVICE=gpu for one
