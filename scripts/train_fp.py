@@ -29,6 +29,8 @@ if os.environ.get('FP_NEG_TRAIN'):      # window negatives restricted to trainin
 INST_DROP = float(os.environ.get('FP_INST_DROP', '0'))     # share of training spectra with the instrument token set to 0
 NOREP = os.environ.get('FP_NEG_NOREP') == '1'      # window negatives drawn without replacement (short lists: no repeats)
 HOURS = float(os.environ.get('FP_HOURS', '0'))     # wall-clock guard: stop, validate and save after this many hours
+STOP_EPOCH = int(os.environ.get('FP_STOP_EPOCH', '0'))   # stop after this many epochs (schedule still epochs x steps):
+# reproduces the deployed fp_model.pt = epoch-2 save of an 8 x 3000 run (docs/reproduce.md G4)
 mz, it, off = S['mz'], S['it'], S['off']
 prec, ce, add_id, inst_id, pol, sidx, split = S['prec'], S['ce'], S['add_id'], S['inst_id'], S['pol'], S['sidx'], S['split']
 sfp = T['fp']
@@ -158,5 +160,5 @@ for ep in range(epochs):
     mrr, top1, n = validate()
     print(f'EPOCH {ep} val MRR {mrr:.4f} top1 {top1:.4f} (n={n}) {time.time()-t0:.0f}s', flush=True)
     torch.save(model.state_dict(), out)
-    if stop:
+    if stop or (STOP_EPOCH and ep + 1 >= STOP_EPOCH):
         break
