@@ -15,7 +15,8 @@ Env: as train_pf.py (PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERG
 PF_TIMS_W, PF_NEG_TRAIN, PF_NEG_NOREP, PF_INST_DROP, PF_VAL_N, PF_LOG, PF_INIT, FP_EXCLUDE) + PF_CORES (number of XLA
 processes; default all), PF_CAL (calibration steps, default 300), PF_DEV (force 'cpu' / 'cuda').
 """
-import math, os, queue, sys, threading, time
+import math, os, queue, sys, threading, time, traceback
+os.environ.setdefault('XLA_NO_SPECIAL_SCALARS', '1')    # Adam's bias correction reaches 1.0: no constant -> no recompile
 import numpy as np, torch, torch.nn.functional as F
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); sys.path.insert(0, '/kaggle/working/pkg')
 from casmi.peakformer import K, PeakFormer, csr_rows, embed_query, fz_scores, meta_matrix, ADD, N_ADD, N_INST
@@ -46,6 +47,8 @@ N_FREQ = 64
 FREQ = 1.0 / np.logspace(-2, 3, N_FREQ)          # = PeakFormer.freq
 t0 = time.time()
 G = {}
+INIT_LOCK = threading.Lock()        # PJRT on TPU v2/v3 runs 2 cores as threads of one process sharing the CPU RNG
+LAST = [time.time()]                # last training progress (watchdog)
 
 
 def load():
@@ -180,7 +183,12 @@ def host_batch(rng):
 
 
 class PeakFormerX(PeakFormer):
-    """PeakFormer with host-computed phases and dense multi-hot molecule inputs (same parameters)."""
+    """PeakFormer with host-computed phases and dense multi-hot molecule inputs (same parameters; the float64
+    frequency buffer, unused here and non-persistent, is dropped so that nothing float64 reaches the device)."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self._buffers.pop('freq', None)
 
     @staticmethod
     def sin_ph(ph):
@@ -203,6 +211,9 @@ class PeakFormerX(PeakFormer):
 def run(rank):
     load()
     g = G
+    if not g.get('_watchdog'):
+        g['_watchdog'] = True
+        threading.Thread(target=watchdog, daemon=True).start()
     NB = g['NB']
     if XLA:
         dev = torch_xla.device() if hasattr(torch_xla, 'device') else xm.xla_device()
@@ -219,16 +230,25 @@ def run(rank):
         world, sync = 1, (lambda: None)
         mh_dtype = torch.float16 if dev == 'cuda' else torch.float32
     master = rank == 0
-    torch.manual_seed(SEED)                         # identical initial weights on every core
     rng = np.random.default_rng(SEED * 1000 + rank)
     cfg = dict(n_bits=NB, d=int(os.environ.get('PF_D', '256')), layers=int(os.environ.get('PF_LAYERS', '6')),
                heads=int(os.environ.get('PF_HEADS', '8')), d_mol=int(os.environ.get('PF_DMOL', '512')),
                drop=float(os.environ.get('PF_DROP', '0.1')))
-    model = PeakFormerX(**cfg)
+    with INIT_LOCK:                                 # identical initial weights on every core
+        torch.manual_seed(SEED)
+        model = PeakFormerX(**cfg)
     if os.environ.get('PF_INIT'):
         sd = torch.load(os.environ['PF_INIT'], map_location='cpu', weights_only=False)
-        sd.pop('_cfg', None); sd.pop('_keep', None); model.load_state_dict(sd)
+        sd.pop('_cfg', None); sd.pop('_keep', None); sd.pop('freq', None); model.load_state_dict(sd)
+    chk0 = float(sum(p.detach().double().sum() for p in model.parameters()))
     model = model.to(dev)
+    if XLA and world > 1:
+        xm.broadcast_master_param(model)            # core 0's weights everywhere (belt and braces with the lock)
+        spread = xm.mesh_reduce('init_chk', chk0, lambda v: max(v) - min(v))
+        if master:
+            print('initial weight checksum spread across cores (before broadcast)', spread, flush=True)
+    if XLA:
+        xm.set_rng_state(SEED * 1000 + rank, device=dev)     # per-core dropout masks
     opt = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=0.01)
     if master:
         print('model params', sum(p.numel() for p in model.parameters()), cfg, 'device', dev, 'world', world,
@@ -318,6 +338,7 @@ def run(rank):
             bt = to_dev(q.get())
             st = train_step(bt)
             sync()
+            LAST[0] = time.time()
             stats = st if stats is None else stats + st
             step += 1
             set_lr(step, total)
@@ -385,11 +406,26 @@ def validate(model, max_structs=int(os.environ.get('PF_VAL_N', '1500'))):
 
 
 def _mp(index):
-    run(index)
+    try:
+        run(index)
+    except BaseException:
+        traceback.print_exc(); sys.stdout.flush(); sys.stderr.flush()
+        os._exit(1)        # one failed core would leave the others waiting in a collective for the whole session
+
+
+def watchdog(limit=float(os.environ.get('PF_STALL_MIN', '30')) * 60):
+    """Kill the run when no training step finished for `limit` seconds (hung collective, dead prefetch thread):
+    a hang would otherwise hold the TPU until the session limit."""
+    while True:
+        time.sleep(60)
+        if time.time() - LAST[0] > limit:
+            print(f'WATCHDOG: no progress for {limit / 60:.0f} min -> exit', flush=True)
+            os._exit(2)
 
 
 if __name__ == '__main__':
     load()
+    LAST[0] = time.time() + 1800                     # compilation / first steps get extra time
     if XLA and os.environ.get('PF_CORES', '') != '1':
         import torch_xla.distributed.xla_multiprocessing as xmp
         n = int(os.environ['PF_CORES']) if os.environ.get('PF_CORES') else None
