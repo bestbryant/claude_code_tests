@@ -172,6 +172,11 @@ v18c stage A (08:24): pool_v18c = pool2 + own bio set: 1,160,133 rows (pool4 + 1
 17,520 rows changed, 17,400 of them COCONUT) -- a stale $W/pool5 from Oct 19 was first picked up by mistake (now: tag-named
 directory + completion marker). Stage B (row dumps, seeds 12 / 11) running; stage C waits for the Oct 26 v17bb reading
 (FP model: FP-b from its GPU kernel if v17bb >= v17b, else a recorded retrain of the v1 FP model, G4).
+v18c stage B (09:42): ret18c dumps 7,788 queries / 980,913 rows and 1,463 / 182,179 (ret4: 980,910 / 182,177; the
+15 new bio structures add 3 + 2 rows). Stage C1 (10:01, 18 min without the richfp cache): PeakFormer-b features equal
+ret17b's on the 182,177 matched validation rows (pf_bern identical, pf_cos <= 1.2e-7). C2-F wait for the FP choice
+(Oct 26 v17bb reading, or the recorded FP-v1 retrain kernels/casmi26-fp-train-v1 running on Kaggle CPU) so that the
+GPU GLACIER pass runs once.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
