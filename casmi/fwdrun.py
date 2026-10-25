@@ -168,6 +168,7 @@ def main():
     ap.add_argument('--bs', type=int, default=32)
     ap.add_argument('--dump-preds', default=None, help='pickle the predicted spectra here (for offline rescoring)')
     ap.add_argument('--batch-timeout', type=int, default=300, help='seconds before a batch is abandoned')
+    ap.add_argument('--device', default='cpu', help="'cuda' runs the network on the GPU (the forward pass is ~95% of CPU time)")
     a = ap.parse_args()
     t0 = time.time()
     if a.wheels:
@@ -187,7 +188,16 @@ def main():
     from casmi.entropy import entropy_sim
 
     model = joint_model.JointModel.load_from_checkpoint(a.ckpt, map_location='cpu', weights_only=False)
-    model.eval(); model.freeze()
+    model.eval(); model.freeze(); model.to(a.device)
+
+    def todev(x):
+        if torch.is_tensor(x):
+            return x.to(a.device, non_blocking=True)
+        if isinstance(x, dict):
+            return {k: todev(v) for k, v in x.items()}
+        if isinstance(x, (list, tuple)):
+            return type(x)(todev(v) for v in x)
+        return x
     tp = dataset.TreeProcessor(pe_embed_k=model.pe_embed_k, root_encode='graphormer',
                                embed_elem_group=model.embed_elem_group, multi_hop_max_dist=model.multi_hop_max_dist)
     items = json.load(open(a.inp))
@@ -268,6 +278,8 @@ def main():
                         print('featurize fail', smi[:60], repr(e)[:120], flush=True)
                 if batch:
                     col = dataset.IntenDataset.collate_fn([x[1] for x in batch])
+                    if a.device != 'cpu':
+                        col = todev(col)
                     res = model.predict_inten_frag_batch_sparse(col, 100)
                     ms, its, cnt = res['masses'], res['intens'], res['counts']
                     for i, (k, _) in enumerate(batch):

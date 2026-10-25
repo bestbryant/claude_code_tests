@@ -197,6 +197,11 @@ paired-bootstrap interval > 0, delta vs COCONUT decoys >= -0.01, excess_syn <= e
 covered A queries (scripts/add_gl_feats.py computes the GLACIER column from the simulations); (4) arms step-matched
 (PF_STEPS; set PILOT_STEPS from the PF-x v5e step time before pushing). scripts/eval_pf_pair.py reproduces the known
 PF-d -> PF-b numbers exactly (pf_bern +0.124 [+0.095, +0.154], = +0.005 LB).
+GLACIER simulation speed (Oct 25): ~0.95 predictions/s on 4 CPU threads (597 in 625 s locally; the network forward
+pass is ~95% of the time, fragment-tree featurisation ~2%) -> the 4 CPU workers (per-file budget 2.75 h) cover only
+~21% of the 714k pilot predictions, shortest SMILES first. casmi/fwdrun.py --device cuda added; GPU simulation
+kernel casmi26-simg (T4 x 2, one fwdrun per GPU, hard deadline 1.5 h = the GPU quota this costs; 12.1 h were left,
+shared with the owner) replaces them for the pilot; the CPU outputs serve as a CPU-vs-GPU equivalence check.
 TPU: Tpu1VmV38 queued 2 h without starting; current Kaggle docs list TpuV5E8 -> all TPU kernels moved to v5e-8, PF-x
 re-pushed as casmi26-pf-train-x5 (04:39).
 
