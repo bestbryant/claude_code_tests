@@ -227,6 +227,10 @@ pass is ~95% of the time, fragment-tree featurisation ~2%) -> the 4 CPU workers 
 ~21% of the 714k pilot predictions, shortest SMILES first. casmi/fwdrun.py --device cuda added; GPU simulation
 kernel casmi26-simg (T4 x 2, one fwdrun per GPU, hard deadline 1.5 h = the GPU quota this costs; 12.1 h were left,
 shared with the owner) replaces them for the pilot; the CPU outputs serve as a CPU-vs-GPU equivalence check.
+GPU simulation done (08:15): 704,636 of 714,165 predictions in 5,379 s on T4 x 2 (~65 / s per GPU, ~70x a 4-core
+CPU kernel); only the longest-SMILES tails of 2 of 16 files were cut by the deadline -> kernels/casmi26-syn-prep
+pushed. Kaggle allows ONE TPU session at a time (queued ones included): the two pilot arms are merged into one kernel
+kernels/casmi26-pf-pilot (ctl then syn, PF_STEPS 20,000 each, 3.5 h guard each), pushed when PF-x (x5) has finished.
 TPU: Tpu1VmV38 queued 2 h without starting; current Kaggle docs list TpuV5E8 -> all TPU kernels moved to v5e-8, PF-x
 re-pushed as casmi26-pf-train-x5 (04:39).
 

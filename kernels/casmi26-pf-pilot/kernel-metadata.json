@@ -5,8 +5,8 @@
   "enable_internet": false,
   "competition_sources": [],
   "model_sources": [],
-  "id": "bryantyu/casmi26-pf-train-ctl",
-  "title": "casmi26-pf-train-ctl",
+  "id": "bryantyu/casmi26-pf-pilot",
+  "title": "casmi26-pf-pilot",
   "code_file": "notebook.py",
   "enable_gpu": false,
   "enable_tpu": true,
@@ -16,7 +16,10 @@
     "bryantyu/casmi26-fp-data",
     "bryantyu/casmi26-pf-data",
     "bryantyu/casmi26-pf-negtrain",
-    "bryantyu/casmi26-models"
+    "bryantyu/casmi26-models",
+    "bryantyu/casmi26-sim-jobs"
   ],
-  "kernel_sources": []
+  "kernel_sources": [
+    "bryantyu/casmi26-syn-prep"
+  ]
 }
