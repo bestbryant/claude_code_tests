@@ -80,6 +80,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-24 | casmi26-probe11tok3-coco v1 | PROBE: v11l tok3 lists restricted to COCONUT-not-train | 0.200 |
 | 10-24 | casmi26-probe11-train v1 | PROBE: v11l lists restricted to training structures | 0.149 |
 | 10-24 | casmi26-own-s2v13 v2 | stage 1 / stage 2 retrained on token-3 features + token-3 override | 0.313 |
+| 10-25 | casmi26-probe5w-coco v2 | PROBE: v5w lists restricted to COCONUT-not-train | 0.208 |
+| 10-25 | casmi26-probe5w-train v2 | PROBE: v5w lists restricted to training structures | 0.156 |
+| 10-25 | casmi26-own-s2v5w-olast v2 | v5w lists, source tiering (train / COCONUT first, other after, nothing dropped) | 0.324 |
+| 10-25 | casmi26-own-s2v17 v3 | v5w recipe (31 leaves, alpha 1, lib10) + PeakFormer d features | 0.334 |
+| 10-25 | casmi26-own-s2v17b v1 | v17 with the debiased PeakFormer b (training-structure negatives, instrument-free, GPU 5 h) replacing d | **0.339** (best eligible) |
 
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
@@ -99,6 +104,43 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 - Consequence for variant b (instrument-free PeakFormer / FP): it removes the token like tok0 -> the class-1 cost may
   repeat. Deploy debiased models only as ADDITIONAL features next to the token-1 ones, or for COCONUT candidates only,
   and judge by the COCONUT-restricted probe plus the full list.
+
+## Lessons from the Oct 25 submissions
+Predictions (pre-registered in the Oct 25 trigger) vs LB, and the rule outcomes:
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| probe5w-coco | 0.195 (0.185-0.210) | 0.208 | probe11-coco 0.190: +0.018 | in range (high end) |
+| probe5w-train | 0.148 (0.140-0.156) | 0.156 | probe11-train 0.149: +0.007 | in range (top) |
+| s2v5w-olast | 0.334; adopt >= 0.337, reject <= 0.332 | 0.324 | v5w 0.332: -0.008 | REJECT (source tiering) |
+| s2v17 | 0.328 +- 0.009; >= 0.326 neutral | 0.334 | v5w 0.332: +0.002 | PeakFormer d neutral at lib10 -> v17 = the PF-b control |
+| s2v17b | 0.330 +- 0.010 | **0.339** | v17 0.334: +0.005; v5w: +0.007 | >= 0.336 -> candidate pick #1; retrain rule (>= +0.008 vs the matched parent) not met by the LB alone -> second consistent point = the Oct 26 probes |
+- PeakFormer b (debiased + ~11x the training of d) is the first spectral change that moved the LB up since Oct 20: v17b 0.339
+  is the best eligible score (v5w 0.332, s2v4 0.330). v17 (PF-d at lib10) was neutral, so the +0.005 belongs to PF-b's
+  replacement as a whole (debiasing and the longer GPU training are confounded by design; v17b vs v17 measures both).
+- The v5w (lib10, 31 leaves) family is better than v11l on both restricted probes: COCONUT +0.018, train +0.007 ->
+  the v10-family loss (-0.012 overall) is spread over both sources, mostly COCONUT. Confirms "never the v10 family".
+- Source tiering FAILS (-0.008; the prediction +0.002 missed by 0.010): v5w's "other" candidates that sit high in the
+  list are right often enough (probe5-other 0.007) that pushing them below train / COCONUT costs about all of it. The
+  ranker's source mixing is already calibrated; no hard source rules (STOP list: source tiering / promotions).
+- Both v5w probes came in at the top of their ranges -> the v5w lists are a bit better than the v11l-based predictions
+  assumed; the public-lineage gaps shrink to COCONUT 0.252 - 0.208 = 0.044 and other ~0.05 (train: parity, 0.155 vs 0.156).
+Adoption rule for v17b (second consistent point, Oct 26): probe17b-coco >= probe5w-coco + 0.005 (>= 0.213; the
+targeted probe of a COCONUT-debiasing change) AND probe17b-train >= probe5w-train - 0.006 (>= 0.150; class-1 cost cap).
+probe5w is the proxy parent (no probe17 exists; v17 - v5w = +0.002 on the LB). Both hold -> v17b ADOPTED as the base
+(pick #1); COCONUT probe < 0.208 -> v17b stays pick #1 on the LB but the mechanism is unconfirmed (push probe17-coco
+as the matched control before building on it); train probe < 0.150 -> the class-1 cost of instrument-free scoring
+repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-keeping donor).
+
+## Oct 26 slots (pre-registered Oct 25 01:30 UTC; all five kernels COMPLETE and verified clean on Oct 24)
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-own-s2v17bb v1 (v17b + FP model b) | v17b 0.339 | 0.340 +- 0.010 | >= 0.347: adopt as base; 0.340-0.346: needs a second point (probe17bb-coco); <= 0.339: FP-b not adopted; <= 0.333: FP-b hurts |
+| 2 | casmi26-probe17b-coco v1 | probe5w-coco 0.208 | 0.216 +- 0.010 | >= 0.213 (with slot 3 ok): v17b ADOPTED; < 0.208: mechanism unconfirmed |
+| 3 | casmi26-probe17b-train v1 | probe5w-train 0.156 | 0.153 +- 0.006 | >= 0.150: class-1 cost within the cap |
+| 4 | casmi26-specpfd-coco v1 (PeakFormer d alone, COCONUT-not-train) | -- | 0.14 (0.10-0.18) | reference for slot 5 |
+| 5 | casmi26-specpfb-coco v1 (PeakFormer b alone, COCONUT-not-train) | specpfd-coco | 0.16 (0.12-0.20) | b - d >= +0.015: spectral gains transfer to the hidden COCONUT answers -> GPU spectral scaling is the main lever; <= 0: they do not -> re-plan |
+Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
+COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
 ## v5w drift check (Oct 24): current code reproduces the Oct 20 lists only approximately
 The Oct 24 v5w re-runs (probe5w-coco / -train / olast, current casmi26-code, same models and pool) keep the Oct 20 top-1
