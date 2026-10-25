@@ -14,6 +14,12 @@ Differences from train_pf.py (TPUs have no float64 and XLA recompiles for every 
 Env: as train_pf.py (PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_SBAL, PF_SEED, PF_HOURS,
 PF_TIMS_W, PF_NEG_TRAIN, PF_NEG_NOREP, PF_INST_DROP, PF_VAL_N, PF_LOG, PF_INIT, FP_EXCLUDE) + PF_CORES (number of XLA
 processes; default all), PF_CAL (calibration steps, default 300), PF_DEV (force 'cpu' / 'cuda').
+PF-syn (PF_SYN = syn.npz of scripts/prep_syn_data.py, PF_SYN_P = share of each batch, default 0.25): GLACIER-simulated
+[M+H]+ spectra of pool structures (training AND COCONUT-not-train, so that a synthetic look carries no source
+information) as extra rows. Population balance: synthetic rows take their window negatives from the simulated set
+only (every simulated population is positive and negative in the same proportions); real rows keep their negatives
+(PF_NEG_TRAIN: training positives only); in-batch negatives never cross looks (a real query never sees a COCONUT
+structure as a negative only). A few low noise peaks are added to synthetic spectra; no source token.
 """
 import math, os, queue, sys, threading, time, traceback
 os.environ.setdefault('XLA_NO_SPECIAL_SCALARS', '1')    # Adam's bias correction reaches 1.0: no constant -> no recompile
@@ -43,6 +49,8 @@ S_BAL = float(os.environ.get('PF_SBAL', '0'))
 LR = float(os.environ.get('PF_LR', '5e-4'))
 CAL = int(os.environ.get('PF_CAL', '300'))
 LOG = int(os.environ.get('PF_LOG', '100'))
+SYN = os.environ.get('PF_SYN')
+B_SYN = int(round(float(os.environ.get('PF_SYN_P', '0.25')) * B)) if SYN else 0
 N_FREQ = 64
 FREQ = 1.0 / np.logspace(-2, 3, N_FREQ)          # = PeakFormer.freq
 t0 = time.time()
@@ -102,6 +110,21 @@ def load():
             ln = np.diff(ptr[a:b_ + 1])
             dense[np.repeat(np.arange(b_ - a), ln), idx[ptr[a]:ptr[b_]].astype(np.int64)] = True
             PACK[base + a:base + b_] = np.packbits(dense, axis=1)
+    if SYN:         # simulated structures' bits appended after the negative rows
+        Z = np.load(SYN)
+        y_ptr, y_idx = Z['y_ptr'], Z['y_idx']; ny = len(y_ptr) - 1
+        YP = np.zeros((ny, nbyte), np.uint8)
+        for a in range(0, ny, 20000):
+            b_ = min(ny, a + 20000)
+            dense = np.zeros((b_ - a, nbyte * 8), bool)
+            ln = np.diff(y_ptr[a:b_ + 1])
+            dense[np.repeat(np.arange(b_ - a), ln), y_idx[y_ptr[a]:y_ptr[b_]].astype(np.int64)] = True
+            YP[a:b_] = np.packbits(dense, axis=1)
+        g.update(NSY0=len(PACK), SPM=Z['PM'], SPI=Z['PI'], Sprec=Z['prec'], Sce=Z['ce'], Ssidx=Z['sidx'].astype(np.int64),
+                 Swneg=Z['wneg'].astype(np.int64))
+        PACK = np.concatenate([PACK, YP])
+        print('synthetic spectra', len(Z['sidx']), 'structures', ny, 'per batch', B_SYN, 'window negatives per structure',
+              round(float((Z['wneg'] >= 0).sum(1).mean()), 1), flush=True)
     print('packed bit matrix', PACK.shape, f'{PACK.nbytes / 1e9:.2f} GB', f'{time.time() - t0:.0f}s', flush=True)
     G.update(g, split=split, PM=PM, PI=PI, lens=lens, keep=keep, s_ptr=s_ptr, s_idx=s_idx, n_ptr=n_ptr, n_idx=n_idx,
              NB=NB, negs=negs, tr=tr, cw=cw, so=so, s_first=s_first, s_len=s_len, grp_start=grp_start, grp_n=grp_n,
@@ -114,8 +137,72 @@ def phases(x):
     return (c - np.floor(c)).astype(np.float32)
 
 
+def pick_negs(rng, nl):
+    """NNEG window negatives per row from left-packed lists nl (-1 padded): without replacement (NOREP) or uniform."""
+    cnt = (nl >= 0).sum(1)
+    if NOREP:
+        pick_pos = np.argsort(rng.random(nl.shape) + (np.arange(nl.shape[1]) >= cnt[:, None]), 1)[:, :NNEG]
+        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[pick_pos >= cnt[:, None]] = -1
+    else:
+        pick_pos = np.minimum((rng.random((len(nl), NNEG)) * np.maximum(cnt, 1)[:, None]).astype(np.int64), nl.shape[1] - 1)
+        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[cnt == 0] = -1
+    return pick
+
+
+def augment(rng, mz, it, pr):
+    """Peak dropout (base peak kept), intensity and ppm jitter, renormalisation (train_pf.py batch_inputs)."""
+    n = len(mz)
+    valid = (it > 0) & (mz > 0) & (mz <= pr[:, None] + 2.0)
+    drop = rng.random(valid.shape) < 0.1
+    drop[np.arange(n), np.where(valid, it, -1.0).argmax(1)] = False      # keep the base peak
+    valid &= ~drop
+    it = it * np.exp(0.15 * rng.standard_normal(it.shape)).astype(np.float32)
+    cal = 1 + 3e-6 * rng.standard_normal((n, 1))
+    mz = mz * cal * (1 + 2e-6 * rng.standard_normal(mz.shape)); pr = pr * cal[:, 0]
+    it = np.where(valid, it, 0.0).astype(np.float32)
+    it = it / np.maximum(it.max(1, keepdims=True), 1e-6)
+    mz = np.where(valid, mz, 0.0)
+    return mz, it, valid, pr
+
+
+def syn_rows(rng, n):
+    """n synthetic rows: uniform over simulated spectra (3 energies per structure), up to 4 low noise peaks replacing
+    the weakest slots, window negatives inside the simulated set."""
+    g = G
+    j = rng.integers(0, len(g['Ssidx']), n)
+    s = g['Ssidx'][j]
+    mz = g['SPM'][j].astype(np.float64); it = g['SPI'][j].astype(np.float32); pr = g['Sprec'][j].astype(np.float64)
+    k = rng.integers(0, 5, n)
+    weak = np.argsort(it, 1, kind='stable')[:, :4]
+    for c in range(4):
+        r = np.where(k > c)[0]
+        mz[r, weak[r, c]] = 40.0 + rng.random(len(r)) * np.maximum(pr[r] - 41.0, 1.0)
+        it[r, weak[r, c]] = rng.uniform(0.005, 0.05, len(r)).astype(np.float32)
+    mz, it, valid, pr2 = augment(rng, mz, it, pr)
+    meta = meta_matrix(np.zeros(n, np.int64), np.zeros(n, np.int64), g['Sce'][j].astype(np.float32), np.zeros(n, np.int64),
+                       pr, np.ones(n))
+    return mz, it, valid, pr2, meta, s, pick_negs(rng, g['Swneg'][s])
+
+
 def host_batch(rng):
-    """One training batch as fixed-shape numpy arrays (train_pf.py sampling + batch_inputs, in numpy)."""
+    """One training batch as fixed-shape numpy arrays: B - B_SYN real rows (train_pf.py sampling + batch_inputs, in
+    numpy) then B_SYN synthetic rows (PF_SYN)."""
+    mz, it, valid, pr, meta, s, pick = real_rows(rng, B - B_SYN)
+    rows_p = s; rows_n = G['NS'] + np.maximum(pick, 0)
+    look = np.zeros(B, bool)
+    if B_SYN:
+        sm, si, sv, sp, smeta, ss, spick = syn_rows(rng, B_SYN)
+        mz, it, valid, pr, meta = (np.concatenate(x) for x in ((mz, sm), (it, si), (valid, sv), (pr, sp), (meta, smeta)))
+        rows_p = np.r_[rows_p, G['NSY0'] + ss]; rows_n = np.r_[rows_n, G['NSY0'] + np.maximum(spick, 0)]
+        pick = np.r_[pick, spick]; s = np.r_[s, ss]; look[B - B_SYN:] = True
+    # in-batch negatives: never the same structure, never across looks
+    same = ((s[:, None] == s[None, :]) | (look[:, None] != look[None, :])) & ~np.eye(B, dtype=bool)
+    return dict(ph_mz=phases(mz), ph_nl=phases(pr[:, None] - mz), it=it, valid=valid, ph_pr=phases(pr), meta=meta,
+                rows_p=rows_p, rows_n=rows_n.reshape(-1), okn=pick >= 0, same=same)
+
+
+def real_rows(rng, B):
+    """B real training rows (train_pf.py sampling + batch_inputs, in numpy)."""
     g = G
     tr, cw = g['tr'], g['cw']
     idx = tr[np.minimum(np.searchsorted(cw, rng.random(B)), len(tr) - 1)]
@@ -124,13 +211,7 @@ def host_batch(rng):
         j = rng.integers(0, len(g['s_first']), nb)
         idx[:nb] = g['so'][g['s_first'][j] + (rng.random(nb) * g['s_len'][j]).astype(np.int64)]
     s = g['sidx'][idx].astype(np.int64)
-    nl = g['negs'][s]; cnt = (nl >= 0).sum(1)
-    if NOREP:
-        pick_pos = np.argsort(rng.random(nl.shape) + (np.arange(nl.shape[1]) >= cnt[:, None]), 1)[:, :NNEG]
-        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[pick_pos >= cnt[:, None]] = -1
-    else:
-        pick_pos = np.minimum((rng.random((B, NNEG)) * np.maximum(cnt, 1)[:, None]).astype(np.int64), nl.shape[1] - 1)
-        pick = np.take_along_axis(nl, pick_pos, 1).astype(np.int64); pick[cnt == 0] = -1
+    pick = pick_negs(rng, g['negs'][s])
     PM, PI, ce, prec = g['PM'], g['PI'], g['ce'], g['prec']
     n = B
     mz = PM[idx].astype(np.float64); it = PI[idx].astype(np.float32); pr = prec[idx].astype(np.float64)
@@ -162,24 +243,12 @@ def host_batch(rng):
             Pm = np.concatenate(Pm, 1); Pi = np.concatenate(Pi, 1)
             top = np.argpartition(-Pi, K - 1, axis=1)[:, :K]      # top K by intensity (tokens are a set: order free)
             mz = np.take_along_axis(Pm, top, 1); it = np.take_along_axis(Pi, top, 1)
-    valid = (it > 0) & (mz > 0) & (mz <= pr[:, None] + 2.0)
-    drop = rng.random(valid.shape) < 0.1
-    drop[np.arange(n), np.where(valid, it, -1.0).argmax(1)] = False      # keep the base peak
-    valid &= ~drop
-    it = it * np.exp(0.15 * rng.standard_normal(it.shape)).astype(np.float32)
-    cal = 1 + 3e-6 * rng.standard_normal((n, 1))
-    mz = mz * cal * (1 + 2e-6 * rng.standard_normal(mz.shape)); pr = pr * cal[:, 0]
-    it = np.where(valid, it, 0.0).astype(np.float32)
-    it = it / np.maximum(it.max(1, keepdims=True), 1e-6)
-    mz = np.where(valid, mz, 0.0)
+    mz, it, valid, pr = augment(rng, mz, it, pr)
     ib = g['inst_id'][idx]
     if INST_DROP > 0:
         ib = np.where(rng.random(n) < INST_DROP, 0, ib)
     meta = meta_matrix(g['add_id'][idx], g['pol'][idx], ce_b, ib, prec[idx].astype(np.float64), nm)
-    okn = pick >= 0
-    return dict(ph_mz=phases(mz), ph_nl=phases(pr[:, None] - mz), it=it, valid=valid, ph_pr=phases(pr), meta=meta,
-                rows_p=s, rows_n=g['NS'] + np.maximum(pick, 0).reshape(-1), okn=okn,
-                same=(s[:, None] == s[None, :]) & ~np.eye(n, dtype=bool))
+    return mz, it, valid, pr, meta, s, pick
 
 
 class PeakFormerX(PeakFormer):

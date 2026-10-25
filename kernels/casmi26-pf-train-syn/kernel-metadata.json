@@ -1,0 +1,24 @@
+{
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_internet": false,
+  "competition_sources": [],
+  "model_sources": [],
+  "id": "bryantyu/casmi26-pf-train-syn",
+  "title": "casmi26-pf-train-syn",
+  "code_file": "notebook.py",
+  "enable_gpu": false,
+  "enable_tpu": true,
+  "machine_shape": "Tpu1VmV38",
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-fp-data",
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pf-negtrain",
+    "bryantyu/casmi26-models"
+  ],
+  "kernel_sources": [
+    "bryantyu/casmi26-syn-prep"
+  ]
+}
