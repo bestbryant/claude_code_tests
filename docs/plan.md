@@ -240,6 +240,9 @@ GPU simulation done (08:15): 704,636 of 714,165 predictions in 5,379 s on T4 x 2
 CPU kernel); only the longest-SMILES tails of 2 of 16 files were cut by the deadline -> kernels/casmi26-syn-prep
 pushed. Kaggle allows ONE TPU session at a time (queued ones included): the two pilot arms are merged into one kernel
 kernels/casmi26-pf-pilot (ctl then syn, PF_STEPS 20,000 each, 3.5 h guard each), pushed when PF-x (x5) has finished.
+syn-prep done (09:00): syn.npz 704,636 synthetic spectra of 234,880 structures (all matched to pool ids, fingerprints
+computed in the kernel, ~1,037 on-bits), within-set window negatives per structure mean 31.9 (neutral 58.2, train 32.9,
+COCONUT 20.8; 9,810 without any). The pilot kernel waits for the single TPU slot (PF-x x5 queued since 04:39).
 TPU: Tpu1VmV38 queued 2 h without starting; current Kaggle docs list TpuV5E8 -> all TPU kernels moved to v5e-8, PF-x
 re-pushed as casmi26-pf-train-x5 (04:39).
 
