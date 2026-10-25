@@ -5,7 +5,7 @@
 #   G2: GLACIER scores for every stage-2 training / validation pair computed in ONE fresh pass (no --have, no merged
 #       history) on a Kaggle GPU kernel (casmi.fwdrun --device cuda); stage 2 reads only that pass.
 #   G13/G14: row dumps with recorded seeds, VENDOR_PATH disabled, stale part dirs removed; features added in one place.
-# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool5 + row dumps only)
+# scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool + row dumps; C1: + PeakFormer features)
 # Stage E stops after pushing the GPU GLACIER kernel; run the script again when kernels/casmi26-gl<tag> is COMPLETE.
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
@@ -40,25 +40,31 @@ done
 
 [ "${STOP_AFTER:-}" = B ] && { log "STOP_AFTER=B"; exit 0; }
 
-# C. spectral features: FP model (fp_*), PeakFormer (pf_* + within-formula columns); no richfp cache (pool5 ids differ)
+# C. spectral features without a richfp cache (pool ids differ from pool4): C1 PeakFormer (pf_* + within-formula
+#    columns) on the raw rows, C2 FP model (fp_*) on top -- C1 does not depend on the FP choice
 for s in train val; do
-  out=$W/${ROWS}_${s}_fp.parquet; [ -f $out ] && continue
-  log "C: features $s"
-  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${ROWS}_$s.parquet $FP $out.fp$i $P5 $i 3 > $out.fp$i.log 2>&1 & done; wait
-  python3 -c "
-import pandas as pd
-pd.concat([pd.read_parquet(f'$out.fp{i}') for i in range(3)], ignore_index=True).to_parquet('$out.fp')"
-  rm -f $out.fp0 $out.fp1 $out.fp2
-  for i in 0 1 2; do RICHFP_CACHE= python3 scripts/add_fp_feats.py $out.fp $PF $out.pf$i $P5 $i 3 > $out.pf$i.log 2>&1 & done; wait
+  out=$W/${ROWS}_${s}_pf.parquet; [ -f $out ] && continue
+  log "C1: PeakFormer features $s"
+  for i in 0 1 2; do RICHFP_CACHE= python3 scripts/add_fp_feats.py $W/${ROWS}_$s.parquet $PF $out.p$i $P5 $i 3 > $out.p$i.log 2>&1 & done; wait
   python3 -c "
 import sys, pandas as pd
 sys.path.insert(0, '$R')
 from casmi.own import formula_rel, PF_FREL_SRC
-D = pd.concat([pd.read_parquet(f'$out.pf{i}') for i in range(3)], ignore_index=True)
+D = pd.concat([pd.read_parquet(f'$out.p{i}') for i in range(3)], ignore_index=True)
 D['formula'] = pd.read_parquet('$P5/pool.parquet', columns=['formula']).formula.to_numpy(dtype=object)[D.pid.values]
 formula_rel(D, PF_FREL_SRC)
 D.drop(columns='formula').to_parquet('$out')"
-  rm -f $out.fp $out.pf0 $out.pf1 $out.pf2
+  rm -f $out.p0 $out.p1 $out.p2
+done
+[ "${STOP_AFTER:-}" = C1 ] && { log "STOP_AFTER=C1"; exit 0; }
+for s in train val; do
+  out=$W/${ROWS}_${s}_fp.parquet; [ -f $out ] && continue
+  log "C2: FP features $s"
+  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${ROWS}_${s}_pf.parquet $FP $out.f$i $P5 $i 3 > $out.f$i.log 2>&1 & done; wait
+  python3 -c "
+import pandas as pd
+pd.concat([pd.read_parquet(f'$out.f{i}') for i in range(3)], ignore_index=True).to_parquet('$out')"
+  rm -f $out.f0 $out.f1 $out.f2
 done
 
 # D. stage 1 (v5w recipe: 31 leaves, alpha 1) + out-of-fold scores
