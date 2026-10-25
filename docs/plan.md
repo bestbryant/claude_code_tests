@@ -260,6 +260,15 @@ hexose, deoxyhexose, pentose, glucuronide, CH2O, acetyl, C2H4, H2O, malonyl, sul
 threshold, but the set is a curated example list (the hidden test may be denser: "natural molecules and their
 analogs" from one isolation platform). Build after items 1-4; offline evaluation needs a pseudo-test of held-out
 timsTOF families.
+Networking offline test (item 6, Oct 25 16:30; scripts/net_prep.py + net_eval.py): pseudo-test = the 979 v18c val
+queries as one test set (stage-2 top 30, query spectra rebuilt from q_rows, modified cosine over every same-polarity
+spectrum pair). Spectral neighbours are weak structural evidence: modcos >= 0.7 with >= 6 matched peaks -> truths
+Tanimoto >= 0.5 in 26% of pairs; 10-17% of queries have a structurally close high-modcos neighbour (enveda-np-examples:
+19-28%, comparable). NAP-style consensus boost (neighbour-weighted softmax of stage-2 x Tanimoto): -0.004 to -0.16
+overall at every setting (48 configs). Confident-neighbour variant (max Tanimoto to the top-1 of neighbours with
+stage-2 gap >= 1-3, optional transform-delta filter, applied only to unconfident queries): at most +0.0013 overall
+(one or two of 979 queries), larger only on post-hoc subsets of 8-60 queries. Below the research gate (+0.05 on
+networked queries without a post-hoc pick) and far below LB resolution -> item 6 CLOSED; not built into run_own.
 Verified Oct 25: casmi26-own-s2v17bpop v1 (400/400 lists, GLACIER 371/400, 400/400 rows with candidates, no
 Traceback; from the execution log while the output endpoint returned 429 for ~4 h, later also from the output) and
 casmi26-probe17-coco v1 (393/400 rows, GLACIER 371; placeholder top-1 agreement with probe17b-coco only 0.42 -> PF-d
