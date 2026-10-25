@@ -142,6 +142,17 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
+## Oct 27 slots (pre-registered Oct 25 16:40 UTC, before any Oct 26 reading; kernels pushed Oct 25 15:54-16:40)
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-own-s2v18c v1 (clean-room rebuild: no in_bio leak, FP v1r, fresh GLACIER pass) | v17b 0.339 | 0.345 +- 0.012 | >= 0.347: leak removal pays, v18c = base; 0.331-0.346: v18c = base (eligible, cost within noise); <= 0.330: leak removal costs -> read slots 2-3 before anything else |
+| 2 | casmi26-probe18c-coco v1 | probe17b-coco (Oct 26) | probe17b-coco + 0.015 +- 0.012 | >= +0.010: mechanism confirmed (COCONUT answers freed); <= 0: not confirmed |
+| 3 | casmi26-probe18c-train v1 | probe17b-train (Oct 26) | probe17b-train - 0.005 +- 0.006 | >= -0.006: class-1 cost within the cap; <= -0.012: in_bio carried real class-1 evidence -> consider a leak-free class-1 flag |
+| 4 | casmi26-zen-probe | -- | 0.005-0.02 | >= 0.008: integrate the Zenodo-only structures as a library channel |
+| 5 | casmi26-own-s2v17bpop | v17b 0.339 | 0.342 +- 0.008 | post-processing rule: adopt >= +0.005 (then as v18cpop on the new base), reject <= 0 |
+If the Oct 26 trigger fills slots with conditional follow-ups (probe17-coco, v17bb second point), they take priority
+over slot 5; slots 1-3 are kept together (one mechanism reading).
+
 ## in_bio was a training-membership leak (found Oct 25 by the v18c clean rebuild)
 pool4's in_bio came from the third-party ChEBI/LMSD set, which removed the keys of prvsiyan/coconut-casmi26-candidates,
 a COCONUT-NOT-TRAIN candidate list. Result: among COCONUT structures in_bio = 1 for 60.75% of TRAINING structures
