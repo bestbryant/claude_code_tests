@@ -2,36 +2,44 @@
 # Generic PeakFormer swap on the v17 recipe (v5w: 31 leaves, alpha 1, lib10): scripts/build_v17b.sh with the model
 # and tag as arguments. scripts/build_pfswap.sh <pf_model.pt> <tag> [fp_model.pt]
 # 1. neutral gate on the 620-query class-2 COCONUT subset (as build_v17b.sh: pf_bern vs training decoys >= 0.70,
-#    excess <= +0.087); also printed: PeakFormer b's reference .791 / +.044;
-# 2. ret<tag> rows = ret17 with pf_* (+ within-formula pf columns) rescored by the new model (token tied); with a third
-#    argument the fp_* columns are rescored too (FP model swap, as build_v17bb.sh);
+#    excess <= +0.087); also printed: PeakFormer b's reference .791 / +.044; GATE=0 skips it (as build_v17b.sh, G15);
+# 2. ret<tag> rows = ret4 rows (the fp_* part of the unbuildable ret17, G14) with pf_* (+ within-formula pf columns)
+#    scored by the new model (token tied), columns in the ret17 order; with a third argument the fp_* columns are
+#    rescored too (FP model swap, as build_v17bb.sh); richfp cache as build_v17b.sh step 0 (G18);
 # 3. pipeline T=<tag>; 4. models upload (pf_model_<tag>.pt) + kernel casmi26-own-s2<tag> (LIB_CAP 10).
 set -e
 PF=$1; TAG=$2; FP=$3
 [ -n "$PF" ] && [ -n "$TAG" ] || { echo "usage: $0 <pf_model.pt> <tag> [fp_model.pt]"; exit 1; }
 W=/home/user/work; R=/home/user/claude_code_tests; cd $R
-export RICHFP_CACHE=$W/richfp_ret10.npz
+export RICHFP_CACHE=${RICHFP_CACHE-$W/richfp_ret4.npz}
+[ -z "$RICHFP_CACHE" ] || python3 scripts/cache_richfp.py --check $W/pool4 $RICHFP_CACHE \
+  || python3 scripts/cache_richfp.py $W/pool4 $RICHFP_CACHE $W/ret4_train_fp.parquet $W/ret4_val_fp.parquet > $RICHFP_CACHE.log
 O=$W/$TAG; mkdir -p $O
-python3 scripts/add_fp_feats.py $W/fpb_local/sub.parquet $PF $O/sub_pf.parquet $W/pool4 > /dev/null
-python3 scripts/eval_pf_neutral.py $O/sub_pf.parquet pf_bern,pf_cos | tee $O/gate.txt
-python3 - $O/gate.txt <<'EOF'
+if [ "${GATE:-1}" != 0 ]; then
+  [ -f $W/fpb_local/sub.parquet ] || { echo "no $W/fpb_local/sub.parquet (input deleted, G15): GATE=0 skips the gate"; exit 1; }
+  python3 scripts/add_fp_feats.py $W/fpb_local/sub.parquet $PF $O/sub_pf.parquet $W/pool4 > /dev/null
+  python3 scripts/eval_pf_neutral.py $O/sub_pf.parquet pf_bern,pf_cos | tee $O/gate.txt
+  python3 - $O/gate.txt <<'EOF'
 import re, sys
 line = [l for l in open(sys.argv[1]) if l.startswith('pf_bern')][0]
 tr, ex = float(re.search(r'training decoys ([0-9.]+)', line).group(1)), float(re.search(r'excess \(prior\) ([-+0-9.]+)', line).group(1))
 print('GATE pf_bern: vs training decoys', tr, 'excess', ex, '(PeakFormer b: .791 / +.044)')
 sys.exit(0 if tr >= 0.70 and ex <= 0.087 else 'GATE FAILED')
 EOF
+fi
 for s in train val; do
   out=$W/ret${TAG}_${s}_fp.parquet; [ -f $out ] && continue
-  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/ret17_${s}_fp.parquet $PF $out.part$i $W/pool4 $i 3 > $out.part$i.log 2>&1 & done; wait
+  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/ret4_${s}_fp.parquet $PF $out.part$i $W/pool4 $i 3 > $out.part$i.log 2>&1 & done; wait
   python3 -c "
 import sys, pandas as pd
 sys.path.insert(0, '$R')
-from casmi.own import formula_rel, PF_FREL_SRC
+from casmi.own import formula_rel, PF_FEATS, PF_FREL, PF_FREL_SRC
 D = pd.concat([pd.read_parquet(f'$out.part{i}') for i in range(3)], ignore_index=True)
+assert len(D) == dict(train=980910, val=182177)['$s'], len(D)
 D['formula'] = pd.read_parquet('$W/pool4/pool.parquet', columns=['formula']).formula.to_numpy(dtype=object)[D.pid.values]
 formula_rel(D, PF_FREL_SRC)
-D.drop(columns='formula').to_parquet('$out')"
+D = D.drop(columns='formula')
+D[[c for c in D.columns if c not in PF_FEATS + PF_FREL] + PF_FEATS + PF_FREL].to_parquet('$out')"
   rm -f $out.part0 $out.part1 $out.part2
   if [ -n "$FP" ]; then
     for i in 0 1 2; do python3 scripts/add_fp_feats.py $out $FP $out.fp$i $W/pool4 $i 3 > $out.fp$i.log 2>&1 & done; wait

@@ -2,8 +2,9 @@
 
 Usage: python scripts/add_fp_feats.py <rows.parquet> <weights.pt> <out.parquet> [pool_dir|-] [shard nshards]
 A PeakFormer checkpoint (casmi/peakformer.py, has '_cfg'; comma-separated = ensemble) adds pf_* columns instead
-of fp_*; RICHFP_CACHE = scripts/cache_richfp.py output. OWN_PF_INST=<token>: score every query with this instrument token
-(test-time policy, casmi/own.query_from_rows) instead of its own.
+of fp_*; RICHFP_CACHE = scripts/cache_richfp.py output (speed only; refused unless stamped for pool_dir, empty = none).
+OWN_PF_INST=<token>: score every query with this instrument token (test-time policy, casmi/own.query_from_rows) instead
+of its own.
 """
 import os, sys, time
 import numpy as np, pandas as pd, torch
@@ -23,7 +24,7 @@ P = pd.read_parquet(f'{POOL}/pool.parquet')
 PF = '_cfg' in torch.load(wpath.split(',')[0], map_location='cpu', weights_only=False)
 if PF:                  # comma-separated checkpoints -> ensemble
     from casmi.peakformer import PFEnsemble
-    sc = PFEnsemble(wpath.split(','), fp_cache=os.environ.get('RICHFP_CACHE'))
+    sc = PFEnsemble(wpath.split(','), fp_cache=os.environ.get('RICHFP_CACHE'), pool_smiles=P.smiles.values)
 else:
     sc = FPScorer(wpath, np.load(f'{POOL}/pool_fp.npy', mmap_mode='r'))
 st = Store('/home/user/work/train_store'); meta = st.meta

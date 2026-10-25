@@ -4,7 +4,8 @@ scripts/make_sim_workers.py.
 python scripts/prep_syn_data.py <structs.parquet> <fpx.npz> <out syn.npz> <sim.npz> [<sim.npz> ...]
 structs.parquet: scripts/build_sim_jobs.py (pid, smiles, set). Predictions are matched back to pool ids by InChIKey14
 (fwdrun canonicalised the SMILES under another RDKit version). Env: POOL (pool.parquet, default pool v4 in /home/user/work),
-RICHFP_CACHE (optional npz pid / ptr / idx of raw on-bits; missing structures are computed), PREP_PROCS. Writes:
+RICHFP_CACHE (optional scripts/cache_richfp.py npz, no default; must be stamped for POOL; missing structures are
+computed), PREP_PROCS. Writes:
   PM (n, 64) float32 m/z / PI (n, 64) float16 intensity (top 64 predicted peaks <= precursor + 2, base 1),
   prec float64 ([M+H]+ = pool mass + 1.007276), ce float32 (eV), sidx int32 (row of the simulated structure),
   y_ptr / y_idx: on-bits of every simulated structure in the kept multi-block bits of fpx.npz (CSR, uint16),
@@ -32,7 +33,8 @@ def key14(s):
 if __name__ == '__main__':
     structs_p, fpx_p, out = sys.argv[1:4]
     S = pd.read_parquet(structs_p)
-    P = pd.read_parquet(os.environ.get('POOL', '/home/user/work/pool4/pool.parquet'), columns=['key', 'mass', 'formula'])
+    pool_p = os.environ.get('POOL', '/home/user/work/pool4/pool.parquet')
+    P = pd.read_parquet(pool_p, columns=['key', 'mass', 'formula'])
     procs = int(os.environ.get('PREP_PROCS', '4'))
     S['key'] = P.key.values[S.pid.values]
     pid_of = dict(zip(S.key, S.pid))
@@ -66,9 +68,14 @@ if __name__ == '__main__':
         if len(a):
             PM[i, :len(a)] = a; PI[i, :len(a)] = b / b.max()
         prec[i], ce[i], sidx[i] = pr, c, row_of[p]
-    # fingerprints: richfp cache (pool ids of the ret10 rows) else computed
-    cp = os.environ.get('RICHFP_CACHE', '/home/user/work/richfp_ret10.npz')
-    C = np.load(cp) if os.path.exists(cp) else dict(pid=np.zeros(0, np.int64), ptr=np.zeros(1, np.int64), idx=np.zeros(0, np.int32))
+    # fingerprints: richfp cache (RICHFP_CACHE, refused unless stamped for POOL) else computed
+    cp = os.environ.get('RICHFP_CACHE')
+    if cp and os.path.exists(cp):
+        from casmi.richfp import load_fp_cache
+        psmi = pd.read_parquet(pool_p, columns=['smiles']).smiles.values
+        C = dict(zip(('pid', 'ptr', 'idx'), load_fp_cache(cp, psmi)))
+    else:
+        C = dict(pid=np.zeros(0, np.int64), ptr=np.zeros(1, np.int64), idx=np.zeros(0, np.int32))
     cpos = {p: i for i, p in enumerate(C['pid'].tolist())}
     need = [p for p in pids if p not in cpos]
     smi_of = dict(zip(S.pid, S.smiles))

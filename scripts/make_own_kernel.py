@@ -8,6 +8,8 @@ kernels/casmi26-pc-full-build (full PubChem tier, two-pass channel); PC_TIER=ena
 bryantyu/casmi26-pc-purch); ZEN=1 mounts bryantyu/casmi26-zen-extra (ZEN_PATH); PC_POP=1 the full-tier documentation
 prior; PC_EXCLUDE=1 the probe source key sets (bryantyu/casmi26-srckeys); VEND=1 the depositor columns
 (bryantyu/casmi26-vendor, VENDOR_PATH).
+The template's docstring (v10: full-library matching, alpha 0.5, "reproducible") is replaced by one written from the
+arguments (slug, rankers, LIB_CAP, FP / PF checkpoints); it points to docs/reproduce.md for the open gaps.
 """
 import json, os, sys
 
@@ -44,6 +46,20 @@ nb = open(os.path.join(src, 'notebook.py')).read()
 nb = nb.replace("# stage-1 ranker (full-library matching, doc-shift weights alpha 0.5)",
                 "# stage-1 ranker (library mode = LIB_CAP below; extra env at the end of the run_own call)")
 nb = nb.replace("OWN_RANKER = 'ret_ranker_v10'", f"OWN_RANKER = {rk1!r}").replace("OWN_STAGE2 = 'stage2_v10'", f"OWN_STAGE2 = {rk2!r}")
+# docstring from the arguments: the template's one describes v10 and claims full reproducibility (docs/reproduce.md G20)
+cap, fpm, pfm = env.get('LIB_CAP', '100000'), env.get('OWN_FP', 'fp_model.pt'), env.get('OWN_PF', 'pf_model.pt')
+doc = f'''"""CASMI26 own pipeline, kernel {slug} (written by scripts/make_own_kernel.py from the s2v10 template).
+Candidate pool (bryantyu/casmi26-pool4: train + COCONUT + PubChemLite + ChEBI / LIPID MAPS)
+-> features: library (LIB_CAP {cap} spectra per structure and polarity; 100000 = all), analog, fragment, prior,
+   FP dual encoder ({fpm}), PeakFormer ({pfm}; used if the ranker has pf_* features)
+-> LambdaRank stage 1 ({rk1}) -> top 30 -> GLACIER predicted-spectrum similarity (own runner on ms-pred, MIT;
+   MassSpecGym checkpoint of the ms-pred authors) -> stage-2 LambdaRank ({rk2}) -> top 25 per molecule.
+Run environment: the run_own call below.
+Code is ours and the learned weights except GLACIER were trained by us on train.parquet + permitted data; how each
+was trained (rows, doc-shift alpha) and the gaps that keep the chain from being fully reproducible are in
+docs/reproduce.md; third-party data and models in docs/ATTRIBUTION.md."""'''
+assert nb.startswith('"""')
+nb = doc + nb[nb.index('"""', 3) + 3:]
 extra = {k: v for k, v in env.items() if k not in ('PC_TIER', 'ZEN', 'PC_POP', 'PC_EXCLUDE', 'VEND')}
 pc = ("'PC_TIER': os.path.dirname(first('tier_full/mass.npy')), " if env.get('PC_TIER') == 'full'
       else "'PC_TIER': first('tier_enam.npz'), " if env.get('PC_TIER') == 'enam'

@@ -5,7 +5,10 @@ spectra.npz : mz (float32, flat), it (float16, flat), off (int64), prec, ce, add
 structs.npz : fp (packed uint8: Morgan r2 2048 + MACCS 167 -> 2215 bits), mass, key, pool_idx
 negs.npy    : (n_structs, 64) int32 hard negatives = indices into negfp (pool structures in the 10 ppm window,
               same formula first), -1 padded; negfp.npy packed fingerprints of every pool row referenced
-Usage: python scripts/prep_fp_data.py <out_dir>
+Usage: python scripts/prep_fp_data.py <out_dir> [pool_dir] [train_store] [val_keys.txt] [rank_keys.txt]
+Defaults: /home/user/work/pool (pool v1, scripts/build_pool_v1.py), /home/user/work/train_store
+(scripts/build_spec_store.py, top 64 peaks), /home/user/work/val_keys.txt, /home/user/work/rank_keys.txt.
+Check the output against the published casmi26-fp-data with scripts/check_fp_data.py <out_dir>.
 """
 import os, sys
 from multiprocessing import Pool
@@ -17,6 +20,9 @@ sys.path.insert(0, '/home/user/claude_code_tests')
 from casmi.spectra import Store
 
 out = sys.argv[1]; os.makedirs(out, exist_ok=True)
+W = '/home/user/work'           # defaults: the inputs of the published casmi26-fp-data
+POOL, STORE, VAL, RANK = [sys.argv[2 + i] if len(sys.argv) > 2 + i else d for i, d in
+                          enumerate([f'{W}/pool', f'{W}/train_store', f'{W}/val_keys.txt', f'{W}/rank_keys.txt'])]
 ADD = ['[M+H]+', '[M-H]-', '[M+Na]+', '[M+NH4]+', '[M-H2O+H]+', '[M+CH2O2-H]-', '[M+K]+', '[M+Cl]-', '[M-H2O-H]-',
        '[M-2H2O+H]+', '[2M+H]+', '[2M+Na]+', '[2M-H]-', '[M]+', '[M+C2H4O2-H]-']
 _G = None
@@ -43,12 +49,12 @@ def inst_family(s):
 
 
 if __name__ == '__main__':
-    st = Store('/home/user/work/train_store'); meta = st.meta
-    P = pd.read_parquet('/home/user/work/pool/pool.parquet')
-    pfp = np.load('/home/user/work/pool/pool_fp.npy')
+    st = Store(STORE); meta = st.meta
+    P = pd.read_parquet(f'{POOL}/pool.parquet')
+    pfp = np.load(f'{POOL}/pool_fp.npy')
     key2pool = {k: i for i, k in enumerate(P.key.values)}
-    val = set(open('/home/user/work/val_keys.txt').read().split())
-    rk = set(open('/home/user/work/rank_keys.txt').read().split())
+    val = set(open(VAL).read().split())
+    rk = set(open(RANK).read().split())
     keep = meta.adduct.isin(ADD) & meta.inchikey14.isin(key2pool.keys())
     sel = np.where(keep.values)[0]
     m = meta.iloc[sel]

@@ -1,10 +1,18 @@
-"""CASMI26 own pipeline (all code and weights ours, reproducible from this repository + permitted data):
-candidate pool (train + COCONUT + PubChemLite + ChEBI / LIPID MAPS) -> library / analog / fragment / prior / dual-encoder features ->
-LambdaRank (stage 1) -> top 30 -> GLACIER predicted-spectrum similarity (own runner on ms-pred, MIT; MassSpecGym weights)
--> stage-2 LambdaRank with forward-model features -> top 25 per molecule."""
+"""CASMI26 own pipeline, kernel casmi26-own-s2v17b (LB 0.339; written by scripts/make_own_kernel.py, docs/reproduce.md
+1.6-1.7). Candidate pool v4 (bryantyu/casmi26-pool4: train + COCONUT + PubChemLite + ChEBI / LIPID MAPS)
+-> features: library (LIB_CAP 10 spectra per structure and polarity), analog, fragment, prior,
+   FP dual encoder (fp_model.pt), PeakFormer (pf_model_b.pt)
+-> LambdaRank stage 1 (ret_ranker_v17b, doc-shift weights alpha 1) -> top 30 -> GLACIER predicted-spectrum similarity
+   (own runner on ms-pred, MIT; MassSpecGym checkpoint of the ms-pred authors) -> stage-2 LambdaRank (stage2_v17b)
+   -> top 25 per molecule.
+Code is ours and every learned weight except GLACIER was trained by us on train.parquet + permitted data, but the
+chain is not fully reproducible yet: the open gaps (third-party ChEBI / LMSD set, merged stage-2 GLACIER scores, model
+training stops, LightGBM determinism, ...) are in docs/reproduce.md section 3; third-party data and models in
+docs/ATTRIBUTION.md. Docstring and comments corrected on 2026-10-25; the code is unchanged from the pushed (LB) version.
+"""
 import glob, json, os, shutil, subprocess, sys
 import pandas as pd
-OWN_RANKER = 'ret_ranker_v17b'       # stage-1 ranker (full-library matching, doc-shift weights alpha 0.5) in bryantyu/casmi26-models
+OWN_RANKER = 'ret_ranker_v17b'       # stage-1 ranker (library LIB_CAP 10, doc-shift weights alpha 1) in bryantyu/casmi26-models
 OWN_STAGE2 = 'stage2_v17b'       # stage-2 ranker (GLACIER features)
 tag = f'cp{sys.version_info.major}{sys.version_info.minor}'
 whl = [w for w in glob.glob('/kaggle/input/**/rdkit-2026.3.3-*.whl', recursive=True) if tag in w]

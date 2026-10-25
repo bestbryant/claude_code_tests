@@ -4,6 +4,7 @@ Raw layout (RDKit generators, bits): Morgan r2 4096 | Morgan r3 4096 | feature-M
 2048 | atom pairs 2048 | topological torsions 2048 | MACCS 167 = 16,551 raw bits. Training keeps the informative
 bits (set in >= 1 / 2000 training structures and not in nearly all of them); `keep` maps raw -> kept index.
 """
+import hashlib
 import numpy as np
 from rdkit import Chem, RDLogger
 from rdkit.Chem import MACCSkeys, rdFingerprintGenerator as G
@@ -46,3 +47,33 @@ def to_csr(lists, keep_map=None):
     ptr[1:] = np.cumsum([len(a) for a in lists])
     idx = np.concatenate(lists).astype(np.uint16) if len(lists) else np.zeros(0, np.uint16)
     return ptr, idx
+
+
+def pool_stamp(smiles):
+    """(row count, md5 of the newline-joined SMILES in row order) of a pool: a richfp cache is keyed by pool row id,
+    so it is valid only for the same SMILES in the same order (pool order can differ between builds, G12 of
+    docs/reproduce.md)."""
+    return len(smiles), hashlib.md5('\n'.join(map(str, smiles)).encode()).hexdigest()
+
+
+def check_fp_cache(z, pool_smiles, path=''):
+    """Raise ValueError unless the richfp cache z (np.load of a scripts/cache_richfp.py npz) is stamped for this
+    pool."""
+    if 'pool_md5' not in z.files:
+        raise ValueError(f'{path}: richfp cache has no pool stamp (built before the check); rebuild it with '
+                         'scripts/cache_richfp.py or run without it (RICHFP_CACHE=)')
+    n, h = pool_stamp(pool_smiles)
+    if int(z['pool_n']) != n or str(z['pool_md5']) != h:
+        raise ValueError(f'{path}: richfp cache built for another pool ({int(z["pool_n"])} rows, md5 '
+                         f'{str(z["pool_md5"])[:8]}; this pool: {n} rows, md5 {h[:8]}); rebuild it with '
+                         'scripts/cache_richfp.py')
+
+
+def load_fp_cache(path, pool_smiles):
+    """scripts/cache_richfp.py npz -> (pid, ptr, idx), refused (ValueError) unless stamped for pool_smiles (pool.parquet
+    smiles in row order)."""
+    if pool_smiles is None:
+        raise ValueError(f'{path}: a richfp cache needs the pool SMILES to check its stamp')
+    z = np.load(path)
+    check_fp_cache(z, pool_smiles, path)
+    return z['pid'], z['ptr'], z['idx']

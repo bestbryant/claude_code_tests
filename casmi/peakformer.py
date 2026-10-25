@@ -178,8 +178,9 @@ class PFScorer:
     """Like casmi.fpscore.FPScorer: score(spectra, pids, smiles) -> (cosine, f . z). Candidate fingerprints are
     computed from SMILES (casmi/richfp.py) and cached by pool id."""
 
-    def __init__(self, weights, pool_fp=None, device='cpu', fp_cache=None):
-        """fp_cache: optional npz (pid, ptr, idx) of raw on-bits by pool id (scripts/cache_richfp.py)."""
+    def __init__(self, weights, pool_fp=None, device='cpu', fp_cache=None, pool_smiles=None):
+        """fp_cache: optional npz (pid, ptr, idx) of raw on-bits by pool id (scripts/cache_richfp.py); refused unless
+        its pool stamp matches pool_smiles (the pool's SMILES in row order, required with fp_cache)."""
         from .richfp import N_RAW
         sd = torch.load(weights, map_location=device, weights_only=False)
         cfg = sd.pop('_cfg'); keep = np.asarray(sd.pop('_keep'))
@@ -191,8 +192,9 @@ class PFScorer:
         self._fp = {}
         self.cache = None
         if fp_cache:
-            z = np.load(fp_cache)
-            self.cache = (dict(zip(z['pid'].tolist(), range(len(z['pid'])))), z['ptr'], z['idx'])
+            from .richfp import load_fp_cache
+            pid, ptr, idx = load_fp_cache(fp_cache, pool_smiles)
+            self.cache = (dict(zip(pid.tolist(), range(len(pid)))), ptr, idx)
 
     def onbits(self, pid, smiles):
         v = self._fp.get(pid)
@@ -226,8 +228,8 @@ class PFEnsemble:
     """Several PeakFormer checkpoints: cosine = mean over models; f.z = mean of the per-query z-scored f.z (models
     differ in scale). One checkpoint behaves exactly like PFScorer."""
 
-    def __init__(self, paths, device='cpu', fp_cache=None):
-        self.ms = [PFScorer(p, device=device, fp_cache=fp_cache) for p in paths]
+    def __init__(self, paths, device='cpu', fp_cache=None, pool_smiles=None):
+        self.ms = [PFScorer(p, device=device, fp_cache=fp_cache, pool_smiles=pool_smiles) for p in paths]
         for m in self.ms[1:]:          # one fingerprint cache for all members with the same kept bits
             if np.array_equal(m.km, self.ms[0].km):
                 m._fp = self.ms[0]._fp; m.cache = self.ms[0].cache
