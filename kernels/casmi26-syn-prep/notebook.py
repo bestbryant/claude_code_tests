@@ -1,4 +1,4 @@
-"""PF-syn data build (scripts/prep_syn_data.py) from the GLACIER simulation workers kernels/casmi26-simw-0..3:
+"""PF-syn data build (scripts/prep_syn_data.py) from the GPU GLACIER simulation kernels/casmi26-simg:
 synthetic [M+H]+ spectra (CE 20 / 40 / 60 eV) of 238k pool structures -> /kaggle/working/syn.npz."""
 import glob, os, shutil, subprocess, sys
 tag = f'cp{sys.version_info.major}{sys.version_info.minor}'

@@ -18,9 +18,6 @@
     "metric/rdkit-2026-3-3-wheel"
   ],
   "kernel_sources": [
-    "bryantyu/casmi26-simw-0",
-    "bryantyu/casmi26-simw-1",
-    "bryantyu/casmi26-simw-2",
-    "bryantyu/casmi26-simw-3"
+    "bryantyu/casmi26-simg"
   ]
 }
