@@ -1,0 +1,8 @@
+# Versions the offline pipeline (row dumps, rankers, data builds) was run with (docs/reproduce.md G3).
+# Inference kernels install RDKit 2026.03.3 from metric/rdkit-2026-3-3-wheel and use the pinned Kaggle image
+# gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0f2a7e0a33943c95754b1b7af6b30d65221633a284b6b601cd84a.
+lightgbm==4.7.0
+numpy==2.5.3
+pandas==3.0.5
+torch==2.14.1
+rdkit==2026.3.3

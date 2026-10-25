@@ -43,7 +43,8 @@ def build(pool_dir, out, target='nospectra'):
         R = R.join(pr[cols], on='key')
         R[cols] = R[cols].fillna(0).astype(float)
         doc += cols
-    m = lgb.train(dict(objective='binary', learning_rate=0.1, num_leaves=31, verbose=-1, num_threads=4, seed=0),
+    m = lgb.train(dict(objective='binary', learning_rate=0.1, num_leaves=31, verbose=-1, num_threads=4, seed=0,
+                           deterministic=True, force_row_wise=True),
                   lgb.Dataset(R[doc].astype(float), R.in_train), 200)
     R = R.assign(p=m.predict(R[doc].astype(float)))
     pi = R.in_train.mean()

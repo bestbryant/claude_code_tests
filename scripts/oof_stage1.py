@@ -24,7 +24,8 @@ D = D[keep].reset_index(drop=True)
 feats = open(feats_p).read().split()
 params = dict(objective='lambdarank', metric='map', eval_at=[25], learning_rate=0.05, num_leaves=31,
               min_data_in_leaf=100, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-              lambdarank_truncation_level=25, verbose=-1, num_threads=4)
+              lambdarank_truncation_level=25, verbose=-1, num_threads=4,
+              deterministic=True, force_row_wise=True, seed=0)      # reproducible (docs/reproduce.md G3)
 import json
 params.update(json.loads(os.environ.get('RANKER_PARAMS', '{}')))      # same overrides as train_ret_ranker.py
 q = D.qid.unique(); fold = dict(zip(q, np.random.default_rng(0).integers(0, 2, len(q))))
