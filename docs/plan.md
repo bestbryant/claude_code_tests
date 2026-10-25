@@ -154,6 +154,9 @@ our COCONUT gap (probe 0.208 vs public 0.252).
 Evidence: v18c rows (clean rebuild; own bio set = ChEBI/LMSD minus OUR COCONUT, so in_bio = 0 on all COCONUT) give
 stage-1 val cls1 .8268 / cls2 .8150 (OOF .8232); the SAME rows with pool4's in_bio and doc weights give .8432 / .9168
 = v17b's .8426 / .9145. So the clean pipeline reproduces v17b exactly and the whole simulated drop is the leak.
+2x2 (stage-1 val cls1 / cls2 on v18c rows): old in_bio feature + new doc weights .8468 / .9278; new in_bio + old doc
+weights .8315 / .8165 -> the leak acts through the in_bio FEATURE (a binary flag: low split gain, decisive on the
+simulated truths), not through the doc-shift weights.
 Simulated validation cannot judge this change (its truths carry the leak's target); only the LB can: v18c vs v17b is
 a pre-registered A/B (difference = the leak removal + FP-v1 retrain + 15 pool rows). Prediction: v18c >= v17b - 0.008
 (class 2 freed from the shortcut; the pool-v4 +0.013 was mostly reach of the 52k new ChEBI/LMSD structures), with the
