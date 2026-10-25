@@ -20,6 +20,10 @@ information) as extra rows. Population balance: synthetic rows take their window
 only (every simulated population is positive and negative in the same proportions); real rows keep their negatives
 (PF_NEG_TRAIN: training positives only); in-batch negatives never cross looks (a real query never sees a COCONUT
 structure as a negative only). A few low noise peaks are added to synthetic spectra; no source token.
+PF_SYN_NEUTRAL_W (sampling weight of set == 'neutral' spectra; the pilot uses ~0.18 so that the evaluation windows get
+the per-structure exposure of a full-pool run), PF_SYN_DROP (file of pool ids whose synthetic spectra are dropped and
+removed from synthetic windows: the held-out half B of the evaluation windows), PF_STEPS (fixed total steps: matched
+arms; the PF_HOURS guard still stops a run that is too slow).
 """
 import math, os, queue, sys, threading, time, traceback
 os.environ.setdefault('XLA_NO_SPECIAL_SCALARS', '1')    # Adam's bias correction reaches 1.0: no constant -> no recompile
@@ -120,8 +124,17 @@ def load():
             ln = np.diff(y_ptr[a:b_ + 1])
             dense[np.repeat(np.arange(b_ - a), ln), y_idx[y_ptr[a]:y_ptr[b_]].astype(np.int64)] = True
             YP[a:b_] = np.packbits(dense, axis=1)
-        g.update(NSY0=len(PACK), SPM=Z['PM'], SPI=Z['PI'], Sprec=Z['prec'], Sce=Z['ce'], Ssidx=Z['sidx'].astype(np.int64),
-                 Swneg=Z['wneg'].astype(np.int64))
+        wneg = Z['wneg'].astype(np.int64); sidx_s = Z['sidx'].astype(np.int64)
+        sw = np.where(Z['set'][sidx_s] == 'neutral', float(os.environ.get('PF_SYN_NEUTRAL_W', '1')), 1.0)
+        if os.environ.get('PF_SYN_DROP'):     # held-out structures: no synthetic spectra, not synthetic negatives
+            dropped = np.isin(Z['pid'], np.loadtxt(os.environ['PF_SYN_DROP'], dtype=np.int64, ndmin=1))
+            sw[dropped[sidx_s]] = 0.0
+            km = (wneg >= 0) & ~dropped[np.maximum(wneg, 0)]
+            o_ = np.argsort(~km, axis=1, kind='stable')
+            wneg = np.where(np.take_along_axis(km, o_, 1), np.take_along_axis(wneg, o_, 1), -1)
+            print('PF_SYN_DROP: structures dropped', int(dropped.sum()), 'spectra', int((sw == 0).sum()), flush=True)
+        scw = np.cumsum(sw); scw /= scw[-1]
+        g.update(NSY0=len(PACK), SPM=Z['PM'], SPI=Z['PI'], Sprec=Z['prec'], Sce=Z['ce'], Ssidx=sidx_s, Swneg=wneg, Scw=scw)
         PACK = np.concatenate([PACK, YP])
         print('synthetic spectra', len(Z['sidx']), 'structures', ny, 'per batch', B_SYN, 'window negatives per structure',
               round(float((Z['wneg'] >= 0).sum(1).mean()), 1), flush=True)
@@ -169,7 +182,7 @@ def syn_rows(rng, n):
     """n synthetic rows: uniform over simulated spectra (3 energies per structure), up to 4 low noise peaks replacing
     the weakest slots, window negatives inside the simulated set."""
     g = G
-    j = rng.integers(0, len(g['Ssidx']), n)
+    j = np.minimum(np.searchsorted(g['Scw'], rng.random(n)), len(g['Ssidx']) - 1)
     s = g['Ssidx'][j]
     mz = g['SPM'][j].astype(np.float64); it = g['SPI'][j].astype(np.float32); pr = g['Sprec'][j].astype(np.float64)
     k = rng.integers(0, 5, n)
@@ -398,7 +411,7 @@ def run(rank):
         torch.save(sd, out)
         print(f'{tag} val {res} {time.time() - t0:.0f}s', flush=True)
 
-    total = EPOCHS * STEPS
+    total = int(os.environ['PF_STEPS']) if os.environ.get('PF_STEPS') else EPOCHS * STEPS
     t_start = None; step = 0
     set_lr(0, total)
     stats = None
@@ -413,7 +426,7 @@ def run(rank):
             set_lr(step, total)
             if step == 20:
                 t_start = time.time()           # after compilation
-            if step == 20 + CAL:
+            if step == 20 + CAL and not os.environ.get('PF_STEPS'):
                 per = (time.time() - t_start) / CAL
                 left = HOURS * 3600 * 0.93 - (time.time() - t0)
                 est = int(step + left / per)
@@ -427,6 +440,11 @@ def run(rank):
                       f'{time.time() - t0:.0f}s', flush=True)
             elif step % LOG == 0:
                 stats = None
+            if step % LOG == 0 and os.environ.get('PF_STEPS'):     # fixed steps: wall-clock guard, same on every core
+                if agree(f'stop{step}', int(time.time() - t0 > HOURS * 3600), max):
+                    if master:
+                        print(f'PF_HOURS reached at step {step} of {total}', flush=True)
+                    total = step
             if step >= total:
                 break
         save_and_validate(f'EPOCH {ep}')

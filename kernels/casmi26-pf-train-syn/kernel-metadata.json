@@ -16,7 +16,8 @@
     "bryantyu/casmi26-fp-data",
     "bryantyu/casmi26-pf-data",
     "bryantyu/casmi26-pf-negtrain",
-    "bryantyu/casmi26-models"
+    "bryantyu/casmi26-models",
+    "bryantyu/casmi26-sim-jobs"
   ],
   "kernel_sources": [
     "bryantyu/casmi26-syn-prep"
