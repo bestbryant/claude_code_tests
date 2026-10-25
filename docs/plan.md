@@ -142,6 +142,27 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
+## TPU training of the PeakFormer (Oct 25)
+Why: PeakFormer b is the only spectral change that moved the LB since Oct 20 (v17b +0.005 over v17), its validation
+plateaued after ~7 of 20 epochs (f.z MRR .80-.81, cosine still creeping to .807) -> capacity-bound; the GPU quota is
+shared with the owner (17.9 h used, 12.1 h left until Oct 31) while the 20 h / week TPU quota is untouched.
+scripts/train_pf_xla.py: same model, losses, sampling and augmentation as train_pf.py with static shapes for XLA:
+batches built on the host (numpy, prefetch thread; the float64 sinusoid phase reduction is done there), molecule bits
+as one packed bit matrix on the device (898,753 rows x 1,930 bytes = 1.73 GB; ~1,000 on-bits per molecule) unpacked
+into a dense multi-hot matrix (EmbeddingBag sum -> multi-hot @ bits.weight, f.z -> batched matmul), data parallel over
+the 8 cores, step-based cosine schedule with the step budget calibrated on core 0. CPU checks: embeddings equal to the
+original path to 1e-7, f.z to 3e-5; smoke run trains, validates and saves a checkpoint PFScorer loads.
+Review workflow wf_e7bb7b73-ae2 (3 lenses + adversarial verification, 12 findings -> 3 confirmed): BLOCKER -- on TPU
+v2/v3 PJRT runs two cores as threads of one process sharing the CPU RNG, so the 8 replicas started from different
+weights and, with only gradients all-reduced, would have stayed different for the whole run (reproduced on CPU: 43 of
+71 tensors differ; fixed with an init lock + broadcast of core 0's parameters); Adam's bias correction reaching 1.0
+would have recompiled mid-run (XLA_NO_SPECIAL_SCALARS=1); plus per-core dropout RNG, exit on a failing core and a
+30-min no-progress watchdog (a hung collective would hold the TPU until the session limit).
+Kernels: casmi26-tpu-probe (framework / speed probe, queued since 01:24 -- Kaggle TPU queue) and casmi26-pf-train-x
+(PF-x: variant-b data, d=384 x 6 layers, 8 heads, d_mol 512, dropout 0.1, batch 256 per core x 8, 63 negatives, LR
+5e-4, 8 h budget). When PF-x exists: neutral gate + v17x via scripts/build_pfswap.sh <pf_model.pt> v17x (generic
+build_v17b.sh), compared with v17b 0.339 on the LB (retrain rule: adopt at >= +0.008).
+
 ## v5w drift check (Oct 24): current code reproduces the Oct 20 lists only approximately
 The Oct 24 v5w re-runs (probe5w-coco / -train / olast, current casmi26-code, same models and pool) keep the Oct 20 top-1
 on 399 / 400 molecules, but only 122 / 400 lists keep their full order (16% of candidate scores move > 0.01; top-5
