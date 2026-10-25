@@ -142,6 +142,24 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
+## Reproducibility manifest (Oct 25, workflow wf_029f119e-b7e; docs/reproduce.md)
+44 agents traced every artifact of the v17b submission and verified each gap against the repo (several rebuilds run:
+pool4 from pool2 + build_pool_bio + add_pubchem_pop reproduces pool.parquet exactly; build_pool.py is deterministic).
+20 confirmed gaps, two of them blocking prize eligibility as the submission stands:
+- G1: in_bio and 52,371 pool4 rows come from sergiomalv bio_structures.parquet (no build code; its key set is ChEBI
+  r255 + LMSD minus prvsiyan/coconut-casmi26-candidates keys, a CC-BY-NC-SA list). Fix: our own
+  scripts/build_bio_structures.py from raw ChEBI r255 + LMSD, then rebuild pool, doc_w, rows, rankers.
+- G2: stage2_v17b was fit on GLACIER scores merged from 17 historical fwd dirs (fwd2/3/4 jobs built with third-party
+  fuse.build_ice_input on deleted inputs; batch-dependent scores). Fix: clean rescoring of every top-30 pair with one
+  scripted fwdrun pass (GPU now: casmi/fwdrun --device cuda), retrain stage 2.
+Others: LightGBM determinism and version pinning (G3); fp_model.pt / pf_model_b.pt training commands and step counts
+(G4/G5: FP_STOP_EPOCH, PF_STEPS); missing scripts for split keys, pool v1, COCONUT tables, train_meta, PubChemLite,
+pool2->pool4 chain, ret4 dump, ret17 build (G6-G14); gate inputs (G15); code dataset packaging and version pinning
+(G16); fpx / richfp logs (G17/G18); LICENSE (owner) and dataset licences (G19); stale docs (G20).
+Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
+final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
+stays the reference until v18c is built and checked against it on the LB.
+
 ## Roadmap after the lever research (Oct 25, workflow wf_2081278c-964; full write-up docs/research_oct25.md)
 Critic's order (realistic combined gain +0.015 to +0.04 over 0.339; 0.45-0.50 is not reachable eligibly in 7 weeks):
 0. Compliance package (LICENSE = owner's decision; public training code for every weight; one end-to-end rebuild
