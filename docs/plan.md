@@ -163,6 +163,11 @@ G1 done (Oct 25): scripts/build_bio_structures.py on ChEBI rel255 chebi.sdf.gz (
 rows (+35 rows): the eligibility fix barely changes the candidate set. G3 done: deterministic row-wise LightGBM
 everywhere, requirements-pipeline.txt. scripts/build_v18c.sh (+ make_gl_gpu_kernel.py) scripts the whole chain;
 stages A-B (pool5, row dumps) running.
+GLACIER determinism (G2 detail, Oct 25): predictions depend on batch composition and device -- CPU batch 1 vs 32
+mean predicted-spectrum entropy similarity 0.995 (min 0.889, identical 33%), CPU (batch 32) vs GPU (batch 128)
+0.988 (min 0.885); batch 1 costs 2.6x on CPU (too slow for the 4 h inference budget). So exact equality between the
+GPU training pass and CPU inference is not attainable; the v18c pass is one scripted GPU run with a fixed batch policy
+(bs 128, jobs sorted by SMILES length, 8 + 2 files), reproducible run to run, documented device / batch noise ~0.99.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
