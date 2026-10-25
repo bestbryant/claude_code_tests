@@ -142,6 +142,38 @@ repeats (cf. the token override) -> test PF-b for COCONUT candidates only (slot-
 Donor rule (panel, conditional): specpfb-coco >= probe17b-coco + 0.010 -> build a slot-keeping kernel (v17b lists, the
 COCONUT-not-train slots re-ordered by pf_bern, every other slot unchanged); post-processing rule applies (adopt >= +0.005).
 
+## Roadmap after the lever research (Oct 25, workflow wf_2081278c-964; full write-up docs/research_oct25.md)
+Critic's order (realistic combined gain +0.015 to +0.04 over 0.339; 0.45-0.50 is not reachable eligibly in 7 weeks):
+0. Compliance package (LICENSE = owner's decision; public training code for every weight; one end-to-end rebuild
+   from public inputs before the freeze) -- weeks 1-2, not week 7.
+1. Read the Oct 26 probes; PF-x (TPU, bigger model) + a 2-3 model PeakFormer ensemble as the new spectral base;
+   slot-keeping COCONUT donor only if specpfb-coco >= probe17b-coco + 0.010.
+2. PF-syn (GLACIER-simulated [M+H]+ spectra of pool structures as extra positives: COCONUT-not-train finally appears
+   as positive) -- conditional on specpfb-coco - specpfd-coco >= 0; pilot + matched control on the TPU, gated on the
+   neutral metric, then the full-pool simulation. Population-balance rules: synthetic rows draw negatives inside the
+   simulated set, real rows keep training-positive negatives, in-batch negatives never cross looks, no source token.
+3. GLACIER evidence (reduced): one global CE offset and per-adduct stage-2 features, [M+NH4]+ / [M-H2O+H]+ proxies
+   only for molecules without [M+H]+ (public chain: +0.008 per coverage step; ours covers 371/400 already).
+4. ZEN probe (kernel casmi26-zen-probe, ready since Oct 21, never submitted): direct match to the 3,717
+   Zenodo-only Enveda structures; integrate as a library channel only if >= 0.008.
+5. Enamine-tier promotion: offline first (PF-b misfire on the 206 npx natural-product present queries must fall
+   from 29% to <= 8%), one paired A/B, then close the "other" line either way.
+6. Test-test networking (host-allowed 2026-10-24, thread 752297): half-day density check first (>= 15% networked).
+7. Class 3: CPU go/no-go only (PeakFormer morgan2 Tanimoto bins); otherwise parked for good.
+Dropped: contrastive GLACIER fine-tuning on pool isomers (would teach GLACIER the population prior), late-interaction
+MaxSim head (most expensive, rises or falls with PF-syn). Electron-mass correction of the training data: fold into
+the next data build (no dedicated run). Also from the research: the public chain's post-hoc popularity re-rank
+z(score) + 0.15 (ln SID + ln PMID) was worth +0.010 there; ours exists (POP_BOOST, never LB-tested; offline a
+cls1-up / cls2-down trade-off that HL-val cannot judge) -> kernel casmi26-own-s2v17bpop (v17b lists + POP_BOOST
+0.15, post-processing on identical lists: adopt >= +0.005, reject <= 0).
+Oct 27 candidates: casmi26-own-s2v17bpop, casmi26-zen-probe, casmi26-probe17-coco (matched control, only if the
+Oct 26 probe17b-coco reading is ambiguous), plus whatever the Oct 26 rules trigger.
+PF-syn pilot (started 03:20): scripts/build_sim_jobs.py -> 238,055 structures (38,055 neutral-set window members
+incl. truths, 100k train, 100k COCONUT-not-train) x CE 20/40/60 = 714k GLACIER predictions on 4 Kaggle CPU workers
+(kernels/casmi26-simw-0..3, scripts/make_sim_workers.py) -> kernels/casmi26-syn-prep (scripts/prep_syn_data.py) ->
+TPU pilot kernels/casmi26-pf-train-syn vs matched control casmi26-pf-train-ctl (both 4 h fine-tunes of PF-b);
+design under adversarial review (workflow wf_4f2803ec-ac0) before any TPU hour is spent.
+
 ## TPU training of the PeakFormer (Oct 25)
 Why: PeakFormer b is the only spectral change that moved the LB since Oct 20 (v17b +0.005 over v17), its validation
 plateaued after ~7 of 20 epochs (f.z MRR .80-.81, cosine still creeping to .807) -> capacity-bound; the GPU quota is
