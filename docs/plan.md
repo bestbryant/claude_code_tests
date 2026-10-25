@@ -234,6 +234,9 @@ cls-2 gap is the in_bio leak (see above), the cls-1 gap (.8301 vs .8432) is most
 truths. Models ret_ranker_v18c (md5 3f12b795), stage2_v18c (6af95879) + fp_model_v1r.pt in casmi26-models; pool as
 dataset casmi26-pool-v18c; kernel casmi26-own-s2v18c (make_own_kernel.py POOL_DS=casmi26-pool-v18c) = the Oct 27 LB
 candidate for the pre-registered A/B above.
+v18cb (FP-b swap on the same pool and B / C1 rows: BASE=v18c STOP_AFTER=D scripts/build_v18c.sh ... fp_model_b.pt
+v18cb, 16:22): stage 1 val cls1 .8249 / cls2 .8212 (v18c .8268 / .8159), OOF .8204 (v18c .8232). Stage E (4 CPU GLACIER
+workers) waits until the v18c kernels free their CPU sessions; built only as far as the Oct 26 v17bb reading needs.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
