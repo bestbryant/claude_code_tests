@@ -157,6 +157,12 @@ stage-1 val cls1 .8268 / cls2 .8150 (OOF .8232); the SAME rows with pool4's in_b
 2x2 (stage-1 val cls1 / cls2 on v18c rows): old in_bio feature + new doc weights .8468 / .9278; new in_bio + old doc
 weights .8315 / .8165 -> the leak acts through the in_bio FEATURE (a binary flag: low split gain, decisive on the
 simulated truths), not through the doc-shift weights.
+Leak audit (all 58 stage-1 features, AUC for training membership among 79,475 COCONUT decoys of the v18c val rows):
+library match lib_n / lib .95 / .94 (legitimate: training structures have library spectra at test time too),
+documentation pc_sid .85, pc_pmid .79, pc_patent .78, n_syn .77, PubChemLite / COCONUT annotations .62-.73 (the known
+documentation shift the doc-shift weights address), spectral ranks .62-.68; old in_bio .80 -- but as a construction
+artifact (a list built relative to the competition train set: 61% vs 0.36% = 170x rate ratio) rather than an organic
+documentation signal. No other construction leak found.
 Simulated validation cannot judge this change (its truths carry the leak's target); only the LB can: v18c vs v17b is
 a pre-registered A/B (difference = the leak removal + FP-v1 retrain + 15 pool rows). Prediction: v18c >= v17b - 0.008
 (class 2 freed from the shortcut; the pool-v4 +0.013 was mostly reach of the 52k new ChEBI/LMSD structures), with the
