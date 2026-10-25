@@ -217,6 +217,12 @@ command as the deployed fp_model.pt) gives val MRR .5109 / .5395 / .5569 at epoc
 .5118 / .5346 / .5461 -> equivalent (not bit-identical: CPU nondeterminism). Its checkpoint (own_models/fp_model_v1r.pt,
 md5 a9748a4a) is the FP model of v18c, which is therefore a clean replica of v17b (FP-b variant after the Oct 26 reading).
 v18c stages C2-E launched 13:20 (E = 4 GLACIER CPU worker kernels).
+v18c DONE (15:48): stage 1 val .8197 (cls1 .8268 / cls2 .8159), stage 2 .8314 (.8301 / .8321); fresh GLACIER pass
+coverage train .783 / val .754 (= v17b's merged history). v17b: .8895 (.8426 / .9146) -> .894 (.8432 / .9212); the
+cls-2 gap is the in_bio leak (see above), the cls-1 gap (.8301 vs .8432) is mostly the same flag on class-1 COCONUT
+truths. Models ret_ranker_v18c (md5 3f12b795), stage2_v18c (6af95879) + fp_model_v1r.pt in casmi26-models; pool as
+dataset casmi26-pool-v18c; kernel casmi26-own-s2v18c (make_own_kernel.py POOL_DS=casmi26-pool-v18c) = the Oct 27 LB
+candidate for the pre-registered A/B above.
 Plan: a clean-room rebuild track ("v18c") that fixes G1-G5 structurally and is the base for every later model, so the
 final picks are eligible by construction; the scripted fixes (G6-G18) land as they are touched. The LB-validated v17b
 stays the reference until v18c is built and checked against it on the LB.
