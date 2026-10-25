@@ -10,19 +10,21 @@
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
 W=/home/user/work; R=/home/user/claude_code_tests; EXT=/home/user/ext; DS=/home/user/ds
-P5=$W/pool5; ROWS=ret${T#v}            # e.g. ret18c
+P5=$W/pool_$T; ROWS=ret${T#v}          # e.g. pool_v18c, ret18c (fresh names: an old $W/pool5 from Oct 19 exists)
 cd $R
 log() { echo "[$(date -u +%H:%M)] $*"; }
 
-# A. pool5 = pool2 + our ChEBI / LMSD set; PubChem documentation counts; COCONUT priors; doc-shift weights
+# A. pool_<tag> = pool2 + our ChEBI / LMSD set; PubChem documentation counts; COCONUT priors; doc-shift weights
 BIO=$EXT/bio_raw/bio_structures_own.parquet
 [ -f $BIO ] || python3 scripts/build_bio_structures.py $EXT/bio_raw/chebi_rel255.sdf.gz $EXT/bio_raw/LMSD.sdf.zip \
     $EXT/coconut/coconut_2026_10.parquet $BIO 4
-if [ ! -f $P5/pool.parquet ]; then
-  log "A: pool5"
+if [ ! -f $P5/.built ]; then        # marker written only by this stage: never reuse a directory of unknown origin
+  log "A: $P5"
+  rm -rf $P5
   python3 scripts/build_pool_bio.py $W/pool2 $BIO $P5 4
   python3 scripts/add_pubchem_pop.py $EXT/pubchem/key_pop.parquet $P5
   cp $EXT/coconut/coconut_prior.parquet $P5/
+  touch $P5/.built
 fi
 [ -f $P5/doc_w.parquet ] || python3 -m casmi.docw $P5 $P5/doc_w.parquet
 md5sum $P5/pool.parquet $P5/pool_fp.npy $BIO | tee $W/$T.md5
