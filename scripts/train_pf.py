@@ -10,7 +10,7 @@ Loss = f.z and cosine scores, each against in-batch and same-mass window negativ
 Validation (as scripts/train_fp.py): split-1 structures, up to 3 spectra, truth vs its window negatives -> MRR and
 top-1 for f.z, cosine and their sum of within-query z-scores; also timsTOF-only.
 Env: PF_SBAL, PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_THREADS, PF_VAL_N, PF_INIT, FP_EXCLUDE, PF_HOURS,
-PF_TIMS_W (sampling weight of timsTOF spectra, default 2), PF_NEG_TRAIN (negatives restricted to training structures), PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
+PF_STEPS (fixed total steps, step-based schedule), PF_TIMS_W (sampling weight of timsTOF spectra, default 2), PF_NEG_TRAIN (negatives restricted to training structures), PF_INST_DROP (share of training spectra whose instrument token is replaced by 0 = unknown: timsTOF occurs almost only
 with Enamine chemistry, so the token became a chemistry prior that hurts timsTOF natural products).
 """
 import os, sys, time
@@ -102,11 +102,14 @@ if os.environ.get('PF_INIT'):
 LR = float(os.environ.get('PF_LR', '5e-4'))
 opt = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=0.01)
 total = EPOCHS * STEPS
+FIXED = int(os.environ.get('PF_STEPS', '0'))       # fixed step count (docs/reproduce.md G5): step-based schedule, stop there
+if FIXED:
+    total = FIXED
 
 
 def set_lr(step):
     """Warm-up then cosine decay over the larger of the step fraction and the wall-time fraction (PF_HOURS)."""
-    frac = min(1.0, max(step / total, (time.time() - t0) / (HOURS * 3600)))
+    frac = min(1.0, step / total if FIXED else max(step / total, (time.time() - t0) / (HOURS * 3600)))
     lr = LR * min(1.0, frac / 0.03) * 0.5 * (1 + np.cos(np.pi * frac)) if frac > 0 else LR * 1e-3
     for g in opt.param_groups:
         g['lr'] = max(lr, LR * 1e-3)
@@ -279,10 +282,10 @@ for ep in range(EPOCHS):
             print(f'step {step}/{total} loss {loss.item():.3f} (cos b {loss_cb.item():.2f} h {loss_ch.item():.2f} | '
                   f'fz b {loss_fb.item():.2f} h {loss_fh.item():.2f} | bce {loss_bce.item():.4f}) tau {tau.item():.3f} '
                   f'alpha {alpha.item():.3f} {time.time() - t0:.0f}s', flush=True)
-        if time.time() - t0 > HOURS * 3600:
+        if time.time() - t0 > HOURS * 3600 or (FIXED and step >= FIXED):
             break
     print(f'EPOCH {ep} val {validate()} {time.time() - t0:.0f}s', flush=True)
     save()
-    if time.time() - t0 > HOURS * 3600:
-        print('time budget reached', flush=True)
+    if time.time() - t0 > HOURS * 3600 or (FIXED and step >= FIXED):
+        print(f'stopped at step {step} ({"PF_STEPS" if FIXED and step >= FIXED else "time budget reached"})', flush=True)
         break
