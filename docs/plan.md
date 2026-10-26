@@ -85,6 +85,31 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-25 | casmi26-own-s2v5w-olast v2 | v5w lists, source tiering (train / COCONUT first, other after, nothing dropped) | 0.324 |
 | 10-25 | casmi26-own-s2v17 v3 | v5w recipe (31 leaves, alpha 1, lib10) + PeakFormer d features | 0.334 |
 | 10-25 | casmi26-own-s2v17b v1 | v17 with the debiased PeakFormer b (training-structure negatives, instrument-free, GPU 5 h) replacing d | **0.339** (best eligible) |
+| 10-26 | casmi26-own-s2v17bb v1 | v17b + FP model b (GPU, training-structure negatives, instrument-free) replacing the FP model | 0.322 (FP-b hurts) |
+| 10-26 | casmi26-probe17b-coco v1 | v17b lists restricted to COCONUT-not-train | 0.211 |
+| 10-26 | casmi26-probe17b-train v1 | v17b lists restricted to training structures | 0.150 |
+| 10-26 | casmi26-specpfd-coco v1 | PeakFormer d score alone, COCONUT-not-train candidates | 0.129 |
+| 10-26 | casmi26-specpfb-coco v1 | PeakFormer b score alone, COCONUT-not-train candidates | 0.160 |
+
+## Lessons from the Oct 26 submissions
+Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and the rule outcomes:
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| v17bb | 0.340 +- 0.010 | 0.322 | v17b 0.339: -0.017 | <= 0.333: FP-b HURTS -> not adopted; v18cb (FP-b on the clean base, val .838 vs .8314) NOT pushed |
+| probe17b-coco | 0.216 +- 0.010 | 0.211 | probe5w-coco 0.208: +0.003 | 0.208-0.213: ambiguous (v17b's +0.007 over v5w is not located in COCONUT) |
+| probe17b-train | 0.153 +- 0.006 | 0.150 | probe5w-train 0.156: -0.006 | at the cap (>= 0.150) |
+| specpfd-coco | 0.14 (0.10-0.18) | 0.129 | -- | reference |
+| specpfb-coco | 0.16 (0.12-0.20) | 0.160 | specpfd-coco: +0.031 | b - d >= +0.015: spectral gains TRANSFER to the hidden COCONUT answers -> spectral scaling (PF-x, PF-syn) is the main lever, PF-syn GO; donor rule (>= probe17b-coco + 0.010 = 0.221) not met |
+- The debiased-negatives recipe helps the PeakFormer (v17 -> v17b +0.005; spectral-only COCONUT +0.031) but hurts the
+  FP model (-0.017). The FP model and the PeakFormer share most of their signal; FP-b's instrument-free / training-only
+  negatives may have shifted its scores toward the PeakFormer's (less complementary) -- the stage-1 ranker learned the
+  combination on simulated rows where both looked better (v18cb val +0.0066), which the LB does not credit. Simulated
+  validation again failed to rank an FP / PF change; LB pairs stay the only judge.
+- v17b remains pick #1 (0.339, best eligible) though its mechanism reading is ambiguous; v18c (clean, FP v1r) is its
+  eligible replacement, read Oct 27.
+- Oct 27 slots unchanged from the pre-registered table. The conditional probe17-coco (matched control for the ambiguous
+  COCONUT reading) is NOT added: specpfb - specpfd (+0.031) already answers whether PF-b's spectral gain reaches the
+  COCONUT answers, and slot 5 (v17bpop) can add score; recorded deviation from the conditional rule.
 
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
