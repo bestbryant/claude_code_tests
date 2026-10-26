@@ -122,6 +122,11 @@ Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and
   steps per arm, ctl then syn (~2.3 s/step -> ~6.5 h per arm). 2.56M samples per arm = ~6% of the TPU design (41M);
   a PASS of the pre-registered gate is meaningful, a FAIL is weak evidence. Its role: decide whether the Oct 31 GPU
   week goes to PF-syn (pilot at T4 scale + full-pool simulation on free CPU workers + production run).
+- The local run died with the container (reclaimed while the session was idle; uptime 0 at the 04:28 check-in; no
+  step logged): long local jobs only survive inside active turns. Moved to Kaggle CPU 04:30: kernels
+  casmi26-pf-cpu-ctl / casmi26-pf-cpu-syn (scripts/make_pf_cpu_pilot.py <slug> <arm> 7500 11.3 800 250), the two arms
+  in parallel, step-matched at 7,500 steps of batch 256 (~4.96 s/step -> ~10.3 h; 1.92M samples per arm, ~4.7% of the
+  TPU design). Evaluation as pre-registered: scripts/eval_pf_pair.py on the 620-query neutral set (halves A / B).
 
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
