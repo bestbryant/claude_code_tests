@@ -169,6 +169,28 @@ sha256 in casmi26-code MANIFEST is unchanged): GPU go needs pfs1 CPU gate passed
 Owner note: simulating the candidate pool with GLACIER uses pool structures only (no labels), like inference-time
 GLACIER; recorded for the owner, not a compute blocker.
 
+## PF-syn CPU pilot result (Oct 26 16:20)
+Validity: BOTH seeds VOID by the pre-registered rule -- both ctl arms were cut by the 11.3 h guard at step 6500 of 7500
+(ctl ~6.3 s/step vs syn ~5.4 on Kaggle CPU: the real-row host augmentation is the slower path; the 150-step calibration
+did not show it), both syn arms completed 7500 (syn2 logged "PF_HOURS reached at step 7500 of 7500" = complete).
+The missing ctl tail carries < 0.5% of the integrated LR (cosine at 87%: lr 4% of peak), so the readings below are
+near-matched DIAGNOSTICS, not gate readings. Rule applied: VOID -> re-run; the syn arms are re-run with PF_STOP_AT=6500
+(LR schedule still 7500 = exactly the cut ctl arms): kernels casmi26-pf-cpu-synm (s31) / -syn2m (s32), pushed 16:25,
+~9.8 h -> read ~02:30 Oct 27. Real-val of the arms (764 split-1 structures, cos MRR): ctl .801 / .802, syn .796 / .812.
+Diagnostic gate (scripts/eval_pf_pair.py, files in /home/user/work/pfsyn_eval/gate_*_void.txt), pf_cos delta win vs
+training decoys, half A: s31 +0.032 [+0.009, +0.056], s32 +0.022 [-0.003, +0.046]; seed mean +0.027 [+0.006, +0.048];
+vs COCONUT s31 +0.019, s32 +0.026, mean +0.022; excess (syn vs ctl) s31 +0.012 vs +0.025, s32 +0.026 vs +0.022, mean
++0.019 vs +0.024; pf_cos_gl (covered A) s31 +0.010, s32 -0.000, mean +0.005. Exposure gap (pf_bern, COCONUT decoys
+simulated vs not) -0.0002 / -0.0022: no membership bias. Offline COCONUT probe (scripts/eval_syn_probe.py, pf_bern):
+s31 +0.029 [+0.015, +0.042] (A +0.024, B +0.034), s32 +0.019 [+0.005, +0.033] (A +0.008, B +0.030); cotr s31 +0.023.
+Reading: synthetic rows give a GENERAL discrimination gain (~+0.02 against training AND COCONUT decoys alike), not the
+targeted removal of the membership prior the design aimed at (excess moves -0.005 on the mean). Provisional branch
+(if the matched re-runs read like this): FAIL-near (no seed passes the +0.06 size; seed mean >= +0.02 with CI > 0,
+both seeds > 0, guards hold on the mean) -> no simulation yet; Oct 28: the COCONUT probe pair only (specpfsyn-coco =
+ensemble of the two matched syn checkpoints vs specpfctl-coco = the two ctl checkpoints, specpfb-coco setup);
+delta-coco >= +0.010 -> start the full-pool simulation (casmi26-simw2-*). Diagnostic LB-1 prediction:
+0.49 x (0.22 x 0.016 + 0.78 x 0.032) = +0.014 +- 0.012 (recomputed on the matched checkpoints before pushing).
+
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
   0.313. Within COCONUT it helps (tok3 COCONUT-restricted probe 0.200 vs 0.190), so the rest of the list loses ~0.015:
