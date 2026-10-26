@@ -129,6 +129,11 @@ Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and
   TPU design). Evaluation as pre-registered: scripts/eval_pf_pair.py on the 620-query neutral set (halves A / B).
   Seed replicate (04:40): casmi26-pf-cpu-ctl2 / -syn2, the same pair at PF_SEED 32 (the paired bootstrap covers query
   sampling only, not training-seed noise). Reading: the gate must hold on BOTH seeds (and the mean) to count as a pass.
+  Evaluation dry run (04:50) on the 150-step calibration checkpoints (casmi26-pf-cpu-cal; GLACIER column
+  /home/user/work/pfsyn_eval/sub_gl.parquet: 620 queries, 418 with [M+H]+, 27,155 / 42,421 rows): pf_cos delta win vs
+  training decoys all +0.022 [+0.005, +0.038], half A +0.018 [-0.009, +0.045], half B +0.026 [+0.004, +0.048]; vs
+  COCONUT +0.003; excess +0.025 -> +0.006; pf_cos_gl (covered) +0.004 [-0.010, +0.018]. Direction right after 150
+  steps; the gate (+0.06 on half A) is read on the 7,500-step arms.
 
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
