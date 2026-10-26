@@ -2,6 +2,7 @@
 batch 256, the chosen arms, a fixed step count (both arms step-matched) and a wall-clock guard.
 
 python scripts/make_pf_cpu_pilot.py <slug> <arms: ctl,syn | ctl | syn | synP> <steps> <hours guard per arm> [val_n] [log_every] [seed]
+Env STOP_AT=<step>: PF_STOP_AT (stop there, LR schedule still spanning <steps>).
 synP = production synthetic arm: PF_SYN = SYN_NAME (default syn2.npz) from the kernel SYN_SRC (default
 bryantyu/casmi26-syn-prep2, scripts/make_syn_prep.py), PF_SYN_P 0.25, no neutral weighting and no dropped half (every
 pool structure is simulated, as at test time); it replaces the pilot's syn-prep kernel source.
@@ -33,6 +34,8 @@ if arms == ['synP']:
     syn_name = os.environ.get('SYN_NAME', 'syn2.npz')
     reps.append((old, f"arms = [('synP', dict(PF_SYN=first({syn_name!r}), PF_SYN_P='0.25'))]"))
     meta['kernel_sources'] = [os.environ.get('SYN_SRC', 'bryantyu/casmi26-syn-prep2')]
+if os.environ.get('STOP_AT'):          # PF_STOP_AT: matched partner of a guard-cut arm (train_pf_xla.py)
+    reps.append(("PF_STEPS=STEPS)", f"PF_STEPS=STEPS, PF_STOP_AT='{os.environ['STOP_AT']}')"))
 for a, b in reps:
     assert nb.count(a) == 1, a
     nb = nb.replace(a, b)

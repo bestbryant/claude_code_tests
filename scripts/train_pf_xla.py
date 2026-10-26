@@ -23,7 +23,8 @@ structure as a negative only). A few low noise peaks are added to synthetic spec
 PF_SYN_NEUTRAL_W (sampling weight of set == 'neutral' spectra; the pilot uses ~0.18 so that the evaluation windows get
 the per-structure exposure of a full-pool run), PF_SYN_DROP (file of pool ids whose synthetic spectra are dropped and
 removed from synthetic windows: the held-out half B of the evaluation windows), PF_STEPS (fixed total steps: matched
-arms; the PF_HOURS guard still stops a run that is too slow).
+arms; the PF_HOURS guard still stops a run that is too slow), PF_STOP_AT (stop after that step with the
+schedule still spanning PF_STEPS: the step- and schedule-matched partner of an arm the guard cut there).
 """
 import math, os, queue, sys, threading, time, traceback
 os.environ.setdefault('XLA_NO_SPECIAL_SCALARS', '1')    # Adam's bias correction reaches 1.0: no constant -> no recompile
@@ -52,6 +53,7 @@ W_BCE = float(os.environ.get('PF_BCE', '5'))
 S_BAL = float(os.environ.get('PF_SBAL', '0'))
 LR = float(os.environ.get('PF_LR', '5e-4'))
 CAL = int(os.environ.get('PF_CAL', '300'))
+STOP_AT = int(os.environ.get('PF_STOP_AT', '0'))     # stop after this step, LR schedule unchanged (matches a guard-cut arm)
 LOG = int(os.environ.get('PF_LOG', '100'))
 SYN = os.environ.get('PF_SYN')
 B_SYN = int(round(float(os.environ.get('PF_SYN_P', '0.25')) * B)) if SYN else 0
@@ -445,6 +447,10 @@ def run(rank):
                     if master:
                         print(f'PF_HOURS reached at step {step} of {total}', flush=True)
                     total = step
+            if STOP_AT and step >= STOP_AT and step < total:       # matched stop: schedule still spans PF_STEPS
+                if master:
+                    print(f'PF_STOP_AT reached at step {step} of {total}', flush=True)
+                total = step
             if step >= total:
                 break
         save_and_validate(f'EPOCH {ep}')
