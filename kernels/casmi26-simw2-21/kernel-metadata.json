@@ -1,0 +1,19 @@
+{
+  "id": "bryantyu/casmi26-simw2-21",
+  "title": "casmi26-simw2-21",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-glacier",
+    "bryantyu/casmi26-sim-jobs2"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
