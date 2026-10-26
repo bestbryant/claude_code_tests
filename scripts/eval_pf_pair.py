@@ -1,6 +1,7 @@
 """Paired syn-vs-ctl comparison on the membership-neutral set (PF-syn pilot gate, review wf_4f2803ec-ac0).
 
 python scripts/eval_pf_pair.py <ctl rows_fp.parquet> <syn rows_fp.parquet> [gl rows.parquet] [qids_A.txt qids_B.txt]
+Comma-separated row files per arm (one per training seed) give the seed-mean reading.
 Cells as scripts/eval_pf_neutral.py: within the truth's formula group, (query, Morgan-Tanimoto-to-truth bin) cells
 holding both training and COCONUT-not-train decoys; per arm and column the matched win rate vs training decoys, vs
 COCONUT decoys and the excess (COCONUT - training). Paired bootstrap over queries (2,000 draws, the same draws for both
@@ -69,7 +70,15 @@ def cells(D, cols):
 
 gl = pd.read_parquet(gl_p, columns=['qid', 'pid', 'gl']) if gl_p else None
 cols = ['pf_cos', 'pf_bern'] + (['pf_cos_gl', 'pf_bern_gl'] if gl is not None else [])
-arms = {name: cells(load(p, gl), cols) for name, p in (('ctl', ctl_p), ('syn', syn_p))}
+def seed_mean(paths):
+    """Comma-separated row files (one per training seed): per (column, query) the wins averaged over the seeds that
+    score it, before the bootstrap (seed-mean mode)."""
+    cs = [cells(load(p, gl), cols) for p in paths.split(',')]
+    keys = set.intersection(*(set(c) for c in cs))
+    return {k: tuple(np.mean([c[k][j] for c in cs]) for j in range(3)) for k in keys}
+
+
+arms = {name: seed_mean(p) for name, p in (('ctl', ctl_p), ('syn', syn_p))}
 covered = set(gl.qid[np.isfinite(gl.gl)]) if gl is not None else set()
 rng = np.random.default_rng(0)
 for hname, hq in [('all', None)] + list(halves.items()):

@@ -160,6 +160,8 @@ def predict(R, fps, ranker, feats, g, n=25, pfs=None):
     df['z'] = df[spec].astype(float).values if spec else ranker.predict(df[feats].astype(float).values)
     if os.environ.get('OWN_SPEC_SRC') == 'coco':  # keep COCONUT-not-train candidates only (pool flags)
         df = df[(df.in_coco == 1) & (df.in_train == 0)]
+    elif os.environ.get('OWN_SPEC_SRC') == 'cotr':  # training + COCONUT-not-train candidates (the membership contest)
+        df = df[(df.in_train == 1) | ((df.in_coco == 1) & (df.in_train == 0))]
     df = df.sort_values('z', ascending=False)
     out, seen = [], set()
     for s, z in zip(df.smiles.values, df.z.values):

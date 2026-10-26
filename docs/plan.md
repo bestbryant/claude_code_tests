@@ -135,6 +135,40 @@ Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and
   COCONUT +0.003; excess +0.025 -> +0.006; pf_cos_gl (covered) +0.004 [-0.010, +0.018]. Direction right after 150
   steps; the gate (+0.06 on half A) is read on the 7,500-step arms.
 
+## PF-syn decision tree and LB rules (pre-registered Oct 26 07:00, before the pilot read; design workflow wf_adf4f08f-b33)
+Pilot = kernels casmi26-pf-cpu-ctl / -syn (seed 31) and -ctl2 / -syn2 (seed 32), 7,500 steps each.
+Validity: a seed is VOID if either arm's log contains "PF_HOURS reached" or the two arms' last "step N/7500" differ
+(re-run it; a VOID seed is never a gate fail). Gate per seed (half A, scripts/eval_pf_pair.py): pf_cos delta win vs
+training decoys >= +0.06 with 95% CI > 0; delta vs COCONUT >= -0.01; excess_syn <= excess_ctl and >= -0.02; pf_cos_gl
+delta > 0. Seed-mean reading: comma-separated row files.
+- PASS-2 (both seeds pass; or one passes and the other misses only on size, delta in [+0.03, +0.06) with CI > 0 and
+  guards ok, seed mean >= +0.06): push 3 simulation workers casmi26-simw2-* at once (full pool v18c, 24 workers x
+  ~6 h, rolling, <= 3 long sessions of ours, <= 2 while the owner has a CPU kernel running/queued); Oct 28: pilot
+  spectral probes (below); then the CPU production fine-tune pfs1 on the full-pool syn2 set; GPU only from Oct 31 per
+  the LB-2 rule.
+- PASS-1 (one seed passes, the other fails on sign / CI / a guard or is VOID): seed-33 tie-breaker pair (2 sessions)
+  + 1 simulation worker; read ~12 h later: 2 of 3 seeds pass AND the 3-seed mean >= +0.04 -> PASS-2, else FAIL-near.
+- FAIL-near (no seed passes, seed-mean half-A delta >= +0.02 with CI > 0, both seeds > 0, guards on the mean): no
+  simulation; Oct 28 coco probe pair only; delta-coco >= +0.010 -> start the simulation then (chain ~1.5 days later).
+- FAIL-hard (anything else): Oct 28 coco pair only as a gate calibration; PF-syn closed unless delta-coco >= +0.015.
+LB-1 (Oct 28; pool4 / ret_ranker_v17 / no stage 2 / LIB_CAP 10, ordered by pf_bern = the casmi26-specpfb-coco setup;
+2-seed ensembles OWN_PF=pf_syn_s31.pt,pf_syn_s32.pt vs pf_ctl_s31.pt,pf_ctl_s32.pt):
+| slot | kernel | pair | prediction |
+|---|---|---|---|
+| a | specpfsyn-coco | specpfctl-coco | delta = 0.49 x (0.22 a_A + 0.78 a_B) +- 0.012 (a = offline coco RR delta, halves A/B; 0.49 = LB / offline ratio of PF-d -> PF-b) |
+| b | specpfctl-coco | specpfb-coco 0.160 | 0.160 +- 0.012 (anchor: outside [0.140, 0.180] -> setup drift, read paired deltas only) |
+| c | specpfctl-cotr | -- | anchor (training + COCONUT-not-train candidates, OWN_SPEC_SRC=cotr) |
+| d | specpfsyn-cotr | specpfctl-cotr | diagnostic only (first slot to give way) |
+Rules: delta-coco >= +0.010 transfer confirmed; (-0.010, +0.010) uninformative (CPU path continues, LB-2 decides the
+GPU); <= -0.010 STOP (no pfs1, no GPU). F = specpfctl-coco - 0.160 >= +0.012 -> fine-tuning alone pays (ctl becomes a
+deploy candidate). LB-2 (pfs1 production probes, same setup, paired with the Oct 28 controls if the inference-module
+sha256 in casmi26-code MANIFEST is unchanged): GPU go needs pfs1 CPU gate passed AND delta-p-cotr >= -0.005 AND (delta-p-coco
+>= +0.015 or mean(delta-coco, delta-p-coco) >= +0.007 or delta-p-cotr >= +0.015). Adoption of any PF-syn pipeline
+(v18c rebuild with the new PeakFormer): house retrain rule (>= v18c + 0.008, COCONUT probe >= +0.005, training probe
+>= -0.006), +0.002 on the bar per extra candidate, at most 3 candidates by Nov 10. Honest prior: P(adopt) ~20-25%.
+Owner note: simulating the candidate pool with GLACIER uses pool structures only (no labels), like inference-time
+GLACIER; recorded for the owner, not a compute blocker.
+
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
   0.313. Within COCONUT it helps (tok3 COCONUT-restricted probe 0.200 vs 0.190), so the rest of the list loses ~0.015:
