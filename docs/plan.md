@@ -127,6 +127,8 @@ Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and
   casmi26-pf-cpu-ctl / casmi26-pf-cpu-syn (scripts/make_pf_cpu_pilot.py <slug> <arm> 7500 11.3 800 250), the two arms
   in parallel, step-matched at 7,500 steps of batch 256 (~4.96 s/step -> ~10.3 h; 1.92M samples per arm, ~4.7% of the
   TPU design). Evaluation as pre-registered: scripts/eval_pf_pair.py on the 620-query neutral set (halves A / B).
+  Seed replicate (04:40): casmi26-pf-cpu-ctl2 / -syn2, the same pair at PF_SEED 32 (the paired bootstrap covers query
+  sampling only, not training-seed noise). Reading: the gate must hold on BOTH seeds (and the mean) to count as a pass.
 
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
