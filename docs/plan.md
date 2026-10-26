@@ -111,6 +111,18 @@ Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and
   COCONUT reading) is NOT added: specpfb - specpfd (+0.031) already answers whether PF-b's spectral gain reaches the
   COCONUT answers, and slot 5 (v17bpop) can add score; recorded deviation from the conditional rule.
 
+## Compute after the Oct 26 reading (PF-syn GO)
+- TPU: casmi26-pf-train-x5 (queued since Oct 25 04:39, never started) DELETED Oct 26 01:24: the owner's own
+  ntl-tpu-probe (TpuV5E8) has been queued since Oct 25 16:43 and Kaggle allows one TPU session per account, queued
+  ones included -> owner first. No new TPU push while the owner uses the TPU.
+- GPU: the shared week runs to Oct 31 (12.1 h left before casmi26-simg's 1.5 h; the owner ran three T4 kernels since,
+  ntl-p641-s3a / s3ab / s3b, the last at 00:11 today) -> no 3.5 h pilot now.
+- Local CPU pilot started 01:25 (scripts/run_pf_pilot_local.sh 10000 /home/user/work/pfsyn_local): the pre-reviewed
+  pilot (kernels/casmi26-pf-pilot settings, PF_SYN_P 0.25, NEUTRAL_W 0.18, half B dropped) at batch 256, 10,000
+  steps per arm, ctl then syn (~2.3 s/step -> ~6.5 h per arm). 2.56M samples per arm = ~6% of the TPU design (41M);
+  a PASS of the pre-registered gate is meaningful, a FAIL is weak evidence. Its role: decide whether the Oct 31 GPU
+  week goes to PF-syn (pilot at T4 scale + full-pool simulation on free CPU workers + production run).
+
 ## Lessons from the Oct 24 submissions
 - The token override does not pay on the LB: v11l 0.320 -> tok3 0.315 / tok0 0.316 / v13 (retrained on token-3 rows)
   0.313. Within COCONUT it helps (tok3 COCONUT-restricted probe 0.200 vs 0.190), so the rest of the list loses ~0.015:
