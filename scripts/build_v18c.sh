@@ -6,14 +6,16 @@
 #       history) on a Kaggle GPU kernel (casmi.fwdrun --device cuda); stage 2 reads only that pass.
 #   G13/G14: row dumps with recorded seeds, VENDOR_PATH disabled, stale part dirs removed; features added in one place.
 # scripts/build_v18c.sh <pf_model.pt> <fp_model.pt> [tag]      (STOP_AFTER=B: pool + row dumps; C1: + PeakFormer features; D: + stage 1)
-# BASE=<tag> reuses that build's pool and stage B / C1 rows (same PeakFormer) and rebuilds from C2 (e.g. an FP-model swap:
-#   BASE=v18c scripts/build_v18c.sh <pf_model_b.pt> <fp_model_b.pt> v18cb).
+# BASE=<tag> reuses that build's pool and stage B rows; its C1 rows (PeakFormer features) too unless REUSE_C1=0:
+#   FP-model swap:  BASE=v18c scripts/build_v18c.sh <pf_model_b.pt> <fp_model_b.pt> v18cb
+#   PeakFormer swap: BASE=v18c REUSE_C1=0 scripts/build_v18c.sh <new pf_model.pt> <fp_model_v1r.pt> v18cs
 # Stage E stops after pushing the GPU GLACIER kernel; run the script again when kernels/casmi26-gl<tag> is COMPLETE.
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
 W=/home/user/work; R=/home/user/claude_code_tests; EXT=/home/user/ext; DS=/home/user/ds
 B0=${BASE:-$T}
 P5=$W/pool_$B0; RB=ret${B0#v}; ROWS=ret${T#v}   # e.g. pool_v18c, ret18c (fresh names: an old $W/pool5 from Oct 19 exists)
+if [ -n "${BASE:-}" ] && [ "${REUSE_C1:-1}" = 0 ]; then RC=$ROWS; else RC=$RB; fi   # rows carrying the PeakFormer columns
 cd $R
 log() { echo "[$(date -u +%H:%M)] $*"; }
 
@@ -47,7 +49,7 @@ done
 # C. spectral features without a richfp cache (pool ids differ from pool4): C1 PeakFormer (pf_* + within-formula
 #    columns) on the raw rows, C2 FP model (fp_*) on top -- C1 does not depend on the FP choice
 for s in train val; do
-  out=$W/${RB}_${s}_pf.parquet; [ -f $out ] && continue
+  out=$W/${RC}_${s}_pf.parquet; [ -f $out ] && continue
   log "C1: PeakFormer features $s"
   for i in 0 1 2; do RICHFP_CACHE= python3 scripts/add_fp_feats.py $W/${RB}_$s.parquet $PF $out.p$i $P5 $i 3 > $out.p$i.log 2>&1 & done; wait
   python3 -c "
@@ -64,7 +66,7 @@ done
 for s in train val; do
   out=$W/${ROWS}_${s}_fp.parquet; [ -f $out ] && continue
   log "C2: FP features $s"
-  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${RB}_${s}_pf.parquet $FP $out.f$i $P5 $i 3 > $out.f$i.log 2>&1 & done; wait
+  for i in 0 1 2; do python3 scripts/add_fp_feats.py $W/${RC}_${s}_pf.parquet $FP $out.f$i $P5 $i 3 > $out.f$i.log 2>&1 & done; wait
   python3 -c "
 import pandas as pd
 pd.concat([pd.read_parquet(f'$out.f{i}') for i in range(3)], ignore_index=True).to_parquet('$out')"
