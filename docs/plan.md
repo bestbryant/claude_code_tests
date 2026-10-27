@@ -130,6 +130,9 @@ casmi26-probe18cw-coco / -train generated (pushed when sessions allow); spectral
 -specpfctl-coco pushed 05:11.
 Verified 05:35: casmi26-specpfsyn-coco and -specpfctl-coco COMPLETE, 394 / 400 rows, PeakFormer members 2 (Oct 28 slots 1-2
 ready). casmi26-probe18cw-coco / -train pushed 05:36.
+Verified 07:05: casmi26-own-s2v18cw v1 (400 / 400 rows with candidates, GLACIER 371 / 400, no Traceback),
+casmi26-probe18cw-coco v1 (393 / 400 COCONUT rows), casmi26-probe18cw-train v1 (400 / 400) -> all five Oct 28 kernels ready.
+Oct 29 masked probes casmi26-mask18c-train / -coco pushed 07:05.
 
 ## Oct 29 slots (pre-registered Oct 27 07:00, before the Oct 28 readings)
 Masked split probes E1 on the base (v18c unless v18cw is adopted on Oct 28; kernels casmi26-mask18c-train / -coco,
