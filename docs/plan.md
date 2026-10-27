@@ -128,6 +128,8 @@ cls2 .8396) vs v18c .8314 (.8301 / .8321). Models ret_ranker_v18cw (md5 1d126e99
 casmi26-models; kernel casmi26-own-s2v18cw pushed 05:20 (code identical to s2v18c apart from the ranker names), probes
 casmi26-probe18cw-coco / -train generated (pushed when sessions allow); spectral probes casmi26-specpfsyn-coco /
 -specpfctl-coco pushed 05:11.
+Verified 05:35: casmi26-specpfsyn-coco and -specpfctl-coco COMPLETE, 394 / 400 rows, PeakFormer members 2 (Oct 28 slots 1-2
+ready). casmi26-probe18cw-coco / -train pushed 05:36.
 
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
