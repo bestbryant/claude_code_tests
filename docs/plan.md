@@ -123,6 +123,11 @@ Kernels casmi26-specpfsyn-coco / -specpfctl-coco generated (code identical to ca
 pushed when the v18cw GLACIER workers free their sessions.
 v18cw stage D (01:25; C1_DUP=1 BASE=v18c scripts/build_v18c.sh ... v18cw, FP rows hard-linked from ret18c): stage 1 val
 cls1 .815 / cls2 .8227 (v18c .8268 / .8159), OOF .8229. Stage E waits for free sessions (<= 4 of ours).
+v18cw DONE 05:12 (4 CPU GLACIER workers casmi26-glwv18cw-0..3, coverage .783 / .754): stage 2 val .8341 (cls1 .8237 /
+cls2 .8396) vs v18c .8314 (.8301 / .8321). Models ret_ranker_v18cw (md5 1d126e99), stage2_v18cw (09384a68) in
+casmi26-models; kernel casmi26-own-s2v18cw pushed 05:20 (code identical to s2v18c apart from the ranker names), probes
+casmi26-probe18cw-coco / -train generated (pushed when sessions allow); spectral probes casmi26-specpfsyn-coco /
+-specpfctl-coco pushed 05:11.
 
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:

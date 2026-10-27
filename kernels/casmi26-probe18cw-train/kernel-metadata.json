@@ -1,0 +1,26 @@
+{
+  "id": "bryantyu/casmi26-probe18cw-train",
+  "title": "casmi26-probe18cw-train",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-glacier",
+    "bryantyu/casmi26-models",
+    "bryantyu/casmi26-pool-v18c",
+    "bryantyu/casmi26-srckeys",
+    "metric/rdkit-2026-3-3-wheel"
+  ],
+  "competition_sources": [
+    "enveda-CASMI26-molecule-id-mass-spectra"
+  ],
+  "kernel_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0f2a7e0a33943c95754b1b7af6b30d65221633a284b6b601cd84a",
+  "docker_image_pinning_type": "original"
+}
