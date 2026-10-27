@@ -96,6 +96,20 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-27 | casmi26-zen-probe v1 | direct spectral match to the 3,717 Zenodo-only Enveda-180 structures | 0.000 |
 | 10-27 | casmi26-own-s2v17bpop v1 | v17b lists + popularity re-rank z(score) + 0.15 (ln SID + ln PMID) | 0.323 (rejected) |
 
+## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-specpfsyn-coco (pf_bern alone, COCONUT-not-train, specpfb-coco setup; OWN_PF = matched syn ensemble s31 + s32) | slot 2 | 0.49 x (0.22 a_A + 0.78 a_B) +- 0.012, a = offline coco delta of the ENSEMBLE rows (filled in at the 02:40 read; diagnostic prior +0.014) | delta >= +0.010 transfer confirmed -> start the full-pool simulation (casmi26-simw2-*); (-0.010, +0.010) uninformative; <= -0.010 STOP PF-syn |
+| 2 | casmi26-specpfctl-coco (same, OWN_PF = ctl ensemble s31 + s32) | specpfb-coco 0.160 | 0.160 +- 0.012 | outside [0.140, 0.180]: setup drift; F = slot2 - 0.160 >= +0.012: fine-tuning alone pays |
+| 3 | casmi26-own-s2v18cw (v18c retrained with C1_DUP=1: class-1 queries not duplicated) | v18c 0.339 | 0.341 +- 0.012 | retrain rule: adopt >= 0.347 with slot 4 >= 0.220 and slot 5 >= 0.151; <= 0.333 class-1 weight matters the other way |
+| 4 | casmi26-probe18cw-coco | probe18c-coco 0.215 | 0.222 +- 0.010 | mechanism: COCONUT answers ranked up |
+| 5 | casmi26-probe18cw-train | probe18c-train 0.157 | 0.152 +- 0.006 | class-1 cost cap -0.006 |
+Rationale (slot 3): the source-restricted probes of v18c sum to ~0.385 (train 0.157 + COCONUT 0.215 + other ~0.013) while
+the full lists score 0.339 -> ~0.046 is lost where training and COCONUT candidates compete in one list. Stage 1 / stage 2
+duplicate class-1 queries (effective class-1 share 46% of the training weight; comment: "test mix closer to 45:55",
+never LB-tested alone), while the training probe implies ~17-27% class 1 among the hidden molecules. C1_DUP=1 trains at
+the simulated 30:70 mix. Any kernel not COMPLETE and verified by 00:05 is replaced by nothing (no unverified submits).
+
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
 | kernel | prediction | LB | pair | rule outcome |
