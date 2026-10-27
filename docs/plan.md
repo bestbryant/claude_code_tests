@@ -131,6 +131,34 @@ casmi26-probe18cw-coco / -train generated (pushed when sessions allow); spectral
 Verified 05:35: casmi26-specpfsyn-coco and -specpfctl-coco COMPLETE, 394 / 400 rows, PeakFormer members 2 (Oct 28 slots 1-2
 ready). casmi26-probe18cw-coco / -train pushed 05:36.
 
+## Oct 29 slots (pre-registered Oct 27 07:00, before the Oct 28 readings)
+Masked split probes E1 on the base (v18c unless v18cw is adopted on Oct 28; kernels casmi26-mask18c-train / -coco,
+scripts/make_probe_kernel.py ... mask): M_s = full-list RR carried by source-s answers, L_s = P_s - M_s.
+| slot | kernel | prediction (80%) | derived |
+|---|---|---|---|
+| 1 | casmi26-mask18c-train | 0.139 [0.128, 0.150] | L_T = 0.157 - M_T = 0.018 [0.007, 0.029] |
+| 2 | casmi26-mask18c-coco | 0.194 [0.184, 0.204] | L_C = 0.215 - M_C = 0.022 [0.012, 0.031]; M_O = 0.339 - M_T - M_C = 0.007 [0.002, 0.013] |
+VOID (fix + rerun) if the base lists differ from the v18c v1 output, or M_T + M_C > F + 0.001, or < F - 0.016. Rules:
+COCONUT-heavy (L_T <= 0.010 and L_C >= 0.028) -> Oct 30 library-gated COCONUT prior SRC_COCO_LIBGATE=0.3,0.8 (fixed now;
+adopt >= +0.005); train-heavy (L_T >= 0.025) -> offline class-1 library-trust work only; balanced -> close the
+interleaving line for this window. If valid and M_T <= 0.150, mask-train replaces probe-train as the class-1 cost cap
+(>= parent - 0.006). Slots 3-5: free for other lines (to be pre-registered after the Oct 28 reading).
+
+## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
+- Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
+  included the pc-only channel v18c does not run); almost all train <-> COCONUT displacement, per-query confusion (a
+  training decoy above a class-2 truth leads by a median 0.59 SD), not a source-wide bias (best global shift recovers
+  14-30% offline). The public chain merges ~3x better (0.013) but its recipe (provenance-free rankers, popularity after,
+  RRF) is negative for us in every eligible copy (offline -0.001 to -0.010; LB v17bpop -0.016).
+- Gap to the public 0.451 (0.112): 'other' 0.049, COCONUT within-source ranking 0.037, interleaving 0.027, train -0.002.
+- Hidden class mix (public 124): train 0.19 [0.165, 0.225], COCONUT-not-train 0.32 [0.26, 0.40], other reachable 0.08
+  [0.06, 0.12] (Enamine part ~0.056), unreachable 0.42 [0.30, 0.50]; 28/20/52 ruled out; class-1 share among
+  train + COCONUT answers w1 = 0.37 [0.31, 0.42] (v18c trains at 46%, v18cw at 30%).
+- v18cw predicted 0.339 [-0.003, +0.004] (moves the loss between classes). Next: masked split probes E1 (off-source
+  candidates replaced in place by n-alkane placeholders: exact full-list RR per source), conditional library-gated
+  COCONUT prior (only if COCONUT-heavy); STOP list: unconditional source shifts, re-picked deltas, provenance-free /
+  factorised rankers, class-mix dose retrains (v18cq / v18c3), tiering, POP_BOOST, RRF / rank-2 insertion.
+
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
 | kernel | prediction | LB | pair | rule outcome |
