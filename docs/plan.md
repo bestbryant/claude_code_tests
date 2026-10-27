@@ -109,6 +109,18 @@ the full lists score 0.339 -> ~0.046 is lost where training and COCONUT candidat
 duplicate class-1 queries (effective class-1 share 46% of the training weight; comment: "test mix closer to 45:55",
 never LB-tested alone), while the training probe implies ~17-27% class 1 among the hidden molecules. C1_DUP=1 trains at
 the simulated 30:70 mix. Any kernel not COMPLETE and verified by 00:05 is replaced by nothing (no unverified submits).
+PF-syn matched read (Oct 27 03:40; syn arms re-run with PF_STOP_AT 6500 of 7500 = the guard-cut ctl arms; both logs
+"PF_STOP_AT reached at step 6500 of 7500", no guard cut -> VALID): half A pf_cos delta win vs training decoys s31 +0.031
+[+0.007, +0.055], s32 +0.023 [-0.002, +0.048], seed mean +0.027 [+0.007, +0.048]; vs COCONUT +0.021 / +0.024 / +0.022;
+excess syn vs ctl +0.015 vs +0.025 / +0.023 vs +0.022 / +0.019 vs +0.024; pf_cos_gl +0.009 / -0.001 / +0.004 (files
+/home/user/work/pfsyn_eval/gate_s31.txt, gate_s32.txt, gate_seedmean.txt). No seed passes (+0.06 size; s32 also fails
+CI, excess and gl) -> BRANCH FAIL-near (seed mean >= +0.02 with CI > 0, both seeds > 0, guards hold on the mean): no
+simulation; the Oct 28 COCONUT probe pair decides. Offline coco probe on the 2-checkpoint ENSEMBLE rows (the LB kernels'
+OWN_PF): syn vs ctl +0.0176 [+0.004, +0.031], A +0.0082, B +0.0270 -> slot-1 prediction 0.49 x (0.22 x 0.0082 + 0.78 x
+0.0270) = +0.011 +- 0.012; ctl ensemble vs PF-b +0.0056 -> slot-2 prediction 0.163 +- 0.012. Exposure gap ~0.
+Checkpoints in casmi26-models (md5): pf_ctl_s31 00edd01c, pf_ctl_s32 a0521dd0, pf_synm_s31 61d1a1a5, pf_synm_s32 cd6ed368.
+Kernels casmi26-specpfsyn-coco / -specpfctl-coco generated (code identical to casmi26-specpfb-coco apart from OWN_PF);
+pushed when the v18cw GLACIER workers free their sessions.
 v18cw stage D (01:25; C1_DUP=1 BASE=v18c scripts/build_v18c.sh ... v18cw, FP rows hard-linked from ret18c): stage 1 val
 cls1 .815 / cls2 .8227 (v18c .8268 / .8159), OOF .8229. Stage E waits for free sessions (<= 4 of ours).
 
