@@ -90,6 +90,29 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-26 | casmi26-probe17b-train v1 | v17b lists restricted to training structures | 0.150 |
 | 10-26 | casmi26-specpfd-coco v1 | PeakFormer d score alone, COCONUT-not-train candidates | 0.129 |
 | 10-26 | casmi26-specpfb-coco v1 | PeakFormer b score alone, COCONUT-not-train candidates | 0.160 |
+| 10-27 | casmi26-own-s2v18c v1 | clean-room rebuild: own ChEBI/LMSD set (in_bio leak removed), FP v1 retrain, one fresh GLACIER pass | **0.339** (= v17b; eligible base) |
+| 10-27 | casmi26-probe18c-coco v1 | v18c lists restricted to COCONUT-not-train | 0.215 |
+| 10-27 | casmi26-probe18c-train v1 | v18c lists restricted to training structures | 0.157 |
+| 10-27 | casmi26-zen-probe v1 | direct spectral match to the 3,717 Zenodo-only Enveda-180 structures | 0.000 |
+| 10-27 | casmi26-own-s2v17bpop v1 | v17b lists + popularity re-rank z(score) + 0.15 (ln SID + ln PMID) | 0.323 (rejected) |
+
+## Lessons from the Oct 27 submissions
+Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| v18c | 0.345 +- 0.012 | 0.339 | v17b 0.339: +0.000 | 0.331-0.346: v18c = BASE (eligible by construction, no cost) |
+| probe18c-coco | 0.226 +- 0.012 | 0.215 | probe17b-coco 0.211: +0.004 | between 0.211 and 0.221: mechanism NOT confirmed (the leak cost the hidden COCONUT answers little) |
+| probe18c-train | 0.145 +- 0.006 | 0.157 | probe17b-train 0.150: +0.007 | >= 0.144: no class-1 cost (better, within noise) |
+| zen-probe | 0.005-0.02 | 0.000 | -- | < 0.008: no hidden answer among the Zenodo-only Enveda-180 structures -> ZEN line CLOSED |
+| v17bpop | 0.342 +- 0.008 | 0.323 | v17b 0.339: -0.016 | <= 0: popularity re-rank REJECTED (no v18cpop) |
+- The in_bio leak removal is LB-neutral: the simulated cls-2 drop (.92 -> .82) did not cost the hidden test anything,
+  and the expected COCONUT gain (+0.015) did not appear (+0.004). The shortcut fired on simulated class-2 truths only;
+  hidden COCONUT answers never carried in_bio (0.36%), so the ranker's use of it did not move them either way.
+- v18c (0.339) replaces v17b as pick #1: same score, prize-eligible chain (docs/reproduce.md section 6).
+- Documentation popularity (POP_BOOST) hurts our lists (-0.016) although it helped the public chain (+0.010 there):
+  our rankers already use pc_sid / pc_pmid; adding them again over-weights documented (training-like) candidates.
+- The Zenodo-only Enveda-180 structures are not hidden answers (0.000): the 'other' gap is not Enveda's own published
+  library; the remaining 'other' levers are the PubChem tiers (closed earlier) -> 'other' stays conceded.
 
 ## Lessons from the Oct 26 submissions
 Predictions (pre-registered Oct 25 01:30 in the "Oct 26 slots" table) vs LB, and the rule outcomes:
