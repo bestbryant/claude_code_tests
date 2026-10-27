@@ -97,7 +97,8 @@ F=$W/fwd_$T; GJ=$DS/casmi26-gl-$T
 mkdir -p $F
 [ -f $F/train.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof $P5 30 $F/train 6)
 [ -f $F/val.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ${ROWS}_val_reach_c.parquet own_models/ret_ranker_$T.txt $P5 30 $F/val 2)
-if [ "${GL_DEVICE:-cpu}" = gpu ]; then KS="casmi26-gl$T"; else KS="casmi26-glw$T-0 casmi26-glw$T-1 casmi26-glw$T-2 casmi26-glw$T-3"; fi
+GLW_N=${GLW_N:-4}                   # CPU workers: 4, or 3 when fewer Kaggle sessions are free (the owner's come first)
+if [ "${GL_DEVICE:-cpu}" = gpu ]; then KS="casmi26-gl$T"; else KS=$(for i in $(seq 0 $((GLW_N - 1))); do echo -n "casmi26-glw$T-$i "; done); fi
 if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
   if [ ! -f kernels/${KS%% *}/kernel-metadata.json ]; then
     log "E: upload GLACIER jobs + push ${GL_DEVICE:-cpu} kernels"
@@ -107,8 +108,9 @@ if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
     if [ "${GL_DEVICE:-cpu}" = gpu ]; then
       python3 scripts/make_gl_gpu_kernel.py casmi26-gl$T casmi26-gl-$T
     else
-      GLW_DS=casmi26-gl-$T GLW_PREFIX=casmi26-glw$T python3 scripts/make_gl_workers.py \
-        0:train.jobs_0.json,train.jobs_4.json 1:train.jobs_1.json,train.jobs_5.json 2:train.jobs_2.json,val.jobs_0.json 3:train.jobs_3.json,val.jobs_1.json
+      if [ "$GLW_N" = 3 ]; then MAP="0:train.jobs_0.json,train.jobs_3.json,val.jobs_0.json 1:train.jobs_1.json,train.jobs_4.json,val.jobs_1.json 2:train.jobs_2.json,train.jobs_5.json"
+      else MAP="0:train.jobs_0.json,train.jobs_4.json 1:train.jobs_1.json,train.jobs_5.json 2:train.jobs_2.json,val.jobs_0.json 3:train.jobs_3.json,val.jobs_1.json"; fi
+      GLW_DS=casmi26-gl-$T GLW_PREFIX=casmi26-glw$T python3 scripts/make_gl_workers.py $MAP
     fi
     for i in $(seq 1 30); do st=$(kaggle datasets status bryantyu/casmi26-gl-$T 2>&1 | grep -v Warning); [ "$st" = ready ] && break; sleep 20; done
     sleep 120
