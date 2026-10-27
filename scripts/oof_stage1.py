@@ -33,8 +33,8 @@ D['fold'] = D.qid.map(fold)
 D['s1_oof'] = np.nan
 for k in (0, 1):
     tr = D[D.fold != k]
-    c1 = tr[tr.cls == 1]
-    tr = pd.concat([tr, c1.assign(qid=c1.qid + 10_000_000)]).sort_values(['qid', 'pid'])
+    c1 = tr[tr.cls == 1]             # C1_DUP copies of each class-1 query, as train_ret_ranker.py
+    tr = pd.concat([tr] + [c1.assign(qid=c1.qid + j * 10_000_000) for j in range(1, int(os.environ.get('C1_DUP', '2')))]).sort_values(['qid', 'pid'])
     wts = None
     if os.environ.get('DOC_W'):        # same documentation-shift weights as the stage-1 ranker
         from casmi.docw import query_weights

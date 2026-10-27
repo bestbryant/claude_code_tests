@@ -59,8 +59,9 @@ def wmrr(T, col, path=os.environ.get('EVAL_W', '/home/user/work/pool4/doc_w.parq
 
 
 def fit(T, feats, rounds=400):
-    c1 = T[T.cls == 1]           # class-1 queries twice (as for the stage-1 ranker)
-    T = pd.concat([T, c1.assign(qid=c1.qid + 10_000_000)], ignore_index=True).sort_values(['qid', 's1_r'])
+    c1 = T[T.cls == 1]           # class-1 queries twice (as for the stage-1 ranker; C1_DUP copies, default 2)
+    T = pd.concat([T] + [c1.assign(qid=c1.qid + j * 10_000_000) for j in range(1, int(os.environ.get('C1_DUP', '2')))],
+                  ignore_index=True).sort_values(['qid', 's1_r'])
     wts = None
     if os.environ.get('DOC_W'):        # documentation-shift weights for class-2 queries (casmi/docw.py)
         from casmi.docw import query_weights
