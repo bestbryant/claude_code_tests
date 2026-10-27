@@ -133,6 +133,9 @@ ready). casmi26-probe18cw-coco / -train pushed 05:36.
 Verified 07:05: casmi26-own-s2v18cw v1 (400 / 400 rows with candidates, GLACIER 371 / 400, no Traceback),
 casmi26-probe18cw-coco v1 (393 / 400 COCONUT rows), casmi26-probe18cw-train v1 (400 / 400) -> all five Oct 28 kernels ready.
 Oct 29 masked probes casmi26-mask18c-train / -coco pushed 07:05.
+Masked probes COMPLETE (logs 09:52): train kept 3,045 / masked 6,798 slots, coco kept 4,331 / masked 5,512 (both 9,843 =
+the same lists), 400 rows, GLACIER 371 / 400, no Traceback. List-identity check vs the v18c v1 output pending (output
+endpoint 429).
 
 ## Oct 29 slots (pre-registered Oct 27 07:00, before the Oct 28 readings)
 Masked split probes E1 on the base (v18c unless v18cw is adopted on Oct 28; kernels casmi26-mask18c-train / -coco,
