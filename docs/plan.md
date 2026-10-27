@@ -109,6 +109,8 @@ the full lists score 0.339 -> ~0.046 is lost where training and COCONUT candidat
 duplicate class-1 queries (effective class-1 share 46% of the training weight; comment: "test mix closer to 45:55",
 never LB-tested alone), while the training probe implies ~17-27% class 1 among the hidden molecules. C1_DUP=1 trains at
 the simulated 30:70 mix. Any kernel not COMPLETE and verified by 00:05 is replaced by nothing (no unverified submits).
+v18cw stage D (01:25; C1_DUP=1 BASE=v18c scripts/build_v18c.sh ... v18cw, FP rows hard-linked from ret18c): stage 1 val
+cls1 .815 / cls2 .8227 (v18c .8268 / .8159), OOF .8229. Stage E waits for free sessions (<= 4 of ours).
 
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
