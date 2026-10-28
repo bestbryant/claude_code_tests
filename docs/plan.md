@@ -95,6 +95,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-27 | casmi26-probe18c-train v1 | v18c lists restricted to training structures | 0.157 |
 | 10-27 | casmi26-zen-probe v1 | direct spectral match to the 3,717 Zenodo-only Enveda-180 structures | 0.000 |
 | 10-27 | casmi26-own-s2v17bpop v1 | v17b lists + popularity re-rank z(score) + 0.15 (ln SID + ln PMID) | 0.323 (rejected) |
+| 10-28 | casmi26-specpfsyn-coco v1 | PF-syn matched ensemble (s31+s32) score alone, COCONUT-not-train | **0.173** |
+| 10-28 | casmi26-specpfctl-coco v1 | PF-b fine-tune control ensemble (s31+s32) score alone, COCONUT-not-train | 0.149 |
+| 10-28 | casmi26-own-s2v18cw v1 | v18c retrained without class-1 query duplication (C1_DUP=1) | 0.317 (class-1 weight matters) |
+| 10-28 | casmi26-probe18cw-coco v1 | v18cw lists restricted to COCONUT-not-train | 0.208 |
+| 10-28 | casmi26-probe18cw-train v1 | v18cw lists restricted to training structures | 0.148 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -167,6 +172,26 @@ interleaving line for this window. If valid and M_T <= 0.150, mask-train replace
   candidates replaced in place by n-alkane placeholders: exact full-list RR per source), conditional library-gated
   COCONUT prior (only if COCONUT-heavy); STOP list: unconditional source shifts, re-picked deltas, provenance-free /
   factorised rankers, class-mix dose retrains (v18cq / v18c3), tiering, POP_BOOST, RRF / rank-2 insertion.
+
+## Lessons from the Oct 28 submissions
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| specpfsyn-coco | slot 2 + 0.011 +- 0.012 | 0.173 | specpfctl-coco 0.149: +0.024 | >= +0.010: PF-syn TRANSFER CONFIRMED -> start the full-pool simulation |
+| specpfctl-coco | 0.163 +- 0.012 | 0.149 | specpfb-coco 0.160: -0.011 | in [0.140, 0.180] (no drift); F = -0.011: fine-tuning PF-b further on real data alone HURTS COCONUT ranking |
+| v18cw | 0.341 +- 0.012 (analysis 0.339) | 0.317 | v18c 0.339: -0.022 | <= 0.333: class-1 weight matters the OTHER way (not adopted) |
+| probe18cw-coco | 0.222 +- 0.010 | 0.208 | probe18c-coco 0.215: -0.007 | COCONUT answers ranked DOWN, not up |
+| probe18cw-train | 0.152 +- 0.006 | 0.148 | probe18c-train 0.157: -0.009 | beyond the -0.006 cap |
+- PF-syn: the synthetic arm beats its matched control by +0.024 and PF-b by +0.013 on the spectral-only COCONUT probe
+  (offline analog predicted +0.011: the LB / offline ratio of this pair is ~1.1, vs 0.49 for PF-d -> PF-b). The
+  control alone loses -0.011 vs PF-b: more fine-tuning on real spectra deepens the population prior; synthetic
+  positives of pool structures counteract it and add. -> full-pool simulation (casmi26-simw2-*) started; production
+  fine-tune (synP) on the full-pool syn2 set next; pilot checkpoints stay probe-only (their syn set used the
+  neutral-set windows from sub.parquet, G15).
+- Class-1 weight: halving it (C1_DUP 2 -> 1) cost -0.022 on the LB with BOTH source probes down (train -0.009,
+  COCONUT -0.007; G_cw = 0.148 + 0.208 - 0.317 = 0.039 vs 0.033): the duplicated class-1 queries are not just a mix
+  prior, they carry general training signal (clean library-supported labels). The interleaving analysis' prediction
+  (0.339 [-0.003, +0.004]) and its "no mirror dose" advice are refuted by the LB -> the opposite dose C1_DUP=3 (v18c3)
+  is the natural next test.
 
 ## Lessons from the Oct 27 submissions
 Predictions (pre-registered Oct 25 16:40, "Oct 27 slots") vs LB, and the rule outcomes:
