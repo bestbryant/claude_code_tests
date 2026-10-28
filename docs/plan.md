@@ -178,6 +178,9 @@ Verified 07:35: casmi26-probe18c3-train v1 (400 / 400 training rows, GLACIER 371
 verified. Simulation: simw2-3 pushed 07:35 (running: 1, 2, 3; done: 0).
 Rollout automation: recurring trigger trig_01AiNse4as9CLD231rSo5Vuv (every 4 h at :34) pushes the next workers within the
 cap, verifies completed ones, pushes casmi26-syn-prep2 when all 24 are done and then deletes itself.
+07:56: rollout check made HOURLY (cron 34 * * * *; at 4 h a finished worker waited up to ~2.5 h). A 4th worker
+(simw2-4) was refused at 07:55 although the owner's kernels were all COMPLETE ("Maximum batch CPU session count of 5
+reached": interactive notebook sessions count too) -> stays at 3 of ours.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
@@ -193,6 +196,29 @@ cap, verifies completed ones, pushes casmi26-syn-prep2 when all 24 are done and 
   candidates replaced in place by n-alkane placeholders: exact full-list RR per source), conditional library-gated
   COCONUT prior (only if COCONUT-heavy); STOP list: unconditional source shifts, re-picked deltas, provenance-free /
   factorised rankers, class-mix dose retrains (v18cq / v18c3), tiering, POP_BOOST, RRF / rank-2 insertion.
+
+## GLACIER is in-sample on public-library truths (Oct 28 08:00; scratchpad ana/glpub.py, glpub2.py) -- no fix found
+GLACIER (MassSpecGym weights) was trained on GNPS / MassBank / MoNA / MSnLib spectra. Proxy for membership: the truth
+has a public-library [M+H]+ spectrum in train (gnps, massbank, mona, pluskal_ms2) = pub. Within-formula truth RR among
+GLACIER-covered top-30 candidates (fwd_v18c train, groups with >= 3 same-formula candidates):
+| class / pub | n | GLACIER | PeakFormer cos | stage 1 |
+|---|---|---|---|---|
+| 1 / 0 | 422 | 0.785 | 0.814 | 0.965 |
+| 1 / 1 | 629 | 0.706 | 0.589 | 0.909 |
+| 2 / 0 | 260 | 0.397 | 0.445 | 0.715 |
+| 2 / 1 | 1914 | 0.634 | 0.521 | 0.833 |
+(val: 2/1 0.626 vs 0.460, 2/0 0.345 vs 0.376.) GLACIER beats the PeakFormer only where it has seen the truth's spectra; on
+Enveda-only truths (not in MassSpecGym; the hidden COCONUT-not-train answers are all of this kind) it is slightly worse.
+74-88% of the simulated class-2 truths are pub, so stage 2 learns GLACIER on mostly in-sample truths. Stage 2 vs stage 1
+by group, val: 2/1 covered 0.844 -> 0.876, 2/0 covered 0.701 -> 0.680, 2/0 uncovered 0.724 -> 0.713; 5-fold CV on the
+4,877 training queries: 2/0 0.742 -> 0.735 (s1 -> base stage 2).
+Fixes tried (CV train / val, MRR of the test-like group 2/0, overall): down-weighting pub class-2 queries x0.25 .732 /
+.728 (overall .821 / .826 vs base .824 / .831), x0.1 .733 / .723, x0 .715 / .696, plus pub class-1 x0.5 .730 / .710;
+stage 2 without GLACIER .729 / .731; minimal stage 2 (s1_z, s1_r + GLACIER columns) .708 / .711, with PeakFormer
+within-formula columns .710 / .713. Nothing beats stage 1 alone on 2/0 (.742 CV) and every variant costs overall ->
+no build, no slot. The LB credited GLACIER stage 2 with +0.010 (Oct 19), so its gain must come from other answers
+(class 1 with public spectra) or the simulated 2/0 group is not representative; recorded as a known bias. Relevance
+for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-of-sample for COCONUT ones.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
