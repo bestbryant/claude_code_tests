@@ -176,6 +176,8 @@ Verified 06:05: casmi26-own-s2v18c3 v1 (400 / 400 rows, GLACIER 371 / 400, no Tr
 shared with the owner) -> keep <= 3 of ours.
 Verified 07:35: casmi26-probe18c3-train v1 (400 / 400 training rows, GLACIER 371 / 400) -> all five Oct 29 kernels
 verified. Simulation: simw2-3 pushed 07:35 (running: 1, 2, 3; done: 0).
+Rollout automation: recurring trigger trig_01AiNse4as9CLD231rSo5Vuv (every 4 h at :34) pushes the next workers within the
+cap, verifies completed ones, pushes casmi26-syn-prep2 when all 24 are done and then deletes itself.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
