@@ -165,6 +165,10 @@ Slots 3-5 (pre-registered Oct 28 01:30, after the v18cw reading, before v18c3 is
 | 5 | casmi26-probe18c3-train | probe18c-train 0.157 | 0.160 +- 0.006 | |
 v18c3 stage D (01:24): stage 1 val cls1 .8316 / cls2 .8171 (v18c .8268 / .8159); stage E 3 CPU GLACIER workers
 casmi26-glwv18c3-0..2 pushed 01:32 (GLW_N=3). Full-pool simulation: casmi26-simw2-0 pushed 01:20 (1 of 24).
+v18c3 DONE 04:24: stage 2 val .8351 (cls1 .837 / cls2 .834) vs v18c .8314 (.8301 / .8321), v18cw .8341; models
+ret_ranker_v18c3 (md5 69622e2c), stage2_v18c3 (ba659dd5) in casmi26-models; kernels casmi26-own-s2v18c3 and
+casmi26-probe18c3-coco pushed 04:32 (code identical to s2v18c apart from the ranker names); probe18c3-train waits for a
+session (owner's ntl-dv-full running -> cap 3).
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
