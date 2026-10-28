@@ -208,6 +208,10 @@ structure's 3 CEs failed in fwdrun, not a deadline cut (16,567 s): no top-up), s
 QUEUED 7 h 40 min.
 17:34: simw2-6 COMPLETE (jobs_6 69,888 / 69,888 md5 8d67ccc1, jobs_30 70,023 / 70,023 dff7dff5); simw2-9 pushed. Running
 7, 8, 9; done 0-6 (14 of 48 files); TPU smoke QUEUED 9 h 35 min.
+19:40: TPU smoke still QUEUED (11 h 40 min; the owner's ntl-tpu-probe waited > 1 day in Oct). Fallback for the synP
+production fine-tune: DEV=gpu scripts/make_pf_cpu_pilot.py (one T4, PF_DEV=cuda, batch 256, otherwise the CPU variant;
+PF-b ran ~0.31 s/step on a T4 -> ~100k steps = 26M samples in a 9 h session, ~13x the CPU pilot) once the GPU week
+resets (Oct 31, owner first); CPU two-seed synP remains the no-accelerator path.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
