@@ -197,6 +197,9 @@ build_fwd_jobs.py --have (pairs already scored by earlier passes on the same row
 too); GLW_N=1 runs the rest on one worker. Dry run (v18c3 val vs the v18c cache): 26,261 top-30 pairs -> 2,323 GLACIER
 predictions left (572 items) -> a PeakFormer swap needs ~15k predictions (~30 min on one CPU worker) instead of 3 workers
 x 3 h. Not a fresh pass (G2): a final pick gets a GL_HAVE-free rebuild.
+Simulation 10:41: simw2-1 COMPLETE (sim2.jobs_1 69,471 / 69,471 md5 4fe7a334, jobs_25 69,993 / 69,993 caa15adb),
+simw2-2 COMPLETE (jobs_2 69,981 / 69,981 1567bd7a, jobs_26 69,651 / 69,651 89ce385d); simw2-4 and -5 pushed 10:41.
+Running 3, 4, 5; done 0-2 (6 of 48 files); TPU smoke still QUEUED (2 h 40 min).
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
