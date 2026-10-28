@@ -202,6 +202,10 @@ simw2-2 COMPLETE (jobs_2 69,981 / 69,981 1567bd7a, jobs_26 69,651 / 69,651 89ce3
 Running 3, 4, 5; done 0-2 (6 of 48 files); TPU smoke still QUEUED (2 h 40 min).
 12:36: simw2-3 COMPLETE (jobs_3 69,750 / 69,750 md5 d9ffc7d0, jobs_27 69,774 / 69,774 ea34c3e8); simw2-6 pushed.
 Running 4, 5, 6; done 0-3 (8 of 48 files); TPU smoke QUEUED 4 h 40 min.
+15:36: simw2-4 COMPLETE (jobs_4 69,558 / 69,558 md5 cb4a651c; jobs_28 69,879 / 69,882 00dc6c96 -- 3 predictions = one
+structure's 3 CEs failed in fwdrun, not a deadline cut (16,567 s): no top-up), simw2-5 COMPLETE (jobs_5 70,119 / 70,119
+271c1cda, jobs_29 69,681 / 69,681 c1a5c7e5); simw2-7 and -8 pushed. Running 6, 7, 8; done 0-5 (12 of 48 files); TPU smoke
+QUEUED 7 h 40 min.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
