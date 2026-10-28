@@ -174,6 +174,8 @@ Verified 06:05: casmi26-own-s2v18c3 v1 (400 / 400 rows, GLACIER 371 / 400, no Tr
 69,507 / 69,507 and sim2.jobs_24 69,903 / 69,903 predictions, ~2.0 h per file -> ~4 h per worker); simw2-1 and -2 pushed
 06:05; simw2-3 refused: "Maximum batch CPU session count of 5 reached" = the account-wide Kaggle limit (5 CPU sessions,
 shared with the owner) -> keep <= 3 of ours.
+Verified 07:35: casmi26-probe18c3-train v1 (400 / 400 training rows, GLACIER 371 / 400) -> all five Oct 29 kernels
+verified. Simulation: simw2-3 pushed 07:35 (running: 1, 2, 3; done: 0).
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
