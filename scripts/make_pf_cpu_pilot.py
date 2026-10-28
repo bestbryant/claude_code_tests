@@ -8,6 +8,8 @@ bryantyu/casmi26-syn-prep2, scripts/make_syn_prep.py), PF_SYN_P 0.25, no neutral
 pool structure is simulated, as at test time); it replaces the pilot's syn-prep kernel source.
 The model, data, learning rate, negatives and synthetic-row settings are the TPU pilot's (same notebook text); only
 the device, the per-step batch (256 instead of 8 x 256) and the step count differ, identically for both arms.
+Env DEV=tpu: the same arms on the TPU v5e-8 instead (the pilot's device and batch 8 x 256; only the step count, guard, val_n,
+log interval, seed and arms change) -- e.g. a short smoke run of the never-yet-run XLA path.
 """
 import json, os, sys
 
@@ -19,15 +21,18 @@ seed = sys.argv[7] if len(sys.argv) > 7 else '31'          # the TPU pilot's PF_
 assert set(arms) <= {'ctl', 'syn'} or arms == ['synP'], arms
 src = os.path.join(root, 'kernels', 'casmi26-pf-pilot')
 meta = json.load(open(os.path.join(src, 'kernel-metadata.json')))
-meta.update(id=f'bryantyu/{slug}', title=slug, enable_tpu=False, enable_gpu=False)
-meta.pop('machine_shape', None)
+TPU = os.environ.get('DEV') == 'tpu'
+meta.update(id=f'bryantyu/{slug}', title=slug, enable_tpu=TPU, enable_gpu=False)
+if not TPU:
+    meta.pop('machine_shape', None)
 nb = open(os.path.join(src, 'notebook.py')).read()
 reps = [("STEPS = os.environ.get('PILOT_STEPS', '20000')", f"STEPS = '{steps}'"),
-        ("base = dict(os.environ, PF_HOURS='3.5', PF_VAL_N='800',", f"base = dict(os.environ, PF_DEV='cpu', PF_HOURS='{hours}', PF_VAL_N='{val_n}',"),
+        ("base = dict(os.environ, PF_HOURS='3.5', PF_VAL_N='800',",
+         f"base = dict(os.environ, {'' if TPU else "PF_DEV='cpu', "}PF_HOURS='{hours}', PF_VAL_N='{val_n}',"),
         ("PF_LOG='200'", f"PF_LOG='{log}'"),
         ("PF_SEED='31'", f"PF_SEED='{seed}'"),
         ("for name, extra in arms:", f"arms = [a for a in arms if a[0] in {arms!r}]\nfor name, extra in arms:"),
-        ("'40', '4000', '256', '63']", f"'1', '{steps}', '256', '63']")]
+        ("'40', '4000', '256', '63']", "'40', '4000', '256', '63']" if TPU else f"'1', '{steps}', '256', '63']")]
 if arms == ['synP']:
     old = ("arms = [('ctl', {}),\n        ('syn', dict(PF_SYN=first('syn.npz'), PF_SYN_P='0.25', PF_SYN_NEUTRAL_W='0.18', "
            "PF_SYN_DROP=first('syn_drop_B.txt')))]")
@@ -39,7 +44,7 @@ if os.environ.get('STOP_AT'):          # PF_STOP_AT: matched partner of a guard-
 for a, b in reps:
     assert nb.count(a) == 1, a
     nb = nb.replace(a, b)
-nb = (f'"""CPU variant (scripts/make_pf_cpu_pilot.py): arms {arms}, {steps} steps of batch 256 per arm on CPU, '
+nb = (f'"""{"TPU" if TPU else "CPU"} variant (scripts/make_pf_cpu_pilot.py): arms {arms}, {steps} steps of batch {"8 x " if TPU else ""}256 per arm on {"TPU v5e-8" if TPU else "CPU"}, '
       f'wall-clock guard {hours} h per arm, PF_SEED {seed}.\nThe TPU pilot\'s docstring follows.\n' + nb[3:])
 d = os.path.join(root, 'kernels', slug); os.makedirs(d, exist_ok=True)
 open(os.path.join(d, 'notebook.py'), 'w').write(nb)

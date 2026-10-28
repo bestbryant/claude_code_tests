@@ -181,6 +181,17 @@ cap, verifies completed ones, pushes casmi26-syn-prep2 when all 24 are done and 
 07:56: rollout check made HOURLY (cron 34 * * * *; at 4 h a finished worker waited up to ~2.5 h). A 4th worker
 (simw2-4) was refused at 07:55 although the owner's kernels were all COMPLETE ("Maximum batch CPU session count of 5
 reached": interactive notebook sessions count too) -> stays at 3 of ours.
+TPU line (08:20): the owner's last TPU kernel (ntl-tpu-probe) finished Oct 26; this week's 20 h TPU quota (resets
+Sat Oct 31 00:00) is otherwise unused. Our XLA path (scripts/train_pf_xla.py) has never run on a TPU (only PF_DEV=cpu).
+kernels/casmi26-pf-tpu-smoke (DEV=tpu scripts/make_pf_cpu_pilot.py casmi26-pf-tpu-smoke ctl,syn 300 0.4 200 25 31: the
+TPU pilot at 300 steps per arm, pilot syn set) pushed 08:20 (QUEUED). Pass = both arms reach "PF_STOP"/step 300 without
+a Traceback or watchdog exit, a stable s/step after compilation, val numbers comparable to the CPU arms. If it passes:
+(1) synP-partial on the TPU = PF-b fine-tuned with PF_SYN = syn-prep of the simulation files finished so far (workers 0-3
+= sim2.jobs_0-3 + 24-27, ~1/6 of the pool, a deterministic subset -> eligible), PF_SYN_P 0.25, step count from the smoke's
+s/step (<= 7.5 h); syn-prep on a CPU kernel (scripts/make_syn_prep.py, prep needs RDKit); read on Oct 30 (spectral COCONUT
+probe vs specpfb-coco 0.160 / specpfsyn-coco 0.173, plus a v18c PeakFormer swap if built in time);
+(2) synP-full on the TPU once all 24 workers are done (before the quota reset if hours remain, else the next week) --
+replaces the two-seed CPU synP fine-tune.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
