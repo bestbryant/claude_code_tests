@@ -163,6 +163,8 @@ Slots 3-5 (pre-registered Oct 28 01:30, after the v18cw reading, before v18c3 is
 | 3 | casmi26-own-s2v18c3 (v18c with C1_DUP=3: class-1 queries tripled) | v18c 0.339 | 0.345 +- 0.012 (monotone in the class-1 weight, diminishing: the 1 -> 2 step was +0.022) | retrain rule: adopt >= 0.347 with slot 4 >= 0.220 and slot 5 >= 0.151; <= 0.333: the class-1 weight optimum is 2 |
 | 4 | casmi26-probe18c3-coco | probe18c-coco 0.215 | 0.218 +- 0.010 | |
 | 5 | casmi26-probe18c3-train | probe18c-train 0.157 | 0.160 +- 0.006 | |
+v18c3 stage D (01:24): stage 1 val cls1 .8316 / cls2 .8171 (v18c .8268 / .8159); stage E 3 CPU GLACIER workers
+casmi26-glwv18c3-0..2 pushed 01:32 (GLW_N=3). Full-pool simulation: casmi26-simw2-0 pushed 01:20 (1 of 24).
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
