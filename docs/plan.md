@@ -200,6 +200,8 @@ x 3 h. Not a fresh pass (G2): a final pick gets a GL_HAVE-free rebuild.
 Simulation 10:41: simw2-1 COMPLETE (sim2.jobs_1 69,471 / 69,471 md5 4fe7a334, jobs_25 69,993 / 69,993 caa15adb),
 simw2-2 COMPLETE (jobs_2 69,981 / 69,981 1567bd7a, jobs_26 69,651 / 69,651 89ce385d); simw2-4 and -5 pushed 10:41.
 Running 3, 4, 5; done 0-2 (6 of 48 files); TPU smoke still QUEUED (2 h 40 min).
+12:36: simw2-3 COMPLETE (jobs_3 69,750 / 69,750 md5 d9ffc7d0, jobs_27 69,774 / 69,774 ea34c3e8); simw2-6 pushed.
+Running 4, 5, 6; done 0-3 (8 of 48 files); TPU smoke QUEUED 4 h 40 min.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
