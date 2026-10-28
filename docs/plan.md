@@ -156,7 +156,13 @@ VOID (fix + rerun) if the base lists differ from the v18c v1 output, or M_T + M_
 COCONUT-heavy (L_T <= 0.010 and L_C >= 0.028) -> Oct 30 library-gated COCONUT prior SRC_COCO_LIBGATE=0.3,0.8 (fixed now;
 adopt >= +0.005); train-heavy (L_T >= 0.025) -> offline class-1 library-trust work only; balanced -> close the
 interleaving line for this window. If valid and M_T <= 0.150, mask-train replaces probe-train as the class-1 cost cap
-(>= parent - 0.006). Slots 3-5: free for other lines (to be pre-registered after the Oct 28 reading).
+(>= parent - 0.006).
+Slots 3-5 (pre-registered Oct 28 01:30, after the v18cw reading, before v18c3 is built):
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 3 | casmi26-own-s2v18c3 (v18c with C1_DUP=3: class-1 queries tripled) | v18c 0.339 | 0.345 +- 0.012 (monotone in the class-1 weight, diminishing: the 1 -> 2 step was +0.022) | retrain rule: adopt >= 0.347 with slot 4 >= 0.220 and slot 5 >= 0.151; <= 0.333: the class-1 weight optimum is 2 |
+| 4 | casmi26-probe18c3-coco | probe18c-coco 0.215 | 0.218 +- 0.010 | |
+| 5 | casmi26-probe18c3-train | probe18c-train 0.157 | 0.160 +- 0.006 | |
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
