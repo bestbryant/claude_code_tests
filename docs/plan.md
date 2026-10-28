@@ -206,6 +206,8 @@ Running 4, 5, 6; done 0-3 (8 of 48 files); TPU smoke QUEUED 4 h 40 min.
 structure's 3 CEs failed in fwdrun, not a deadline cut (16,567 s): no top-up), simw2-5 COMPLETE (jobs_5 70,119 / 70,119
 271c1cda, jobs_29 69,681 / 69,681 c1a5c7e5); simw2-7 and -8 pushed. Running 6, 7, 8; done 0-5 (12 of 48 files); TPU smoke
 QUEUED 7 h 40 min.
+17:34: simw2-6 COMPLETE (jobs_6 69,888 / 69,888 md5 8d67ccc1, jobs_30 70,023 / 70,023 dff7dff5); simw2-9 pushed. Running
+7, 8, 9; done 0-6 (14 of 48 files); TPU smoke QUEUED 9 h 35 min.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
