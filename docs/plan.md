@@ -212,6 +212,9 @@ QUEUED 7 h 40 min.
 production fine-tune: DEV=gpu scripts/make_pf_cpu_pilot.py (one T4, PF_DEV=cuda, batch 256, otherwise the CPU variant;
 PF-b ran ~0.31 s/step on a T4 -> ~100k steps = 26M samples in a 9 h session, ~13x the CPU pilot) once the GPU week
 resets (Oct 31, owner first); CPU two-seed synP remains the no-accelerator path.
+20:35: simw2-7 COMPLETE (jobs_7 69,939 / 69,939 md5 36a33eee; jobs_31 69,453 / 69,456 45c711fc -- one structure's 3 CEs
+failed, no top-up), simw2-8 COMPLETE (jobs_8 69,669 / 69,669 9e4508c9, jobs_32 69,750 / 69,750 fcb23d17); simw2-10 and -11
+pushed. Running 9, 10, 11; done 0-8 (18 of 48 files); TPU smoke QUEUED 12 h 35 min.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
