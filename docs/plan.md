@@ -181,10 +181,10 @@ cap, verifies completed ones, pushes casmi26-syn-prep2 when all 24 are done and 
 07:56: rollout check made HOURLY (cron 34 * * * *; at 4 h a finished worker waited up to ~2.5 h). A 4th worker
 (simw2-4) was refused at 07:55 although the owner's kernels were all COMPLETE ("Maximum batch CPU session count of 5
 reached": interactive notebook sessions count too) -> stays at 3 of ours.
-TPU line (08:20): the owner's last TPU kernel (ntl-tpu-probe) finished Oct 26; this week's 20 h TPU quota (resets
+TPU line (08:00): the owner's last TPU kernel (ntl-tpu-probe) finished Oct 26; this week's 20 h TPU quota (resets
 Sat Oct 31 00:00) is otherwise unused. Our XLA path (scripts/train_pf_xla.py) has never run on a TPU (only PF_DEV=cpu).
 kernels/casmi26-pf-tpu-smoke (DEV=tpu scripts/make_pf_cpu_pilot.py casmi26-pf-tpu-smoke ctl,syn 300 0.4 200 25 31: the
-TPU pilot at 300 steps per arm, pilot syn set) pushed 08:20 (QUEUED). Pass = both arms reach "PF_STOP"/step 300 without
+TPU pilot at 300 steps per arm, pilot syn set) pushed 07:59 (QUEUED). Pass = both arms reach "PF_STOP"/step 300 without
 a Traceback or watchdog exit, a stable s/step after compilation, val numbers comparable to the CPU arms. If it passes:
 (1) synP-partial on the TPU = PF-b fine-tuned with PF_SYN = syn-prep of the simulation files finished so far (workers 0-3
 = sim2.jobs_0-3 + 24-27, ~1/6 of the pool, a deterministic subset -> eligible), PF_SYN_P 0.25, step count from the smoke's
@@ -192,6 +192,11 @@ s/step (<= 7.5 h); syn-prep on a CPU kernel (scripts/make_syn_prep.py, prep need
 probe vs specpfb-coco 0.160 / specpfsyn-coco 0.173, plus a v18c PeakFormer swap if built in time);
 (2) synP-full on the TPU once all 24 workers are done (before the quota reset if hours remain, else the next week) --
 replaces the two-seed CPU synP fine-tune.
+GLACIER cache for LB-read builds (08:10): scripts/build_v18c.sh GL_HAVE=/home/user/work/fwd_v18c* passes
+build_fwd_jobs.py --have (pairs already scored by earlier passes on the same rows are skipped; stage F reads those files
+too); GLW_N=1 runs the rest on one worker. Dry run (v18c3 val vs the v18c cache): 26,261 top-30 pairs -> 2,323 GLACIER
+predictions left (572 items) -> a PeakFormer swap needs ~15k predictions (~30 min on one CPU worker) instead of 3 workers
+x 3 h. Not a fresh pass (G2): a final pick gets a GL_HAVE-free rebuild.
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'

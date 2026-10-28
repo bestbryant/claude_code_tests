@@ -10,6 +10,10 @@
 #   FP-model swap:  BASE=v18c scripts/build_v18c.sh <pf_model_b.pt> <fp_model_b.pt> v18cb
 #   PeakFormer swap: BASE=v18c REUSE_C1=0 scripts/build_v18c.sh <new pf_model.pt> <fp_model_v1r.pt> v18cs
 # Stage E stops after pushing the GPU GLACIER kernel; run the script again when kernels/casmi26-gl<tag> is COMPLETE.
+# GL_HAVE=<dir glob> (e.g. /home/user/work/fwd_v18c*): LB-read builds only -- GLACIER jobs skip (query, candidate) pairs
+#   already scored in <dir>/{train,val}.jobs_*.gl.json of earlier builds on the same rows (build_fwd_jobs.py --have) and
+#   stage F reads those files too; GLW_N=1 then runs the missing pairs on one worker. Not a fresh pass (G2): rebuild
+#   without GL_HAVE before a final pick (CPU GLACIER differs between passes by a median 0, 99% < 0.003 anyway).
 set -euo pipefail
 PF=$1; FP=$2; T=${3:-v18c}
 W=/home/user/work; R=/home/user/claude_code_tests; EXT=/home/user/ext; DS=/home/user/ds
@@ -95,8 +99,8 @@ PY
 #    T4 x 2 kernel (scripts/make_gl_gpu_kernel.py; ~65 predictions/s per GPU, shared GPU quota)
 F=$W/fwd_$T; GJ=$DS/casmi26-gl-$T
 mkdir -p $F
-[ -f $F/train.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof $P5 30 $F/train 6)
-[ -f $F/val.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ${ROWS}_val_reach_c.parquet own_models/ret_ranker_$T.txt $P5 30 $F/val 2)
+[ -f $F/train.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof $P5 30 $F/train 6 ${GL_HAVE:+"--have=$GL_HAVE/train.jobs_*.gl.json"})
+[ -f $F/val.jobs_0.json ] || (cd $W && python3 $R/scripts/build_fwd_jobs.py ${ROWS}_val_reach_c.parquet own_models/ret_ranker_$T.txt $P5 30 $F/val 2 ${GL_HAVE:+"--have=$GL_HAVE/val.jobs_*.gl.json"})
 GLW_N=${GLW_N:-4}                   # CPU workers: 4, or 3 when fewer Kaggle sessions are free (the owner's come first)
 if [ "${GL_DEVICE:-cpu}" = gpu ]; then KS="casmi26-gl$T"; else KS=$(for i in $(seq 0 $((GLW_N - 1))); do echo -n "casmi26-glw$T-$i "; done); fi
 if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
@@ -108,7 +112,8 @@ if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
     if [ "${GL_DEVICE:-cpu}" = gpu ]; then
       python3 scripts/make_gl_gpu_kernel.py casmi26-gl$T casmi26-gl-$T
     else
-      if [ "$GLW_N" = 3 ]; then MAP="0:train.jobs_0.json,train.jobs_3.json,val.jobs_0.json 1:train.jobs_1.json,train.jobs_4.json,val.jobs_1.json 2:train.jobs_2.json,train.jobs_5.json"
+      if [ "$GLW_N" = 1 ]; then MAP="0:$(cd $F && ls train.jobs_*.json val.jobs_*.json | grep -v gl.json | paste -sd,)"
+      elif [ "$GLW_N" = 3 ]; then MAP="0:train.jobs_0.json,train.jobs_3.json,val.jobs_0.json 1:train.jobs_1.json,train.jobs_4.json,val.jobs_1.json 2:train.jobs_2.json,train.jobs_5.json"
       else MAP="0:train.jobs_0.json,train.jobs_4.json 1:train.jobs_1.json,train.jobs_5.json 2:train.jobs_2.json,val.jobs_0.json 3:train.jobs_3.json,val.jobs_1.json"; fi
       GLW_DS=casmi26-gl-$T GLW_PREFIX=casmi26-glw$T python3 scripts/make_gl_workers.py $MAP
     fi
@@ -126,7 +131,7 @@ if ! ls $F/train.jobs_*.gl.json > /dev/null 2>&1; then
 fi
 
 # F. stage 2 on the fresh GLACIER pass only
-[ -f $W/own_models/stage2_$T.txt ] || (cd $W && GL_GLOB="$F/train.jobs_*.gl.json" GL_GLOB_VAL="$F/val.jobs_*.gl.json" \
+[ -f $W/own_models/stage2_$T.txt ] || (cd $W && GL_GLOB="$F/train.jobs_*.gl.json${GL_HAVE:+,$GL_HAVE/train.jobs_*.gl.json}" GL_GLOB_VAL="$F/val.jobs_*.gl.json${GL_HAVE:+,$GL_HAVE/val.jobs_*.gl.json}" \
   python3 $R/scripts/train_stage2.py fit fwd_$T/train own_models/ret_ranker_${T}_feats.txt own_models/stage2_$T.txt fwd_$T/val)
 md5sum $W/own_models/ret_ranker_$T.txt $W/own_models/stage2_$T.txt | tee -a $W/$T.md5
 log "${T}_DONE"
