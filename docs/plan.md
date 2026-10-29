@@ -309,6 +309,20 @@ md5 8395d8fb, jobs_34 69,720 / 69,720 43206655).
 02:10: simw2-12 COMPLETE (jobs_12 69,765 / 69,765 md5 726eee17, jobs_36 69,663 / 69,663 4de88f40); casmi26-probe18ce-coco
 pushed into its slot; probe18cr1-coco / -train follow as slots free (simulation done 0-12 = 26 of 48 files, 13 running;
 simulation pushes resume after the Oct 30 kernels). Class-1 trust workflow wf_a232667e-c38 running (offline only).
+TPU smoke RAN (Oct 29 ~02:30, after 18.5 h in the queue) and FAILED in 2.5 min in both arms at start-up: xmp.spawn ->
+"TPU initialization failed: Invalid --..._slice_builder_worker_addresses specified. Expected 8 worker addresses, got 1"
+(torch 2.8.0 / torch_xla 2.8.0, 96 vCPU, 377 GB host; the data load itself worked: 2,288,233 train spectra, PF_SYN_DROP
+19,034 structures). Diagnosis: the image presets single-process TPU_* topology variables that torch_xla's
+configure_topology keeps (setdefault). Fix: train_pf_xla.py PF_TPU_RESET=1 pops TPU_PROCESS_ADDRESSES / _BOUNDS /
+CHIPS_PER_PROCESS_BOUNDS / VISIBLE_CHIPS / PROCESS_PORT / CLOUD_TPU_TASK_ID before spawning (and logs every TPU_* var);
+scripts/make_pf_tpu_kernel.py builds a kernel that probes strategies in-session (8 chips with the reset, else one chip
+PF_CORES=1 at batch 1024, each a 120-step probe in its own process group, 30-min timeout) and then trains with the
+first one that worked, the step budget calibrated on it (PF_CAL 200, no PF_STEPS) -> one queue wait cannot end in a
+start-up failure. casmi26-code at bbb07e8.
+TPU synP-partial: kernels/casmi26-syn-prep2p (scripts/make_syn_prep.py on simw2-0..12 = sim2.jobs_0-12 + 24-36, 26 of 48
+files, a deterministic subset -> eligible) is pushed into the next free CPU slot, then kernels/casmi26-pfs-tpu-p (PF-b
+fine-tune, PF_SYN syn2p.npz, PF_SYN_P 0.25, PF_SEED 41, 8.3 h session) once syn-prep2p is verified. Uses this week's
+otherwise idle TPU quota (resets Sat 00:00); the production run on the full syn2 follows next week (TPU or T4).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
