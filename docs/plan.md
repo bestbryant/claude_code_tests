@@ -100,11 +100,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-28 | casmi26-own-s2v18cw v1 | v18c retrained without class-1 query duplication (C1_DUP=1) | 0.317 (class-1 weight matters) |
 | 10-28 | casmi26-probe18cw-coco v1 | v18cw lists restricted to COCONUT-not-train | 0.208 |
 | 10-28 | casmi26-probe18cw-train v1 | v18cw lists restricted to training structures | 0.148 |
-| 10-29 | casmi26-mask18c-train v1 | PROBE (masked): v18c lists, non-training candidates replaced in place by placeholders | pending |
-| 10-29 | casmi26-mask18c-coco v1 | PROBE (masked): v18c lists, non-COCONUT-not-train candidates replaced in place | pending |
-| 10-29 | casmi26-own-s2v18c3 v1 | v18c retrained with class-1 queries tripled (C1_DUP=3) | pending |
-| 10-29 | casmi26-probe18c3-coco v1 | v18c3 lists restricted to COCONUT-not-train | pending |
-| 10-29 | casmi26-probe18c3-train v1 | v18c3 lists restricted to training structures | pending |
+| 10-29 | casmi26-mask18c-train v1 | PROBE (masked): v18c lists, non-training candidates replaced in place by placeholders | 0.132 |
+| 10-29 | casmi26-mask18c-coco v1 | PROBE (masked): v18c lists, non-COCONUT-not-train candidates replaced in place | 0.199 |
+| 10-29 | casmi26-own-s2v18c3 v1 | v18c retrained with class-1 queries tripled (C1_DUP=3) | 0.341 (not adopted) |
+| 10-29 | casmi26-probe18c3-coco v1 | v18c3 lists restricted to COCONUT-not-train | 0.201 |
+| 10-29 | casmi26-probe18c3-train v1 | v18c3 lists restricted to training structures | 0.161 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -262,6 +262,40 @@ within-formula columns .710 / .713. Nothing beats stage 1 alone on 2/0 (.742 CV)
 no build, no slot. The LB credited GLACIER stage 2 with +0.010 (Oct 19), so its gain must come from other answers
 (class 1 with public spectra) or the simulated 2/0 group is not representative; recorded as a known bias. Relevance
 for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-of-sample for COCONUT ones.
+
+## Lessons from the Oct 29 submissions
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| mask18c-train | 0.139 [0.128, 0.150] | 0.132 | probe18c-train 0.157: L_T = 0.025 | VALID (M_T + M_C = 0.331 in [0.323, 0.340]); L_T >= 0.025 -> TRAIN-HEAVY |
+| mask18c-coco | 0.194 [0.184, 0.204] | 0.199 | probe18c-coco 0.215: L_C = 0.016; M_O = 0.339 - 0.331 = 0.008 | (COCONUT-heavy needs L_C >= 0.028: no) |
+| v18c3 | 0.345 +- 0.012 | 0.341 | v18c 0.339: +0.002 | in (0.333, 0.347): not adopted; v18c stays the base |
+| probe18c3-coco | 0.218 +- 0.010 | 0.201 | probe18c-coco 0.215: -0.014 | below 0.220 |
+| probe18c3-train | 0.160 +- 0.006 | 0.161 | probe18c-train 0.157: +0.004 | >= 0.151 |
+- Interleaving loss 0.041 = L_T 0.025 + L_C 0.016 (+ M_O 0.008 'other' answers): the larger part is TRAINING answers
+  pushed down by non-training candidates (the class-1 under-trust failure: a COCONUT / other candidate with a strong
+  spectral-model score above a training structure with a moderate cross-instrument library match), not COCONUT answers
+  under training decoys. Branch (pre-registered): train-heavy -> offline class-1 library-trust work only (docs/
+  interleaving_oct27.md #3: gate >= +0.005 at w1 0.37 under both yardsticks on hardness-matched lists; no slot before
+  it clears); libgate NOT built. Mask-train (0.132) is now the class-1 cost cap of any interleaving change (>= parent
+  - 0.006).
+- Class-1 dose C1_DUP 1 / 2 / 3: full 0.317 / 0.339 / 0.341, training probe 0.148 / 0.157 / 0.161 (monotone),
+  COCONUT probe 0.208 / 0.215 / 0.201 (peak at 2). The full score is flat from 2 to 3 -> dose line closed at 2. Open
+  question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
+- The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
+
+## Oct 30 slots (pre-registered Oct 29 01:40, after the Oct 29 reading, before any v18cr1 build)
+Retrain-noise calibration + seed ensemble. v18cr1 = v18c rebuilt with LightGBM seed 1 in stage 1, the out-of-fold
+stage 1 and stage 2 (RANKER_PARAMS '{"num_threads": 4, "seed": 1}', S2_PARAMS '{"seed": 1}'; same rows, features,
+C1_DUP 2, DOC_W; GLACIER via GL_HAVE=fwd_v18c*). v18ce = seed ensemble: stage-1 score = mean of ret_ranker_v18c and
+_v18cr1 predictions, stage-2 score = mean of stage2_v18c and _v18cr1 (casmi/run_own.py comma lists).
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-own-s2v18cr1 | v18c 0.339 | 0.339 +- 0.008 | noise read only (never adopted on its own) |
+| 2 | casmi26-probe18cr1-coco | probe18c-coco 0.215 | 0.215 +- 0.010 | |Delta| >= 0.010: seed noise is as large as the dose / PF effects -> every later retrain A/B is read on 2-seed ensembles (or with a +-0.010 probe band); |Delta| <= 0.005: the dose moves were real |
+| 3 | casmi26-probe18cr1-train | probe18c-train 0.157 | 0.157 +- 0.006 | same, +-0.006 band |
+| 4 | casmi26-own-s2v18ce | v18c 0.339 | 0.341 +- 0.008 | adopt >= 0.344 (+0.005: a variance-reducing ensemble of the same recipe, not a new model) with slot 5 >= 0.209 and the masked-train cap; <= 0.334 -> no seed ensembles |
+| 5 | casmi26-probe18ce-coco | probe18c-coco 0.215 | 0.217 +- 0.008 | |
+Any kernel not COMPLETE and verified by 00:05 is replaced by nothing.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
