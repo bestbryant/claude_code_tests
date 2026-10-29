@@ -283,6 +283,39 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
   question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
 - The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
 
+## Class-1 library trust (train-heavy branch; workflow wf_a232667e-c38, Oct 29 01:55-04:20) -- CLOSED, no slot
+Files: scratchpad c1trust/ (d1_anatomy, d2_gate/gate_eval.py, d3_hiddenlike, f1-f4, refutations).
+Diagnosis (v18c val + train out-of-fold stage 2; the OOF refit reproduces stage2_v18c exactly):
+- Offline class-1 loss 0.040 per class-1 query (x 0.19 = 0.008, LB L_T 0.025 = 3x). 95% of it comes from COCONUT
+  candidates, 95% of them same-formula isomers (median Tanimoto 0.58); the displacer is #1 in 87% of displaced queries.
+  Truth lib median 0.58 when displaced vs 0.87 when not; spectral evidence is a coin flip (pf_bern displacer ahead 53%);
+  documentation favours the truth. SHAP: the in_train / in_coco flags favour the displacer in 100% of class-1 pairs
+  (+0.46 to +0.53, the mirror of what they give COCONUT truths in class 2); lib -0.30.
+- Instrument: every timsTOF spectrum in train is Enveda's. Same-instrument library max median 0.917 vs cross-instrument
+  0.631; the displacement acts through lib. An exact same-query re-dump that leaves the truth only cross-instrument
+  library spectra ("xinst", d3 redump_same.py, 4 min) gives a class-1 loss of 0.098-0.105 per query = 74-80% of the LB
+  value with restricted MRR 0.848 (the LB's ~0.84): the hidden class-1 answers lose because their library matches are
+  cross-instrument / weak, which our simulation rarely shows (80-93% of simulated class-1 truths keep same-instrument
+  spectra).
+- The mirror: class-2 truths lose 0.030 per query to training decoys whose lib (median 0.65) overlaps the losing class-1
+  truths' lib (0.58) almost completely -> a promotion of training candidates is net negative in EVERY lib x margin cell
+  at w1 0.31-0.42 on the actual lists.
+Fixes (gate = d2_gate/gate_eval.py: hardness-matched as-is + documentation-transplant yardsticks, w1 0.37, mask cap):
+| fix | gate | robust? |
+|---|---|---|
+| f1 post-hoc library-supported protection (tuned on train OOF) | +0.0001 / -0.0001 | fail |
+| f2 stage-2 query-context library features | seed 0 passes, seeds 1-2 fail, 3-seed ensemble +0.002 / +0.000 | fail (seed noise) |
+| f3 stage-2 trained on class-1 truths degraded to cross-instrument lib | seed 0 +0.009 / +0.011, 6 seeds mean +0.003 / +0.008, fresh 3-seed ensemble -0.001 / +0.004 | fail (seed noise, COCONUT cost -0.012) |
+| f4 matched-score arbitration (logistic, promote at p >= 0.8) | +0.017 / +0.011 matched, but raw -0.012 [-0.019, -0.005] | REFUTED: passes only under the hardness tilt; fails at own_T 0.84 and on the xinst lists |
+- Stage-2 seed noise on the gate's matched mix: -0.0044 to +0.0060 per seed -> single-seed offline passes are false
+  positives; any retrain A/B needs >= 2 seeds (consistent with the Oct 30 seed-replicate slots).
+- The gate evaluator rejected every LB-flat / LB-negative known pair (v18cw, v18c3) and passed the positive control: a
+  reject filter, not a predictor (it under-predicts LB losses).
+Decision (pre-registered #3: no slot unless the gate clears): the interleaving line is closed for this window. The
+class-1 loss is an evidence problem (weak cross-instrument library matches vs same-formula COCONUT isomers), so the
+lever is better within-formula spectral discrimination (PF-syn), not merge policy. Reusable: gate_eval.py and the xinst
+re-dump as the class-1 yardstick for any later spectral-model swap (class-1 cost cap read on xinst lists).
+
 ## Oct 30 slots (pre-registered Oct 29 01:40, after the Oct 29 reading, before any v18cr1 build)
 Retrain-noise calibration + seed ensemble. v18cr1 = v18c rebuilt with LightGBM seed 1 in stage 1, the out-of-fold
 stage 1 and stage 2 (RANKER_PARAMS '{"num_threads": 4, "seed": 1}', S2_PARAMS '{"seed": 1}'; same rows, features,
