@@ -376,6 +376,8 @@ Running 17, 18, 19; done 0-16 (34 of 48 files); pending 20-23.
 no top-up), simw2-19 COMPLETE (jobs_19 69,765 / 69,765 bd22c32e, jobs_43 69,879 / 69,879 4a4118cb); simw2-21 and -22 pushed.
 Running 20, 21, 22 + simw2-23 pushed 14:40 as a 4th session (accepted: the owner is idle) -> all 24 workers pushed; done 0-19 (40 of 48); full set ~19:00. TPU pfs-tpu-p QUEUED 11 h 20 min.
 18:35: simw2-20 COMPLETE (jobs_20 69,543 / 69,543 md5 1cee0682; jobs_44 69,537 / 69,540 79bca49a -- one structure, no top-up). Running 21, 22, 23; done 0-20 (42 of 48).
+19:35: simw2-21 COMPLETE (jobs_21 69,987 / 69,987 md5 778f7069, jobs_45 69,693 / 69,693 39f5c8bb), simw2-23 COMPLETE
+(jobs_23 69,810 / 69,816 0194cf9d -- two structures, jobs_47 70,035 / 70,038 8ad2e5e2 -- one; no top-up). Only simw2-22 left.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
