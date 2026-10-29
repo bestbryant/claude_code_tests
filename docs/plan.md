@@ -323,6 +323,11 @@ TPU synP-partial: kernels/casmi26-syn-prep2p (scripts/make_syn_prep.py on simw2-
 files, a deterministic subset -> eligible) is pushed into the next free CPU slot, then kernels/casmi26-pfs-tpu-p (PF-b
 fine-tune, PF_SYN syn2p.npz, PF_SYN_P 0.25, PF_SEED 41, 8.3 h session) once syn-prep2p is verified. Uses this week's
 otherwise idle TPU quota (resets Sat 00:00); the production run on the full syn2 follows next week (TPU or T4).
+03:15: casmi26-syn-prep2p COMPLETE (~25 min): 26 files, 1,814,055 predictions all matched to pool ids, 604,685
+structures (on-bits mean 943), window negatives mean 37.9 (none 10,989; coco 37.2 / other 32.2 / train 47.4), syn2p.npz md5
+2c80e057 -> casmi26-pfs-tpu-p pushed 03:15 (QUEUED). Oct 30 kernels verified 03:15 from the logs (output endpoint 429):
+s2v18cr1 v1 and s2v18ce v1 400 / 400 lists, GLACIER 371 / 400, no Traceback; probe18ce-coco 393 / 400 COCONUT rows;
+probe18cr1-coco / -train pushed 02:52 / 03:12 (running).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
