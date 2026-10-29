@@ -383,6 +383,10 @@ DONE: 24 workers, 48 files, ~3.35M predictions (13 short files missing 3-6 predi
 top-ups). casmi26-syn-prep2 pushed 19:37; the rollout trigger deleted. Next (background waiter + check-in 21:00): verify
 syn2.npz, push the CPU synP production fine-tunes casmi26-pfs1-s31 / -s32 (scripts/make_pf_cpu_pilot.py ... synP 7500 11.6
 800 250 31 / 32; PF-b init, PF_SYN syn2.npz, PF_SYN_P 0.25, ~11.3 h). TPU casmi26-pfs-tpu-p (partial syn2p) still queued.
+20:32: casmi26-syn-prep2 COMPLETE (~55 min): 48 files, 3,349,953 predictions all matched, 1,116,651 structures (on-bits mean
+942), window negatives mean 46.6 (none 10,230; coco 45.4 / other 42.3 / train 54.6), syn2.npz md5 946badfb ->
+casmi26-pfs1-s31 / -s32 pushed 20:32 (ETA ~08:00 Oct 30; check-in armed 08:20 for download, upload, offline eval,
+spectral COCONUT probe and the PeakFormer swap pair for an Oct 31 LB read against v18ce).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
