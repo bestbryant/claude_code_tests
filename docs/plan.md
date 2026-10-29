@@ -222,6 +222,8 @@ failed, no top-up), simw2-8 COMPLETE (jobs_8 69,669 / 69,669 9e4508c9, jobs_32 6
 pushed. Running 9, 10, 11; done 0-8 (18 of 48 files); TPU smoke QUEUED 12 h 35 min.
 21:35: simw2-9 COMPLETE (jobs_9 69,780 / 69,780 md5 93092465, jobs_33 70,026 / 70,026 2d094fbb); simw2-12 pushed. Running
 10, 11, 12; done 0-9 (20 of 48 files).
+Oct 29 00:35: simw2-11 COMPLETE (jobs_11 69,741 / 69,741 md5 5db12c43, jobs_35 69,651 / 69,654 f138d7bc -- one
+structure, no top-up; 3.2 h, faster than the others); simw2-13 pushed. Running 10, 12, 13; done 0-9, 11 (22 of 48 files).
 
 ## Interleaving loss (Oct 27, workflow wf_006468f5-611; full write-up docs/interleaving_oct27.md)
 - Loss = P_train + P_coco - F + P_other = 0.157 + 0.215 - 0.339 + ~0.007 = ~0.040 (not 0.046; the old 0.013 'other'
