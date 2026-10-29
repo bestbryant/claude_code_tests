@@ -372,6 +372,9 @@ Running 16, 17, 18; done 0-15 (32 of 48 files). TPU pfs-tpu-p QUEUED 6 h 20 min.
 10:35: simw2-16 COMPLETE (jobs_16 69,891 / 69,891 md5 872e59b6, jobs_40 69,813 / 69,813 677c27ba); simw2-19 pushed.
 Running 17, 18, 19; done 0-16 (34 of 48 files); pending 20-23.
 14:04: simw2-17 COMPLETE (jobs_17 70,050 / 70,050 md5 9b7706dc, jobs_41 69,402 / 69,402 b8d91cec); simw2-20 pushed. Running 18, 19, 20; done 0-17 (36 of 48).
+14:37: simw2-18 COMPLETE (jobs_18 69,762 / 69,765 md5 e26cd658, jobs_42 69,888 / 69,891 001ebc2f -- one structure each,
+no top-up), simw2-19 COMPLETE (jobs_19 69,765 / 69,765 bd22c32e, jobs_43 69,879 / 69,879 4a4118cb); simw2-21 and -22 pushed.
+Running 20, 21, 22; done 0-19 (40 of 48); pending 23. TPU pfs-tpu-p QUEUED 11 h 20 min.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
