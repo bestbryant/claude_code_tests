@@ -364,6 +364,8 @@ probe18cr1-coco / -train pushed 02:52 / 03:12 (running).
 04:35: probe18cr1-coco v1 (393 / 400 COCONUT rows) and probe18cr1-train v1 (400 / 400 training rows) verified (GLACIER
 371 / 400, no Traceback) -> all five Oct 30 kernels verified. simw2-14 and -15 pushed (running 13, 14, 15; done 0-12).
 TPU casmi26-pfs-tpu-p QUEUED since 03:15.
+05:35: simw2-13 COMPLETE (jobs_13 70,290 / 70,290 md5 f7da9223, jobs_37 69,948 / 69,948 088b007f); simw2-16 pushed.
+Running 14, 15, 16; done 0-13 (28 of 48 files).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
