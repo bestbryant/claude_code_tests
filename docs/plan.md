@@ -378,6 +378,11 @@ Running 20, 21, 22 + simw2-23 pushed 14:40 as a 4th session (accepted: the owner
 18:35: simw2-20 COMPLETE (jobs_20 69,543 / 69,543 md5 1cee0682; jobs_44 69,537 / 69,540 79bca49a -- one structure, no top-up). Running 21, 22, 23; done 0-20 (42 of 48).
 19:35: simw2-21 COMPLETE (jobs_21 69,987 / 69,987 md5 778f7069, jobs_45 69,693 / 69,693 39f5c8bb), simw2-23 COMPLETE
 (jobs_23 69,810 / 69,816 0194cf9d -- two structures, jobs_47 70,035 / 70,038 8ad2e5e2 -- one; no top-up). Only simw2-22 left.
+19:37: simw2-22 COMPLETE (jobs_22 69,609 / 69,609 md5 8fc88046, jobs_46 69,771 / 69,771 32356082) -> FULL-POOL SIMULATION
+DONE: 24 workers, 48 files, ~3.35M predictions (13 short files missing 3-6 predictions each = single structures; no
+top-ups). casmi26-syn-prep2 pushed 19:37; the rollout trigger deleted. Next (background waiter + check-in 21:00): verify
+syn2.npz, push the CPU synP production fine-tunes casmi26-pfs1-s31 / -s32 (scripts/make_pf_cpu_pilot.py ... synP 7500 11.6
+800 250 31 / 32; PF-b init, PF_SYN syn2.npz, PF_SYN_P 0.25, ~11.3 h). TPU casmi26-pfs-tpu-p (partial syn2p) still queued.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
