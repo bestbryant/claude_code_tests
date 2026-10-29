@@ -78,7 +78,7 @@ pd.concat([pd.read_parquet(f'$out.f{i}') for i in range(3)], ignore_index=True).
 done
 
 # D. stage 1 (v5w recipe: 31 leaves, alpha 1) + out-of-fold scores
-export DOC_W=$P5/doc_w.parquet DOC_ALPHA=1 RANKER_PARAMS='{"num_threads": 4}'
+export DOC_W=$P5/doc_w.parquet DOC_ALPHA=1 RANKER_PARAMS=${RANKER_PARAMS:-'{"num_threads": 4}'}   # e.g. '{"num_threads": 4, "seed": 1}' (seed replicate; S2_PARAMS for stage 2)
 [ -f $W/own_models/ret_ranker_$T.txt ] || python3 scripts/train_ret_ranker.py $W/${ROWS}_train_fp.parquet $W/${ROWS}_val_fp.parquet $W/own_models/ret_ranker_$T.txt $P5 --drop-artifact
 [ -f $W/ret_${T}_train_oof.parquet ] || python3 scripts/oof_stage1.py $W/${ROWS}_train_fp.parquet $W/own_models/ret_ranker_${T}_feats.txt $W/ret_${T}_train_oof.parquet --drop-artifact
 [ -f $W/${ROWS}_val_reach_c.parquet ] || python3 - $W/${ROWS}_val_fp.parquet $W/${ROWS}_val_reach_c.parquet <<'PY'

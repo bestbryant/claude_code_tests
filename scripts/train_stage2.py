@@ -4,7 +4,7 @@ python scripts/train_stage2.py cv <prefix> <stage1_feats.txt>              5-fol
 python scripts/train_stage2.py fit <train_prefix> <stage1_feats.txt> <out.txt> [<val_prefix>]
 <prefix>.top.parquet from build_fwd_jobs.py and <prefix>.jobs_*.gl.json from the GLACIER workers.
 MRR counts the truth's rank inside the top-k list (0 when the truth is outside it); class-1 queries weigh x2 in fit.
-DOC_W / DOC_ALPHA: documentation-shift weights for class-2 queries, as in train_ret_ranker.py. S2_EXTRA=frag2 adds
+S2_PARAMS: JSON overrides of PARAMS (e.g. a seed replicate). DOC_W / DOC_ALPHA: documentation-shift weights for class-2 queries, as in train_ret_ranker.py. S2_EXTRA=frag2 adds
 the fragment evidence v2 columns (casmi/fragscore.py).
 """
 import glob, json, os, sys
@@ -16,6 +16,7 @@ from casmi.fwdfeat import FWD_FEATS, add_features
 PARAMS = dict(objective='lambdarank', metric='ndcg', ndcg_eval_at=[1, 5], learning_rate=0.05, num_leaves=31,
               min_data_in_leaf=20, feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, lambdarank_truncation_level=30,
               verbose=-1, seed=0, num_threads=2, deterministic=True, force_row_wise=True)   # G3: row-wise reproduces stage2_v17b
+PARAMS.update(json.loads(os.environ.get('S2_PARAMS', '{}')))      # e.g. '{"seed": 1}' (seed replicate)
 
 
 def load(prefix, env='GL_GLOB'):

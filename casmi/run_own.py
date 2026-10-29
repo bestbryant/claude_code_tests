@@ -20,6 +20,25 @@ R = FPS = PFS = RK = FEATS = TEST = DREAMS = TIER = FRAMES = PC_EXCL = SECOND = 
 
 
 STAGE2 = os.environ.get('OWN_STAGE2')     # stage-2 ranker name (GLACIER features) in the models dataset, or unset
+# OWN_RANKER / OWN_STAGE2 may be comma lists of seed replicates (same features): the score is their mean (seed ensemble)
+
+
+class _MeanBooster:
+    def __init__(self, boosters):
+        self.m = boosters
+
+    def predict(self, X, **kw):
+        return np.mean([b.predict(X, **kw) for b in self.m], axis=0)
+
+
+def _ranker(mdir, names):
+    """(booster, feature list) for one ranker name or a comma list of seed replicates sharing one feature list."""
+    import lightgbm as lgb
+    names = names.split(',')
+    feats = [open(f'{mdir}/{n}_feats.txt').read().split() for n in names]
+    assert all(f == feats[0] for f in feats), 'seed replicates must share their features'
+    bs = [lgb.Booster(model_file=f'{mdir}/{n}.txt') for n in names]
+    return (bs[0] if len(bs) == 1 else _MeanBooster(bs)), feats[0]
 
 
 def _one(mid):
@@ -76,8 +95,7 @@ def stage2(frames, mdir, work):
         scores = _json.load(open(fout))
     except Exception as e:
         print('GLACIER failed', repr(e), flush=True)
-    rk2 = lgb.Booster(model_file=f'{mdir}/{STAGE2}.txt')
-    f2 = open(f'{mdir}/{STAGE2}_feats.txt').read().split()
+    rk2, f2 = _ranker(mdir, STAGE2)
     out = {}
     demote = float(os.environ.get('SRC_DEMOTE', '0'))   # LB experiment: push PubChemLite-only candidates down
     gate = tuple(float(x) for x in os.environ['SRC_GATE'].split(',')) if os.environ.get('SRC_GATE') else None
@@ -251,8 +269,7 @@ def main(argv):
     fpw = f"{mdir}/{os.environ.get('OWN_FP', 'fp_model.pt')}"          # OWN_FP: FP checkpoint name in the models dataset
     FPS = FPScorer(fpw, np.load(f'{res}/pool_fp.npy', mmap_mode='r')) if os.path.exists(fpw) else None
     rk = os.environ.get('OWN_RANKER', 'ret_ranker')        # which ranker variant in the models dataset
-    RK = lgb.Booster(model_file=f'{mdir}/{rk}.txt')
-    FEATS = open(f'{mdir}/{rk}_feats.txt').read().split()
+    RK, FEATS = _ranker(mdir, rk)
     if os.environ.get('OWN_R2'):   # second (source-blind) stage-1 ranker: its top-1 goes to rank OWN_R2_SLOT (default 2)
         SECOND = (lgb.Booster(model_file=f"{mdir}/{os.environ['OWN_R2']}.txt"),
                   open(f"{mdir}/{os.environ['OWN_R2']}_feats.txt").read().split())
