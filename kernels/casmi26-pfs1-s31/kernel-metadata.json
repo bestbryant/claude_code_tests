@@ -1,0 +1,24 @@
+{
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_internet": false,
+  "competition_sources": [],
+  "model_sources": [],
+  "id": "bryantyu/casmi26-pfs1-s31",
+  "title": "casmi26-pfs1-s31",
+  "code_file": "notebook.py",
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-fp-data",
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pf-negtrain",
+    "bryantyu/casmi26-models",
+    "bryantyu/casmi26-sim-jobs"
+  ],
+  "kernel_sources": [
+    "bryantyu/casmi26-syn-prep2"
+  ]
+}
