@@ -366,6 +366,9 @@ probe18cr1-coco / -train pushed 02:52 / 03:12 (running).
 TPU casmi26-pfs-tpu-p QUEUED since 03:15.
 05:35: simw2-13 COMPLETE (jobs_13 70,290 / 70,290 md5 f7da9223, jobs_37 69,948 / 69,948 088b007f); simw2-16 pushed.
 Running 14, 15, 16; done 0-13 (28 of 48 files).
+09:34: simw2-14 COMPLETE (jobs_14 69,630 / 69,630 md5 9216c1c6, jobs_38 69,948 / 69,948 034fd2a6), simw2-15 COMPLETE
+(jobs_15 69,666 / 69,666 878e72f6; jobs_39 69,981 / 69,984 54412a95 -- one structure, no top-up); simw2-17 and -18 pushed.
+Running 16, 17, 18; done 0-15 (32 of 48 files). TPU pfs-tpu-p QUEUED 6 h 20 min.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
