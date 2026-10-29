@@ -306,6 +306,9 @@ stage2_v18cr1 (d174e038) in casmi26-models; casmi26-code at ba52158 (comma-list 
 and -s2v18cr1 pushed 01:50; probes (probe18cr1-coco / -train from s2v18cr1, probe18ce-coco from s2v18ce) wait for
 CPU slots; simulation pushes pause until the five Oct 30 kernels are pushed (simw2-10 COMPLETE: jobs_10 69,720 / 69,723
 md5 8395d8fb, jobs_34 69,720 / 69,720 43206655).
+02:10: simw2-12 COMPLETE (jobs_12 69,765 / 69,765 md5 726eee17, jobs_36 69,663 / 69,663 4de88f40); casmi26-probe18ce-coco
+pushed into its slot; probe18cr1-coco / -train follow as slots free (simulation done 0-12 = 26 of 48 files, 13 running;
+simulation pushes resume after the Oct 30 kernels). Class-1 trust workflow wf_a232667e-c38 running (offline only).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
