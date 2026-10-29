@@ -361,6 +361,9 @@ structures (on-bits mean 943), window negatives mean 37.9 (none 10,989; coco 37.
 2c80e057 -> casmi26-pfs-tpu-p pushed 03:15 (QUEUED). Oct 30 kernels verified 03:15 from the logs (output endpoint 429):
 s2v18cr1 v1 and s2v18ce v1 400 / 400 lists, GLACIER 371 / 400, no Traceback; probe18ce-coco 393 / 400 COCONUT rows;
 probe18cr1-coco / -train pushed 02:52 / 03:12 (running).
+04:35: probe18cr1-coco v1 (393 / 400 COCONUT rows) and probe18cr1-train v1 (400 / 400 training rows) verified (GLACIER
+371 / 400, no Traceback) -> all five Oct 30 kernels verified. simw2-14 and -15 pushed (running 13, 14, 15; done 0-12).
+TPU casmi26-pfs-tpu-p QUEUED since 03:15.
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
