@@ -13,7 +13,8 @@ Differences from train_pf.py (TPUs have no float64 and XLA recompiles for every 
   shared.
 Env: as train_pf.py (PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_SBAL, PF_SEED, PF_HOURS,
 PF_TIMS_W, PF_NEG_TRAIN, PF_NEG_NOREP, PF_INST_DROP, PF_VAL_N, PF_LOG, PF_INIT, FP_EXCLUDE) + PF_CORES (number of XLA
-processes; default all), PF_CAL (calibration steps, default 300), PF_DEV (force 'cpu' / 'cuda').
+processes; default all; 1 = one chip, no multiprocessing), PF_TPU_RESET=1 (drop preset single-process TPU_*
+topology variables before xmp.spawn), PF_CAL (calibration steps, default 300), PF_DEV (force 'cpu' / 'cuda').
 PF-syn (PF_SYN = syn.npz of scripts/prep_syn_data.py, PF_SYN_P = share of each batch, default 0.25): GLACIER-simulated
 [M+H]+ spectra of pool structures (training AND COCONUT-not-train, so that a synthetic look carries no source
 information) as extra rows. Population balance: synthetic rows take their window negatives from the simulated set
@@ -519,9 +520,15 @@ def watchdog(limit=float(os.environ.get('PF_STALL_MIN', '30')) * 60):
 if __name__ == '__main__':
     load()
     LAST[0] = time.time() + 1800                     # compilation / first steps get extra time
+    if XLA:
+        print('TPU env', {k: v for k, v in os.environ.items() if k.startswith(('TPU_', 'PJRT', 'XLA_', 'CLOUD_TPU'))}, flush=True)
     if XLA and os.environ.get('PF_CORES', '') != '1':
         import torch_xla.distributed.xla_multiprocessing as xmp
         n = int(os.environ['PF_CORES']) if os.environ.get('PF_CORES') else None
+        if os.environ.get('PF_TPU_RESET') == '1':   # Kaggle v5e-8 smoke (Oct 28): preset single-process TPU_* topology
+            for k in ('TPU_PROCESS_ADDRESSES', 'TPU_PROCESS_BOUNDS', 'TPU_CHIPS_PER_PROCESS_BOUNDS', 'TPU_VISIBLE_CHIPS',
+                      'TPU_PROCESS_PORT', 'CLOUD_TPU_TASK_ID'):   # vars made xmp.spawn fail ("Expected 8 worker
+                print('PF_TPU_RESET pop', k, os.environ.pop(k, None), flush=True)   # addresses, got 1"); spawn sets its own
         try:        # fork: the cores share the host arrays loaded above (no XLA device was touched in this process)
             xmp.spawn(_mp, args=(), nprocs=n, start_method='fork')
         except TypeError:

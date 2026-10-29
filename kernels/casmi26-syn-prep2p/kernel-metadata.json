@@ -1,0 +1,35 @@
+{
+  "id": "bryantyu/casmi26-syn-prep2p",
+  "title": "casmi26-syn-prep2p",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-sim-jobs2",
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pool-v18c",
+    "metric/rdkit-2026-3-3-wheel"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "bryantyu/casmi26-simw2-0",
+    "bryantyu/casmi26-simw2-1",
+    "bryantyu/casmi26-simw2-2",
+    "bryantyu/casmi26-simw2-3",
+    "bryantyu/casmi26-simw2-4",
+    "bryantyu/casmi26-simw2-5",
+    "bryantyu/casmi26-simw2-6",
+    "bryantyu/casmi26-simw2-7",
+    "bryantyu/casmi26-simw2-8",
+    "bryantyu/casmi26-simw2-9",
+    "bryantyu/casmi26-simw2-10",
+    "bryantyu/casmi26-simw2-11",
+    "bryantyu/casmi26-simw2-12"
+  ],
+  "model_sources": []
+}

@@ -1,0 +1,24 @@
+{
+  "id": "bryantyu/casmi26-pfs-tpu-p",
+  "title": "casmi26-pfs-tpu-p",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": true,
+  "machine_shape": "TpuV5E8",
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-fp-data",
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pf-negtrain",
+    "bryantyu/casmi26-models"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "bryantyu/casmi26-syn-prep2p"
+  ],
+  "model_sources": []
+}
