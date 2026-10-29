@@ -296,6 +296,16 @@ _v18cr1 predictions, stage-2 score = mean of stage2_v18c and _v18cr1 (casmi/run_
 | 4 | casmi26-own-s2v18ce | v18c 0.339 | 0.341 +- 0.008 | adopt >= 0.344 (+0.005: a variance-reducing ensemble of the same recipe, not a new model) with slot 5 >= 0.209 and the masked-train cap; <= 0.334 -> no seed ensembles |
 | 5 | casmi26-probe18ce-coco | probe18c-coco 0.215 | 0.217 +- 0.008 | |
 Any kernel not COMPLETE and verified by 00:05 is replaced by nothing.
+Build (Oct 29 01:20-01:50): v18cr1 = BASE=v18c GL_HAVE='/home/user/work/fwd_v18c*' GLW_N=1 RANKER_PARAMS='{"num_threads": 4,
+"seed": 1}' S2_PARAMS='{"seed": 1}' scripts/build_v18c.sh ... v18cr1 (ret18cr1_*_fp = hard links of ret18c_*_fp: same rows
+and features). Stage 1 val .8259 (cls1 .8213 / cls2 .8286) vs seed 0 .8196 (.8268 / .8159): seed noise +-0.006 overall,
++-0.013 on class 2 = the size of the dose effects read so far. GLACIER: 5,651 new predictions on one worker
+(casmi26-glwv18cr1-0, 15 min) instead of a 3-worker pass. Stage 2 val .8359 (cls1 .8371 / cls2 .8353) vs v18c .8314;
+seed ensemble on v18c's top 30: .8338 (stage 2 v18c .8314, v18cr1 .8328). Models ret_ranker_v18cr1 (3be129b3),
+stage2_v18cr1 (d174e038) in casmi26-models; casmi26-code at ba52158 (comma-list rankers). Kernels casmi26-own-s2v18ce
+and -s2v18cr1 pushed 01:50; probes (probe18cr1-coco / -train from s2v18cr1, probe18ce-coco from s2v18ce) wait for
+CPU slots; simulation pushes pause until the five Oct 30 kernels are pushed (simw2-10 COMPLETE: jobs_10 69,720 / 69,723
+md5 8395d8fb, jobs_34 69,720 / 69,720 43206655).
 
 ## Lessons from the Oct 28 submissions
 | kernel | prediction | LB | pair | rule outcome |
