@@ -326,6 +326,11 @@ ret_ranker_v18ctr1 964a34ce, stage2_v18ctr1 3c0f223d -> casmi26-models. Kernels 
 10:15. Spectral probes verified: specpftpu-coco v1 and specpfsynp-coco v1 394 / 400 rows, no Traceback.
 casmi26-pfs-tpu-f started ~08:50 without a queue (8-chip strategy expected).
 11:41: verified s2v18cte v1 (400 / 400 lists, GLACIER 371 / 400, no Traceback), probe18cte-coco v1 (393 / 400 COCONUT rows), probe18cte-train v1 (400 / 400) -> all five Oct 31 kernels verified.
+13:15: casmi26-pfs-tpu-f COMPLETE (8-chip, 40,000 steps x 2,048 = 82M samples, 12,800 s; real-val sum .8237 at the end, .8269
+after 10k steps; md5 3f594bf0 -> casmi26-models pf_tpu_f.pt). Offline COCONUT probe: .646 vs PF-b .586 (+.060 [+.043,
++.078]) vs pf_tpu_p .633 (+.013 [-.000, +.027]); train + COCONUT (cotr) +.059 vs PF-b (tpu_p +.043). Scale keeps paying,
+with diminishing steps. Swap pair v18cu (pf_tpu_f) build started 13:20 (deleted superseded v11-v17bb OOF / row files for
+disk) -> ready for a Nov 1 read if the Oct 31 swap reading warrants it.
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
