@@ -105,6 +105,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-29 | casmi26-own-s2v18c3 v1 | v18c retrained with class-1 queries tripled (C1_DUP=3) | 0.341 (not adopted) |
 | 10-29 | casmi26-probe18c3-coco v1 | v18c3 lists restricted to COCONUT-not-train | 0.201 |
 | 10-29 | casmi26-probe18c3-train v1 | v18c3 lists restricted to training structures | 0.161 |
+| 10-30 | casmi26-own-s2v18cr1 v1 | v18c rebuilt with LightGBM seed 1 (retrain-noise calibration) | pending |
+| 10-30 | casmi26-probe18cr1-coco v1 | v18cr1 lists restricted to COCONUT-not-train | pending |
+| 10-30 | casmi26-probe18cr1-train v1 | v18cr1 lists restricted to training structures | pending |
+| 10-30 | casmi26-own-s2v18ce v1 | seed ensemble of v18c and v18cr1 (mean stage-1 / stage-2 scores) | pending |
+| 10-30 | casmi26-probe18ce-coco v1 | v18ce lists restricted to COCONUT-not-train | pending |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
