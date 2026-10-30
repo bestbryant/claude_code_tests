@@ -325,6 +325,7 @@ predictions on one worker each). Val: stage 1 .8282 (cls1 .8208 / cls2 .8322) / 
 ret_ranker_v18ctr1 964a34ce, stage2_v18ctr1 3c0f223d -> casmi26-models. Kernels s2v18cte, probe18cte-coco / -train pushed
 10:15. Spectral probes verified: specpftpu-coco v1 and specpfsynp-coco v1 394 / 400 rows, no Traceback.
 casmi26-pfs-tpu-f started ~08:50 without a queue (8-chip strategy expected).
+11:41: verified s2v18cte v1 (400 / 400 lists, GLACIER 371 / 400, no Traceback), probe18cte-coco v1 (393 / 400 COCONUT rows), probe18cte-train v1 (400 / 400) -> all five Oct 31 kernels verified.
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
