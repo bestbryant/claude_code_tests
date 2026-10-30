@@ -314,6 +314,11 @@ mask probe is dropped.
 | 5 | casmi26-probe18cte-train | probe18c / cr1-train 0.157 / 0.156 | 0.155 +- 0.006 | class-1 cost cap >= 0.150 |
 Any kernel not COMPLETE and verified by 00:05 is replaced by nothing. Next production: the full-syn2 TPU run (fixed
 calibration, ~80k steps) pushed now so it can start within the new TPU week.
+08:55: casmi26-specpftpu-coco and -specpfsynp-coco pushed; swap pair build started (scripts/build_pfswap_pair.sh
+pf_tpu_p v18ct, log /home/user/work/build_v18ct.log; richfp_ret10.npz deleted for disk -- stale cache without a pool
+stamp, refused by add_fp_feats anyway). casmi26-pfs-tpu-f pushed 09:00 (full syn2, seed 43, PF_STEPS 40,000 x 2,048 =
+82M samples = 3x the partial run, kept below the 7x a calibrated full session would do until the partial run's LB read;
+calibration window now steps 600-900, PF_CAL_START; casmi26-code at 1e31261).
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
