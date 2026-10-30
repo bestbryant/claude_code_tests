@@ -288,6 +288,33 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
   question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
 - The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
 
+## PF-syn production results (Oct 30 08:30) and REVISED Oct 31 slots (pre-registered 08:50, before any LB read)
+Runs (all PF-b init, PF_SYN_P 0.25, logs complete):
+- casmi26-pfs1-s31 / -s32: CPU, full syn2 (1.12M structures), 7,500 steps x 256 = 1.9M samples each, exit 0, real-val
+  sum .8115 / .8145 (764 structures). md5 7e222134 / 646ce53b -> casmi26-models pf_synp_s31.pt / pf_synp_s32.pt.
+- casmi26-pfs-tpu-p: TPU v5e-8, partial syn2p (605k structures = 26 of 48 deterministic simulation files), seed 41.
+  The 8-chip strategy WORKED with PF_TPU_RESET (the image presets TPU_PROCESS_ADDRESSES=local; popping it lets
+  xmp.spawn configure 8 processes): world 8, batch 8 x 256. The in-run calibration measured 1.746 s/step (steps 20-220,
+  still warming up) -> budget 13,538 steps; the steady state was ~0.25 s/step, so the run finished in 1.4 h (13,538
+  steps x 2,048 = 27.7M samples, 14x a CPU arm) instead of 6.8 h. Real-val sum .8291 (585). md5 19f17728 ->
+  casmi26-models pf_tpu_p.pt. Queue wait ~23 h.
+Offline COCONUT probe (scripts/eval_syn_probe.py, 620 neutral queries, pf_bern RR among COCONUT-not-train candidates,
+paired bootstrap): PF-b .586; pilot synm pair .609 (+.023); CPU production pair .6095 (+.0236 [+.010, +.037]); TPU
+partial .633 (+.0473 [+.031, +.064]); 3-model ensemble .626. TPU vs CPU pair +.0237 [+.009, +.038]: SCALE PAYS. (LB /
+offline ratios seen so far: 0.49 for PF-d -> PF-b, ~1.4 for the pilot syn vs ctl.)
+DEVIATION from the Oct 30 01:30 table (recorded before any reading): the swap uses the TPU model (offline +0.024 over the
+CPU pair; there is build capacity for one swap pair today); the CPU pair keeps its spectral probe for the record; the
+mask probe is dropped.
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-specpftpu-coco (pf_bern alone, COCONUT-not-train, OWN_PF=pf_tpu_p.pt) | specpfb-coco 0.160, specpfsyn-coco 0.173 | 0.188 +- 0.015 | >= 0.180: TPU-scale gain transfers -> full-syn2 TPU run is the production path; <= 0.165: scale does not transfer |
+| 2 | casmi26-specpfsynp-coco (CPU production pair) | specpfb-coco 0.160 | 0.175 +- 0.012 | record: CPU production vs pilot (0.173) |
+| 3 | casmi26-own-s2v18cte (PeakFormer swap pair with pf_tpu_p.pt: v18ct seed 0 + v18ctr1 seed 1, scripts/build_pfswap_pair.sh) | v18ce 0.342 | 0.348 +- 0.008 | ADOPT (new base) >= 0.350 with slot 4 >= 0.212 and slot 5 >= 0.150; <= 0.338: the spectral gain does not survive the pipeline |
+| 4 | casmi26-probe18cte-coco | probe18ce-coco 0.207 (seed mean of singles 0.213) | 0.220 +- 0.008 | mechanism: COCONUT answers up |
+| 5 | casmi26-probe18cte-train | probe18c / cr1-train 0.157 / 0.156 | 0.155 +- 0.006 | class-1 cost cap >= 0.150 |
+Any kernel not COMPLETE and verified by 00:05 is replaced by nothing. Next production: the full-syn2 TPU run (fixed
+calibration, ~80k steps) pushed now so it can start within the new TPU week.
+
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
 |---|---|---|---|---|
