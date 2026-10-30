@@ -14,7 +14,7 @@ Differences from train_pf.py (TPUs have no float64 and XLA recompiles for every 
 Env: as train_pf.py (PF_D, PF_LAYERS, PF_HEADS, PF_DMOL, PF_DROP, PF_LR, PF_MERGE, PF_BCE, PF_SBAL, PF_SEED, PF_HOURS,
 PF_TIMS_W, PF_NEG_TRAIN, PF_NEG_NOREP, PF_INST_DROP, PF_VAL_N, PF_LOG, PF_INIT, FP_EXCLUDE) + PF_CORES (number of XLA
 processes; default all; 1 = one chip, no multiprocessing), PF_TPU_RESET=1 (drop preset single-process TPU_*
-topology variables before xmp.spawn), PF_CAL (calibration steps, default 300), PF_DEV (force 'cpu' / 'cuda').
+topology variables before xmp.spawn), PF_CAL (calibration steps, default 300), PF_CAL_START (first calibration step, default 20), PF_DEV (force 'cpu' / 'cuda').
 PF-syn (PF_SYN = syn.npz of scripts/prep_syn_data.py, PF_SYN_P = share of each batch, default 0.25): GLACIER-simulated
 [M+H]+ spectra of pool structures (training AND COCONUT-not-train, so that a synthetic look carries no source
 information) as extra rows. Population balance: synthetic rows take their window negatives from the simulated set
@@ -54,6 +54,7 @@ W_BCE = float(os.environ.get('PF_BCE', '5'))
 S_BAL = float(os.environ.get('PF_SBAL', '0'))
 LR = float(os.environ.get('PF_LR', '5e-4'))
 CAL = int(os.environ.get('PF_CAL', '300'))
+CAL0 = int(os.environ.get('PF_CAL_START', '20'))   # calibration window start: TPU v5e still warms up past step 20 (Oct 30 run measured 1.75 s/step at 20-220, 0.25 later)
 STOP_AT = int(os.environ.get('PF_STOP_AT', '0'))     # stop after this step, LR schedule unchanged (matches a guard-cut arm)
 LOG = int(os.environ.get('PF_LOG', '100'))
 SYN = os.environ.get('PF_SYN')
@@ -427,9 +428,9 @@ def run(rank):
             stats = st if stats is None else stats + st
             step += 1
             set_lr(step, total)
-            if step == 20:
+            if step == CAL0:
                 t_start = time.time()           # after compilation
-            if step == 20 + CAL and not os.environ.get('PF_STEPS'):
+            if step == CAL0 + CAL and not os.environ.get('PF_STEPS'):
                 per = (time.time() - t_start) / CAL
                 left = HOURS * 3600 * 0.93 - (time.time() - t0)
                 est = int(step + left / per)

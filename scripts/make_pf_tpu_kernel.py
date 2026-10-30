@@ -5,7 +5,9 @@ with PF_TPU_RESET=1 (preset single-process TPU_* variables dropped before xmp.sp
 1024) -- and then trains with the first strategy that completed its probe; the step budget is calibrated on the chosen
 strategy (PF_CAL steps, no PF_STEPS) so that the cosine schedule ends inside the session.
 
-python scripts/make_pf_tpu_kernel.py <slug> <syn source kernel | -> <syn npz name | -> <seed> [hours] [val_n] [log]
+python scripts/make_pf_tpu_kernel.py <slug> <syn source kernel | -> <syn npz name | -> <seed> [hours] [val_n] [log] [steps]
+steps: fixed PF_STEPS for the main run (cosine schedule over exactly that many steps; the PF_HOURS guard still stops a
+slower run); without it the budget is calibrated in-run on steps 600-900.
 e.g. python scripts/make_pf_tpu_kernel.py casmi26-pfs-tpu-p casmi26-syn-prep2p syn2p.npz 41 8.3
 '-' for the syn source = matched control (real spectra only). Model, data, LR, negatives and synthetic-row settings are
 the TPU pilot's (kernels/casmi26-pf-pilot): PF_SYN_P 0.25, no neutral weighting, no dropped half.
@@ -17,10 +19,11 @@ slug, syn_src, syn_name, seed = sys.argv[1:5]
 hours = float(sys.argv[5]) if len(sys.argv) > 5 else 8.3
 val_n = sys.argv[6] if len(sys.argv) > 6 else '600'
 log = sys.argv[7] if len(sys.argv) > 7 else '500'
+steps = sys.argv[8] if len(sys.argv) > 8 else ''
 syn = syn_src != '-'
 NB = f'''"""PeakFormer b fine-tune on the TPU v5e-8 (scripts/make_pf_tpu_kernel.py): {"synthetic arm, PF_SYN " + syn_name + " from " + syn_src if syn else "matched control (real spectra only)"},
 PF_SEED {seed}, session budget {hours} h, PF_VAL_N {val_n}. Strategy probe first (8 chips with PF_TPU_RESET=1, else one
-chip with batch 1024), then the run with the step budget calibrated on the chosen strategy (PF_CAL 200)."""
+chip with batch 1024), then the run with the step budget calibrated on the chosen strategy (steps 600-900)."""
 import glob, os, shutil, signal, subprocess, sys, time
 T0 = time.time()
 src = os.path.dirname(sorted(glob.glob('/kaggle/input/**/peakformer.py', recursive=True), key=len)[0])
@@ -59,8 +62,8 @@ for f in glob.glob('/kaggle/working/probe_*.pt'):
 assert chosen, 'no TPU strategy completed its probe'
 left = {hours} * 3600 - (time.time() - T0) - 1200          # 20 min for the last validation, the save and the output upload
 print('=== strategy', chosen[0], 'budget', round(left / 3600, 2), 'h', flush=True)
-ok = go(dict(chosen[1], PF_HOURS=f'{{left / 3600:.2f}}', PF_CAL='200', PF_LOG='{log}', PF_VAL_N='{val_n}'),
-        ['16', '10000', chosen[2], '63'], '/kaggle/working/pf_{slug}.pt')
+ok = go(dict(chosen[1], PF_HOURS=f'{{left / 3600:.2f}}', PF_CAL='300', PF_CAL_START='600', PF_LOG='{log}', PF_VAL_N='{val_n}'{(", PF_STEPS='" + steps + "'") if steps else ''}),
+        ['40', '10000', chosen[2], '63'], '/kaggle/working/pf_{slug}.pt')
 print('=== done', ok, f'{{time.time() - T0:.0f}}s', flush=True)
 subprocess.run('md5sum /kaggle/working/*.pt', shell=True)
 shutil.rmtree('/kaggle/working/pkg', ignore_errors=True)
