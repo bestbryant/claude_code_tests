@@ -336,6 +336,7 @@ v18c / v18cr1 .8337, v18ct / v18ctr1 .8314; val does not rank PeakFormer swaps).
 stage2_v18cu 520be0d4, ret_ranker_v18cur1 d3b10b6b, stage2_v18cur1 05cf0511 -> casmi26-models; kernels s2v18cue,
 probe18cue-coco / -train pushed (ready for Nov 1). casmi26-pfs-tpu-f2 (seed 44, same recipe) pushed 14:00 for a 2-model
 TPU PeakFormer ensemble.
+16:51: Nov 1 candidates verified: s2v18cue v1 (400 / 400, GLACIER 371 / 400, no Traceback), probe18cue-coco v1 (392 / 400 COCONUT rows), probe18cue-train v1 (400 / 400). casmi26-pfs-tpu-f2 QUEUED.
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
