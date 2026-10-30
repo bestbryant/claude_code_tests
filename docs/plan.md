@@ -105,11 +105,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-29 | casmi26-own-s2v18c3 v1 | v18c retrained with class-1 queries tripled (C1_DUP=3) | 0.341 (not adopted) |
 | 10-29 | casmi26-probe18c3-coco v1 | v18c3 lists restricted to COCONUT-not-train | 0.201 |
 | 10-29 | casmi26-probe18c3-train v1 | v18c3 lists restricted to training structures | 0.161 |
-| 10-30 | casmi26-own-s2v18cr1 v1 | v18c rebuilt with LightGBM seed 1 (retrain-noise calibration) | pending |
-| 10-30 | casmi26-probe18cr1-coco v1 | v18cr1 lists restricted to COCONUT-not-train | pending |
-| 10-30 | casmi26-probe18cr1-train v1 | v18cr1 lists restricted to training structures | pending |
-| 10-30 | casmi26-own-s2v18ce v1 | seed ensemble of v18c and v18cr1 (mean stage-1 / stage-2 scores) | pending |
-| 10-30 | casmi26-probe18ce-coco v1 | v18ce lists restricted to COCONUT-not-train | pending |
+| 10-30 | casmi26-own-s2v18cr1 v1 | v18c rebuilt with LightGBM seed 1 (retrain-noise calibration) | 0.334 |
+| 10-30 | casmi26-probe18cr1-coco v1 | v18cr1 lists restricted to COCONUT-not-train | 0.211 |
+| 10-30 | casmi26-probe18cr1-train v1 | v18cr1 lists restricted to training structures | 0.156 |
+| 10-30 | casmi26-own-s2v18ce v1 | seed ensemble of v18c and v18cr1 (mean stage-1 / stage-2 scores) | 0.342 (not adopted) |
+| 10-30 | casmi26-probe18ce-coco v1 | v18ce lists restricted to COCONUT-not-train | 0.207 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -287,6 +287,36 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
   COCONUT probe 0.208 / 0.215 / 0.201 (peak at 2). The full score is flat from 2 to 3 -> dose line closed at 2. Open
   question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
 - The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
+
+## Lessons from the Oct 30 submissions
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| v18cr1 (seed 1) | 0.339 +- 0.008 | 0.334 | v18c 0.339: -0.005 | noise read: one seed change moves the full score -0.005 |
+| probe18cr1-coco | 0.215 +- 0.010 | 0.211 | probe18c-coco 0.215: -0.004 | abs <= 0.005: the probes are seed-stable -> the dose moves were REAL (v18c3 COCONUT -0.014, v18cw -0.007) |
+| probe18cr1-train | 0.157 +- 0.006 | 0.156 | probe18c-train 0.157: -0.001 | seed-stable |
+| v18ce (seed ensemble) | 0.341 +- 0.008 | 0.342 | v18c 0.339: +0.003 (v18cr1 +0.008) | in (0.334, 0.344): not adopted; seed ensembles not ruled out |
+| probe18ce-coco | 0.217 +- 0.008 | 0.207 | probe18c-coco 0.215: -0.008 | below the 0.209 bar |
+- Retrain noise (one seed pair): full score 0.005, COCONUT probe 0.004, training probe 0.001. Full-score differences
+  below ~0.008 between single retrains are noise; the source probes are steadier.
+- The 2-seed ensemble lands between and above its members on the full score (0.342 vs 0.339 / 0.334) but its COCONUT
+  probe sits below both (0.207 vs 0.215 / 0.211). Probe noise is about 0.004-0.008.
+- v18c (0.339) stays pick #1. v18ce (0.342) is the variance-reduced alternative to keep in mind for the final pick (the
+  private LB is 69% of the data); it adds no new eligibility gap (same recipe, two seeds).
+- Reading rule from now on: a retrained pipeline (PeakFormer swap etc.) is read as a 2-seed ensemble against v18ce
+  (0.342 / coco 0.207), with the source probes as the mechanism read.
+
+## Oct 31 slots (pre-registered Oct 30 01:30, after the Oct 30 reading, before any pfs1 / TPU output exists)
+PF-syn production = casmi26-pfs1-s31 / -s32 (CPU, PF-b init, PF_SYN syn2.npz = the full pool simulated, PF_SYN_P 0.25,
+7,500 steps, seeds 31 / 32) used as a 2-checkpoint PeakFormer ensemble (OWN_PF=pf_synp_s31.pt,pf_synp_s32.pt).
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-specpfsynp-coco (pf_bern alone, COCONUT-not-train candidates; the specpfb-coco setup with OWN_PF = synP pair) | specpfb-coco 0.160, pilot specpfsyn-coco 0.173, specpfctl-coco 0.149 | 0.175 +- 0.012 | >= 0.173: the full-pool simulation is at least as good as the pilot subset; <= 0.160: production lost the transfer -> stop the swap, investigate |
+| 2 | casmi26-own-s2v18cse (PeakFormer swap pair: v18cs seed 0 + v18csr1 seed 1, stage 1 / 2 retrained on the new pf_* columns; build_pfswap_pair.sh) | v18ce 0.342 | 0.346 +- 0.008 | ADOPT (new base) >= 0.350 with slot 3 >= 0.212 and slot 4 >= 0.150; <= 0.338: the spectral gain does not survive the pipeline |
+| 3 | casmi26-probe18cse-coco | probe18ce-coco 0.207 (seed mean 0.211) | 0.215 +- 0.008 | mechanism: COCONUT answers up |
+| 4 | casmi26-probe18cse-train | probe18c / cr1-train 0.157 / 0.156 | 0.155 +- 0.006 | class-1 cost cap >= 0.150 |
+| 5 | casmi26-mask18cse-train (masked class-1 probe of slot 2) if verified by 20:00; else the TPU spectral probe casmi26-specpftpu-coco if the TPU model exists, else nothing | mask18c-train 0.132 | 0.131 +- 0.008 | cap >= 0.126 (parent - 0.006) |
+Any kernel not COMPLETE and verified by 00:05 is replaced by nothing. GPU (week resets Oct 31): owner first; a larger
+PF-syn run on a T4 (DEV=gpu scripts/make_pf_cpu_pilot.py, ~13x the CPU scale) only if slot 1 >= 0.173 or slot 2 >= 0.346.
 
 ## Class-1 library trust (train-heavy branch; workflow wf_a232667e-c38, Oct 29 01:55-04:20) -- CLOSED, no slot
 Files: scratchpad c1trust/ (d1_anatomy, d2_gate/gate_eval.py, d3_hiddenlike, f1-f4, refutations).
