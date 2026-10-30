@@ -331,6 +331,11 @@ after 10k steps; md5 3f594bf0 -> casmi26-models pf_tpu_f.pt). Offline COCONUT pr
 +.078]) vs pf_tpu_p .633 (+.013 [-.000, +.027]); train + COCONUT (cotr) +.059 vs PF-b (tpu_p +.043). Scale keeps paying,
 with diminishing steps. Swap pair v18cu (pf_tpu_f) build started 13:20 (deleted superseded v11-v17bb OOF / row files for
 disk) -> ready for a Nov 1 read if the Oct 31 swap reading warrants it.
+14:56: v18cu / v18cur1 built (PF columns from pf_tpu_f). Val stage 1 .8264 / .8341, stage 2 .8318 / .8386 (pair mean .835 vs
+v18c / v18cr1 .8337, v18ct / v18ctr1 .8314; val does not rank PeakFormer swaps). Models ret_ranker_v18cu 1bfde65f,
+stage2_v18cu 520be0d4, ret_ranker_v18cur1 d3b10b6b, stage2_v18cur1 05cf0511 -> casmi26-models; kernels s2v18cue,
+probe18cue-coco / -train pushed (ready for Nov 1). casmi26-pfs-tpu-f2 (seed 44, same recipe) pushed 14:00 for a 2-model
+TPU PeakFormer ensemble.
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
