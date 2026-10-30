@@ -319,6 +319,12 @@ pf_tpu_p v18ct, log /home/user/work/build_v18ct.log; richfp_ret10.npz deleted fo
 stamp, refused by add_fp_feats anyway). casmi26-pfs-tpu-f pushed 09:00 (full syn2, seed 43, PF_STEPS 40,000 x 2,048 =
 82M samples = 3x the partial run, kept below the 7x a calibrated full session would do until the partial run's LB read;
 calibration window now steps 600-900, PF_CAL_START; casmi26-code at 1e31261).
+10:15: swap pair built (v18ct seed 0 / v18ctr1 seed 1, PF columns from pf_tpu_p; GLACIER via GL_HAVE: 9,238 + ~8,500 new
+predictions on one worker each). Val: stage 1 .8282 (cls1 .8208 / cls2 .8322) / .8283 vs v18c .8196 / v18cr1 .8259 (class 2
++0.016); stage 2 .8323 / .8305 vs .8314 / .8359 (flat). Models ret_ranker_v18ct b623cf1b, stage2_v18ct d52984f1,
+ret_ranker_v18ctr1 964a34ce, stage2_v18ctr1 3c0f223d -> casmi26-models. Kernels s2v18cte, probe18cte-coco / -train pushed
+10:15. Spectral probes verified: specpftpu-coco v1 and specpfsynp-coco v1 394 / 400 rows, no Traceback.
+casmi26-pfs-tpu-f started ~08:50 without a queue (8-chip strategy expected).
 
 ## Lessons from the Oct 30 submissions
 | kernel | prediction | LB | pair | rule outcome |
