@@ -817,6 +817,14 @@ Nov 1 kernel verification (commit runs; all five pushed 06:40-07:42, 2 GPU sessi
   dataset all rows match; "ENGINE 2 OFF (elig0 F2a)"; null engine steps 1-2 (12 / 12 lists, 460 candidates); ICE / GL ok;
   "depositor-source bonus 0.5 bits 0"; "elig0 F3: src_spectral_library not loaded"; V1 = public 0.466 row for row; MERGE
   applied 400, output 5a1d58e2; pipeline 12.5 min (pubm ~19.5-29). Ready for its LB read vs pubm (eligibility cost).
+- casmi26-pube1 v1 (ELIGIBLE fork elig1 = elig0 + OUR stage 1 as Engine 2) VERIFIED (12:25): "ELIG 1 | F1 datasets
+  mounted 12 / 12 | detached ones present: none | extra mounts: none | F2b ... | frozen source 67764f557a65"; hash checks
+  MATCH 364 / MISMATCH 0 (+ 13 full); "ENGINE 2 OURS subprocess | status done | rc 0 | molecules 12 | ok 12 | timeout 0 |
+  libraries 182.6 s | stage 1 46.2 s | 253.6 s | procs 4 | max RSS main 6.17 GB, worker 5.56 GB | assets MANIFEST 25/25,
+  pinned 22/22 (models 6/6), pool 3/3"; key check 471 / 471, mismatches 0; ICE_UNION 832 (pubm 814); N1 OK; monotone rank
+  assertions passed; RANK2_OVERLAY inserted 1 (as pubm); MERGE applied 400, output d07858e7; SUBMISSION READY 400.
+  Assets: bryantyu/casmi26-elig-assets created 12:05 (private; 26 files; LICENSE.txt MIT for *.py, MODELS_LICENSE.txt
+  CC BY-NC 4.0 for the 6 model files). Rerun estimate for Engine 2: 22-27 min of a 45-min cap.
 - Kaggle output listing is paginated over all output files (hundreds under ice_site/): use --page-size 200 with a narrow
   --file-pattern (page size 1000 -> HTTP 400; default -> many requests -> HTTP 429).
 - Log fetching: the broad --file-pattern '(\.log|\.json)$' matches hundreds of dist-info JSON files under ice_site/ and
