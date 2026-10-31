@@ -889,6 +889,15 @@ data audit, 273,833 molecules and the 2,430,327-row spectrum manifest identical;
 reference 0.48597 (per-query Spearman 0.87 to the published model: the seed spread a non-identical retrain would show).
 The saner neural scorer of the fork is reproducible from public code + competition data.
 
+F6 (Engine 1 training chain, Oct 31 16:40; map docs/f6_engine1_chain.md, workflow wf_85d64e4a-8c0): every trained artefact
+the fork loads has a producing script in ahmedberatozer/casmi26-training-code (MIT) with logs; inputs public and permitted
+(no NIST, no NC beyond train.parquet); ranker_v4b.pkl's 4 boosters match the reconstructed README command exactly (params,
+160 features, 66-feature 'only' list); its sim1x training rows were never published (refit = 6-10 T4-h simulation). Order:
+K1 casmi26-f6-repro1 (fe_v4 tables: fragnet A/B fits from his published intermediates + full chain from data, frag2,
+analog_struct; CPU, <= 330 min; pushed 16:40) -> K2 T4 file-vs-log + seed recovery for FPNet B / full1 (~2 T4-h) -> K4
+sim1x -> ranker (6-10 T4-h) only if the host asks. Train/serve note: ranker_v4b was trained with FPNet A in the engine
+bank, the fork serves fpnet_full1 (v4m / v4n) - not a reproducibility issue.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
