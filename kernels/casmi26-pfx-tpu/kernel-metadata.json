@@ -1,0 +1,26 @@
+{
+  "id": "bryantyu/casmi26-pfx-tpu",
+  "title": "casmi26-pfx-tpu",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": true,
+  "machine_shape": "TpuV5E8",
+  "enable_internet": false,
+  "dataset_sources": [
+    "bryantyu/casmi26-code",
+    "bryantyu/casmi26-fp-data",
+    "bryantyu/casmi26-pf-data",
+    "bryantyu/casmi26-pf-negtrain",
+    "bryantyu/casmi26-models"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "bryantyu/casmi26-syn-prep2"
+  ],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python-tpuvm@sha256:ac9c852b3cdaddf50c4ab3d9eb9d11eb84d32d935f2dbf0f49f9fda276118d30",
+  "docker_image_pinning_type": "original"
+}

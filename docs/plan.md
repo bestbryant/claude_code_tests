@@ -708,6 +708,17 @@ python3 /tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929
   6. If the smoke test passes and f2 is still QUEUED, delete f2 and push casmi26-pfx-tpu.
 - Step budget: if the strategy probe's s/step x 1.6 exceeds 0.34 s, set `PF_STEPS = floor(6.3 h / (1.6 x probe s/step))`, rounded down to the nearest 1,000. Print it before the main run starts.
 
+### Roadmap execution log
+- Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
+  seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
+  FIXED PF_STEPS 60,000 x 2,048 = 123M samples (no probe-based sizing: the probes' warm-up step times 3.29 / 0.64 s vs ~0.25
+  s steady state), versions to pfx_env.json). Local CPU smoke OK (25,150,290 parameters, 6 steps, checkpoint loads).
+  casmi26-pfs-tpu-f2 (queued 14 h) DELETED (same-start seed: ~0 ensemble value per the roadmap evidence) and
+  casmi26-pfx-tpu pushed. D3 rules apply when it lands.
+- Owner actions needed (E1, cannot be done by API): select two eligible final submissions in the Kaggle UI (provisional:
+  casmi26-own-s2v18cte v1 0.348 and casmi26-own-s2v18c v1 0.339) -- otherwise Kaggle auto-selects, probably the two 0.451
+  forks (ineligible); LICENSE (MIT, as the rules require of winners) and dataset licences (G19).
+
 ## Lessons from the Oct 31 submissions
 | kernel | prediction | LB | pair | rule outcome |
 |---|---|---|---|---|
