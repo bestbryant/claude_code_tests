@@ -791,6 +791,11 @@ ISO-PF dMRR (skip lib >= 0.9, in_train protected) [paired bootstrap 95% CI]:
 - casmi26-pub480pf v1 commit run COMPLETE (06:00): 'PF-SYN applied | mode blend w 0.5 | molecules scored 12 | candidates
   scored 540 | outsiders 240 | neural top1 changed 6 | rank corr 0.65 | failures 0 | 6.3 s' (code dataset root layout,
   checkpoint sha b95c8c7b); V1 still = public 0.466 file; SUBMISSION READY 400 rows. The PF cell works on Kaggle.
+Nov 1 kernel verification (commit runs; all five pushed 06:40-07:42, 2 GPU sessions at a time):
+- casmi26-pubm v1 VERIFIED (07:40): "PF-SYN off (OURS = False) | pandas 2.3.3"; V1 = public 0.466 row for row; final layer
+  "outsider fills 0, old leader pinned 0, library-hit molecules 12, POP_W 0.1, NP_W 0.02"; MERGE applied (400 rows,
+  ranks_reordered 12); "ISO off"; SUBMISSION READY 400; output sha d2027d89. Kaggle runs pandas 2.3.3 (the pandas-3 cast
+  fix is insurance only).
 Offline ISO simulation 2 (workflow wf_e1f8344a-f1c, 07:25; verifier reproduced every point estimate and matched the
 Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2.md):
 - GLACIER in the ISO term helps only on a base WITHOUT GLACIER fusion (B0: PF + 0.5 gl +0.0097 vs PF +0.0040); on
