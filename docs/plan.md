@@ -796,6 +796,14 @@ Nov 1 kernel verification (commit runs; all five pushed 06:40-07:42, 2 GPU sessi
   "outsider fills 0, old leader pinned 0, library-hit molecules 12, POP_W 0.1, NP_W 0.02"; MERGE applied (400 rows,
   ranks_reordered 12); "ISO off"; SUBMISSION READY 400; output sha d2027d89. Kaggle runs pandas 2.3.3 (the pandas-3 cast
   fix is insurance only).
+- casmi26-pubm-iso075 v1 VERIFIED (08:30): "PF-SYN applied | mode columns w 0.5 | molecules scored 12 | candidates scored 300
+  | ... | failures 0 | pandas 2.3.3" (pf_rows 540: outsiders scored too; the "outsiders 0" counter only counts blended
+  outsider rows, which columns mode never writes); MERGE applied 400 (same final-layer output d2027d89 as pubm); "ISO dryrun
+  ok | library skip off | considered 12 | reranked 12 | changed rows 8 | top1 changed 0 | protected 96 | moved candidates 64"
+  (the rerank path works on Kaggle); "ISO applied | alpha 0.75 | scope formula | skipped lib 12 | changed rows 0" (expected:
+  the visible molecules are library spectra); SUBMISSION READY 400.
+- Log fetching: the broad --file-pattern '(\.log|\.json)$' matches hundreds of dist-info JSON files under ice_site/ and
+  trips HTTP 429; fetch only "^(<slug>\.log|submission\.csv|pf_blend_report\.json|iso_report\.json|pf_mid_trace\.json)$".
 Offline ISO simulation 2 (workflow wf_e1f8344a-f1c, 07:25; verifier reproduced every point estimate and matched the
 Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2.md):
 - GLACIER in the ISO term helps only on a base WITHOUT GLACIER fusion (B0: PF + 0.5 gl +0.0097 vs PF +0.0040); on
