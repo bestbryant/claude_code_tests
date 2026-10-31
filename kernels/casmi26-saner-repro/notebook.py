@@ -27,6 +27,11 @@ Steps; each prints 'F7 CHECK <name>: OK | FAIL | INFO {...}', and the whole reco
     The two final models were trained on the validation molecules, so their MRR on this set is contaminated. It is
     reported only to compare the two, together with the score correlation of the pair.
  7. sha256 (file and state-dict content) of every new checkpoint; the large training cache is deleted at the end.
+Inputs: the bundle, the competition train.parquet (sha256 9423f90e... in the published data_audit.json), and
+metric/rdkit-2026-3-3-wheel (the same offline RDKit wheel the pubm lineage mounts; a no-op if the image already has it).
+Expected runtime on a T4 session: about 75-95 min. The structure pool takes ~35-50 min of that (measured locally at 193
+SMILES/s with 4 processes, i.e. 24 min), prepare() 10 min, the published training ~16 min, the seed reference ~10 min and
+the evaluation ~5 min.
 """
 import difflib, hashlib, importlib.metadata, json, os, random, shutil, subprocess, sys, time, traceback
 from pathlib import Path
@@ -41,6 +46,7 @@ REPORT_PATH = WORKING / 'repro_report.json'
 SEED_REF = True               # step 5 on/off
 SEED_REF_OFFSET = 1000
 SEED_REF_START_BY_MIN = 80    # skip step 5 if the main training has not finished by then (total budget < 2 h)
+SEED_REF_TIMEOUT_MIN = 25     # kill step 5 after this long (expected ~10 min on a T4)
 SPOT_CHECK = 2000             # memo entries recomputed with the original features.structure after prepare()
 HOLDOUT_TOL = 0.02            # |rep_best - pub_best| diagnostic MRR@25 accepted as reproduced
 PUB_MRR_TOL = 0.002           # pub_best recomputed here vs training_result.json (evaluation-harness parity)
@@ -107,14 +113,21 @@ def sha256(p):
     return h.hexdigest()
 
 
-def run_logged(args, logfile, **kw):
-    """Run a child process, stream its output to this log and to `logfile`; return (exit code, seconds)."""
+def run_logged(args, logfile, timeout=None, **kw):
+    """Run a child process, stream its output to this log and to `logfile`; return (exit code, seconds).
+    With `timeout` (seconds) the child is killed when it runs longer (exit code -9)."""
+    import threading
     t = time.time()
     with open(logfile, 'w') as fh:
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, **kw)
+        timer = threading.Timer(timeout, p.kill) if timeout else None
+        if timer:
+            timer.start()
         for line in p.stdout:
             sys.stdout.write(line); fh.write(line)
         rc = p.wait()
+        if timer:
+            timer.cancel()
     sys.stdout.flush()
     return rc, round(time.time() - t, 1)
 
@@ -357,7 +370,8 @@ def step_train(eff):
     (RW / 'launch.py').write_text(LAUNCHER)
     log(LAUNCHER)
     rc, sec = run_logged([sys.executable, '-u', str(RW / 'launch.py'), str(SRC), str(RW / 'effective_config.json'),
-                          str(RW / 'struct_memo_check.json')], RW / 'train.log', cwd=RW)
+                          str(RW / 'struct_memo_check.json')], RW / 'train.log', cwd=RW,
+                         env={**os.environ, 'SANER_SPOT_CHECK': str(SPOT_CHECK)})
     memo = json.loads((RW / 'struct_memo_check.json').read_text()) if (RW / 'struct_memo_check.json').is_file() else {}
     ok_memo = (not memo.get('pool')) or (memo.get('spot_mismatch') == 0 and memo.get('spot_checked', 0) > 0)
     check('struct_memo', ok_memo if memo else False, **memo)
@@ -375,7 +389,7 @@ def step_seedref(eff):
     log(f'== 5. seed reference: holdout stage with seed {eff["seed"]} + {SEED_REF_OFFSET}')
     (RW / 'seedref.py').write_text(SEEDREF_CODE)
     rc, sec = run_logged([sys.executable, '-u', str(RW / 'seedref.py'), str(SRC), str(RW / 'effective_config.json'),
-                          str(SEEDREF), str(SEED_REF_OFFSET)], RW / 'seedref.log', cwd=RW)
+                          str(SEEDREF), str(SEED_REF_OFFSET)], RW / 'seedref.log', timeout=SEED_REF_TIMEOUT_MIN * 60, cwd=RW)
     ok = rc == 0 and (SEEDREF / 'best_validation_model.pt').is_file()
     res = json.loads((SEEDREF / 'training_result.json').read_text()) if (SEEDREF / 'training_result.json').is_file() else None
     check('seed_reference', ok, exit=rc, minutes=round(sec / 60, 1), result=res)
@@ -412,7 +426,7 @@ def pair_stats(sa, sb, qs, seed=0):
         pe.append(np.corrcoef(a, b)[0, 1] if a.std() > 0 and b.std() > 0 else np.nan)
         t1.append(int(np.argmax(a) == np.argmax(b)))
         ka, kb = np.argsort(-a, kind='stable')[:25], np.argsort(-b, kind='stable')[:25]
-        ov.append(len(set(ka.tolist()) & set(kb.tolist())) / 25)
+        ov.append(len(set(ka.tolist()) & set(kb.tolist())) / min(25, len(a)))
         za.append((a - a.mean()) / (a.std() or 1)); zb.append((b - b.mean()) / (b.std() or 1))
     ra, rb = ranks_from_scores(sa, qs), ranks_from_scores(sb, qs)
     d = mrr_vec(rb) - mrr_vec(ra)
@@ -576,7 +590,9 @@ def step_eval(B, eff):
         if st in by_state:
             meta[name]['same_state_as'] = by_state[st]
             scores[name], ranks[name] = scores[by_state[st]], ranks[by_state[st]]
-            meta[name].update(summarize(ranks[name])); continue
+            meta[name].update(summarize(ranks[name]))
+            log(f'F7 EVAL {name}: same weights as {by_state[st]} (file sha differs only if the zip names differ)')
+            continue
         by_state[st] = name
         model = SpectrumCandidateModel(eff).to(device)
         model.load_state_dict(sd); model.eval()
@@ -601,9 +617,9 @@ def step_eval(B, eff):
              ('rep_best', 'rep_final', 'reproduced holdout vs reproduced final (contaminated reference)')]
     REPORT['pairs'] = {}
     for a, b, what in pairs:
-        if a in scores and b in scores and meta[a].get('state_sha256') != meta[b].get('state_sha256'):
+        if a in scores and b in scores:
             st = pair_stats(scores[a], scores[b], qn)
-            REPORT['pairs'][f'{a}__{b}'] = dict(what=what, **st)
+            REPORT['pairs'][f'{a}__{b}'] = dict(what=what, identical_weights=meta[a]['state_sha256'] == meta[b]['state_sha256'], **st)
             log(f'F7 PAIR {a} vs {b} ({what}): ' + json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in st.items()}, default=_js))
     save_report()
     # Evaluation-harness parity: the published best model recomputed here vs the published per-molecule predictions.
@@ -613,9 +629,10 @@ def step_eval(B, eff):
         ours = pd.DataFrame(dict(key=[key_of[q] for q in qs if q in scores['pub_best']], rank_here=ranks['pub_best']))
         mm = pp.merge(ours, on='key', how='inner')
         mr = meta['pub_best']['mrr25']
-        check('harness_parity', abs(mr - PUBLISHED_HOLDOUT_MRR) <= PUB_MRR_TOL,
-              published_training_result=PUBLISHED_HOLDOUT_MRR, published_predictions_csv_mrr25=float(pp.mrr25.mean()),
-              recomputed_here=mr, abs_diff=abs(mr - PUBLISHED_HOLDOUT_MRR), molecules_matched=len(mm),
+        tr = json.loads((B / 'training_result.json').read_text()).get('best_diagnostic_mrr25') or PUBLISHED_HOLDOUT_MRR
+        check('harness_parity', abs(mr - tr) <= PUB_MRR_TOL,
+              published_training_result=tr, published_predictions_csv_mrr25=float(pp.mrr25.mean()),
+              recomputed_here=mr, abs_diff=abs(mr - tr), molecules_matched=len(mm),
               rank_identical=int((mm['rank'] == mm.rank_here).sum()), validate_parity_abs_diff=meta['pub_best'].get('validate_parity_abs_diff'))
     if 'rep_best' in meta and 'pub_best' in meta and not meta['rep_best'].get('absent'):
         p = REPORT['pairs'].get('pub_best__rep_best', {})
