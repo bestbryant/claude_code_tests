@@ -1,9 +1,10 @@
 """Build kernels/<slug>: casmi26-pub480pf with the midx final layer (+ our PF_MID_W hook), PF-syn OURS_MODE 'columns' and
 our ISO isomer reranker; every kernel made here differs from the others only in the configuration cell (cell 1).
 
-Usage: python scripts/make_pub_variant.py <slug> [KEY=VALUE ...]
+Usage: python scripts/make_pub_variant.py <slug> [KEY=VALUE ...] [--out-dir=DIR]
   KEY is any `NAME = value` line of cell 1 (VALUE a Python literal, a bare word is a string), e.g.
   python scripts/make_pub_variant.py casmi26-pubm-iso075 OURS=True OURS_MODE=columns PF_MID_W=0 ISO_ALPHA=0.75 ISO_SCOPE=formula
+  --out-dir=DIR writes DIR/<slug> instead of kernels/<slug> (test builds; the kernel id is bryantyu/<slug> either way).
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -18,14 +19,19 @@ Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for ever
 Writes kernels/<slug>/notebook.ipynb + kernel-metadata.json (id bryantyu/<slug>, private, GPU / image / datasets of
 casmi26-pub480pf). Nothing is executed: the cells are only checked with ast.parse.
 """
-import ast, hashlib, json, os, re, sys
+import ast, hashlib, json, math, os, re, sys
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 here = os.path.join(root, 'scripts', 'pub_variant')
-slug, args = sys.argv[1], sys.argv[2:]
+slug = sys.argv[1]
+out_dirs = [a.split('=', 1)[1] for a in sys.argv[2:] if a.startswith('--out-dir=')]
+args = [a for a in sys.argv[2:] if not a.startswith('--out-dir=')]
+assert len(out_dirs) <= 1 and all(out_dirs), f'--out-dir given {len(out_dirs)} times or empty'
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
-dst = os.path.join(root, 'kernels', slug)
-assert slug not in ('casmi26-pub480pf', 'casmi26-pub480'), 'the templates stay unchanged'
+dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
+assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
+    'the templates stay unchanged; the slug is one directory name'
+assert os.path.realpath(dst) not in (os.path.realpath(src), os.path.realpath(os.path.join(root, 'kernels', 'casmi26-pub480'))), dst
 ISO_ID = 'ours-iso-rerank'
 if os.path.exists(dst):                                  # only a kernel made here may be rewritten
     nb_path = os.path.join(dst, 'notebook.ipynb')
@@ -55,7 +61,9 @@ CFG = [("OURS_MODE = 'blend'           # 'blend' or 'replace' (neural term = z(P
         "ISO_ALPHA = 0.0               # per list z(-log rank) + ISO_ALPHA * z(PF-syn f.z); 0 = off (submission.csv untouched)\n"
         "ISO_LIB_SKIP = 0.9            # molecules whose best library match reaches this keep their list\n"
         "ISO_KEEP_TRAIN = True         # candidates whose InChIKey14 is in train.parquet keep their exact positions\n"
-        "ISO_SCOPE = 'formula'         # 'formula': only the rank-1 candidate's formula is re-sorted; 'all': every candidate\n")]
+        "ISO_SCOPE = 'formula'         # 'formula': only the rank-1 candidate's formula is re-sorted; 'all': every candidate\n"
+        "ISO_COS_W = 0.0               # > 0: the PF term is z(f.z) + ISO_COS_W * z(PF-syn cosine pf_cos, pf_scores.parquet)\n"
+        "ISO_FREEZE_LEADER = False     # True: rank 1 never moves (ranks 2-25 only; scope 'formula' keeps the leader's formula)\n")]
 
 # ---- cell 11: PF-syn OURS_MODE 'columns' (blend / replace, the atomic write, backup and fall-back are unchanged) ----
 PF = [("# fragment check and Variant M read the blended order unchanged. Any failure keeps the saner-only files (warning).\n",
@@ -244,8 +252,13 @@ for a in args:
 cfg = config_values(c1)
 assert cfg['OURS_MODE'] in ('blend', 'replace', 'columns') and cfg['ISO_SCOPE'] in ('formula', 'all'), cfg
 assert 0 <= cfg['PF_W'] <= 1 and 0 <= cfg['PF_MID_W'] <= 1 and cfg['ISO_ALPHA'] >= 0 and cfg['ISO_LIB_SKIP'] > 0, cfg
+assert isinstance(cfg['ISO_COS_W'], float) and math.isfinite(cfg['ISO_COS_W']) and cfg['ISO_COS_W'] >= 0, \
+    f"ISO_COS_W {cfg['ISO_COS_W']!r}: a finite number >= 0"
+assert isinstance(cfg['ISO_FREEZE_LEADER'], bool), f"ISO_FREEZE_LEADER {cfg['ISO_FREEZE_LEADER']!r}: True or False"
 if (cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0) and not cfg['OURS']:
     sys.exit('PF_MID_W / ISO_ALPHA read the PF-syn columns: they need OURS = True')
+if (cfg['ISO_COS_W'] > 0 or cfg['ISO_FREEZE_LEADER']) and not cfg['ISO_ALPHA'] > 0:
+    sys.exit('ISO_COS_W / ISO_FREEZE_LEADER act only inside the ISO reranker: they need ISO_ALPHA > 0')
 cells[1]['source'] = c1
 cells.insert(17, {'cell_type': 'code', 'execution_count': None, 'id': ISO_ID,
                   'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
@@ -264,4 +277,5 @@ meta['id'] = f'bryantyu/{slug}'; meta['title'] = slug
 with open(os.path.join(dst, 'kernel-metadata.json'), 'w') as f:
     f.write(json.dumps(meta, indent=2) + '\n')
 print('wrote', dst, json.dumps({k: cfg[k] for k in ('OURS', 'OURS_MODE', 'PF_W', 'PF_MID_W', 'ISO_ALPHA', 'ISO_LIB_SKIP',
-                                                     'ISO_KEEP_TRAIN', 'ISO_SCOPE')}), 'set', json.dumps(settings))
+                                                     'ISO_KEEP_TRAIN', 'ISO_SCOPE', 'ISO_COS_W', 'ISO_FREEZE_LEADER')}),
+      'set', json.dumps(settings))
