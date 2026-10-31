@@ -898,6 +898,15 @@ analog_struct; CPU, <= 330 min; pushed 16:40) -> K2 T4 file-vs-log + seed recove
 sim1x -> ranker (6-10 T4-h) only if the host asks. Train/serve note: ranker_v4b was trained with FPNet A in the engine
 bank, the fork serves fpnet_full1 (v4m / v4n) - not a reproducibility issue.
 
+F6 K1 RESULT (casmi26-f6-repro1 v1, CPU, 50 min, 16:06): Engine 1's fe_v4 tables reproduce from Ahmed's public code:
+fragnet rec_* (5) BIT-EXACT; sets.pkl (nspec 32000, seed 0) CONTENT-EQUAL; countsA NUMERIC-EQUAL (<= 1 ulp); stageA fits
+CONTENT-EQUAL (published intermediates and full chain); stageB refit from his published featB CONTENT-EQUAL (identical
+scores, V MRR 0.7712 = logged); frag2 caps / f1 BIT-EXACT / CONTENT-EQUAL; analog_struct rec + str BIT-EXACT. Only featB
+from our own countsA DIFFERS (agg_A1_80: 1,705 of 7.3M values; his gap list notes scripts edited after the runs) -> the
+full-chain stageB is not identical but EQUIVALENT: V MRR 0.7704 vs published 0.7712, inside the seed spread (seed+1000 on
+the published featB: 0.7732; top-1 agreement chain 0.956 vs seed 0.950). A10 is now "reproducible within seed spread".
+Next: K2 (T4, ~2 h): published FPNet A / B / full1 vs their logged validation numbers + seed recovery from step-0 lines.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
