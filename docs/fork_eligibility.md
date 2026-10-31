@@ -264,6 +264,8 @@ There is no eligible replacement short of our own pipeline. That would cost abou
 | Runtime | 0 |
 | LB cost | 0 if kept. Unknown for regenerated artifacts (not bit-exact). |
 
+**Status (Oct 31 18:30): demonstrated except A11.** K1 (casmi26-f6-repro1): fe_v4 tables bit-exact / content-equal; full-chain fragnet stage B equivalent within seed spread (V MRR 0.7704 vs 0.7712; seed spread 0.7732). K2 (casmi26-f6-repro2): FPNet A / B / full1 and fe_D reproduce their logged validation numbers (max |d| <= 0.0014); B used --K 95; likely seeds B 11, full1 31. ranker_v4b: parameters equal the reconstructed command; its training rows were never published (K4 sim1x regeneration, 6-10 T4-h, only if the host asks). Details: docs/plan.md "F6 K1 / K2 RESULT".
+
 ### F7. saner neural scorer (A37)
 
 **Path.**

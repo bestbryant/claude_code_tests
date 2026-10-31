@@ -907,6 +907,17 @@ full-chain stageB is not identical but EQUIVALENT: V MRR 0.7704 vs published 0.7
 the published featB: 0.7732; top-1 agreement chain 0.956 vs seed 0.950). A10 is now "reproducible within seed spread".
 Next: K2 (T4, ~2 h): published FPNet A / B / full1 vs their logged validation numbers + seed recovery from step-0 lines.
 
+F6 K2 RESULT (casmi26-f6-repro2 v1, T4, 35 min, 18:28): every published FPNet file reproduces the validation numbers its own
+training log printed - A (step 38k) max |d| 0.0001, B (40k) 0.0014, full1 (40k) 0.0002, fe_D (DreaMS fine-tune, step 20k)
+0.0000 (all REPRODUCED, tol 0.002); his frozen Evaluator table: A REPRODUCED (0.0009), B / D20k CLOSE (0.004); weighted rows
+not reproducible (truth_g.parquet never published). Data lines equal the logs exactly (2,409,534 / 2,539,608 spectra). His
+06_train_fpnet.py run unmodified with seed 7 reproduces A's logged step-0 line within draw noise (chi2 1.85). Seed recovery
+(1,134 seeds, step-0 replay): A's recorded seed 7 ranks first (method sane); B was trained with --K 95 (not in his README) and
+its best seed is 11 (posterior 0.98, AMBIGUOUS by the 0.99 / range rule); full1 seed 31 (WEAK, posterior 0.9996). Verdict:
+A7-A9 = files verified against their own logs, recipes recovered (B: K 95, seed 11 likely; full1: seed 31 likely); a weight
+retrain can only be statistically equivalent (GPU nondeterminism, bf16, his RTX 5090 vs T4). A11 (ranker_v4b) remains
+"command verified, rows unpublished" - K4 (sim1x regeneration, 6-10 T4-h) only if the host asks.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
