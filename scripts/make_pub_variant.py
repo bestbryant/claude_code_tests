@@ -247,6 +247,7 @@ for a in args:
     kind = lambda x: 'bool' if isinstance(x, bool) else 'number' if isinstance(x, (int, float)) else type(x).__name__
     assert kind(v) == kind(defaults[k]), f'{k}={v!r}: expected a {kind(defaults[k])}'
     v = float(v) if isinstance(defaults[k], float) else v      # ISO_ALPHA=0 -> 0.0, as the default is written
+    assert not isinstance(v, float) or math.isfinite(v), f'{k}={v!r}: not a finite number'
     settings[k] = v
     c1 = set_config(c1, k, v)
 cfg = config_values(c1)
