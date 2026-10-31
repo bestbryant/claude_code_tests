@@ -316,6 +316,7 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
 | 4 | casmi26-specpftpuf-coco (pf_tpu_f alone, COCONUT) | specpftpu-coco 0.189 | 0.196 +- 0.012 | >= 0.192: the full-syn2 / 3x-longer run transfers beyond pf_tpu_p |
 | 5 | casmi26-mask18cue-train (masked class-1 probe of slot 1) | mask18c-train 0.132 | 0.131 +- 0.008 | class-1 interleaving cap >= 0.126 (a stronger PeakFormer could push training answers below COCONUT isomers) |
 Any kernel not COMPLETE and verified by 00:05 is replaced by nothing.
+Verified 02:41: specpftpuf-coco v1 (394 / 400 rows, no Traceback); mask18cue-train v1 (MASKED PROBE kept 2,736 / masked 7,107 slots, 400 rows, GLACIER 371 / 400; v18c's mask kept 3,045: the swap lists hold ~10% fewer training candidates) -> all five Nov 1 kernels verified.
 
 ## PF-syn production results (Oct 30 08:30) and REVISED Oct 31 slots (pre-registered 08:50, before any LB read)
 Runs (all PF-b init, PF_SYN_P 0.25, logs complete):
