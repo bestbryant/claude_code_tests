@@ -6,7 +6,11 @@
 # InChIKey14 in the inchikey14 column of train.parquet) and SMILES RDKit cannot read. Skipped molecules: best library
 # match >= ISO_LIB_SKIP, a listed candidate without a finite PF-syn f.z (neural_candidate_features, then
 # outsider_neural_features, then pf_scores.parquet), fewer than 2 candidates. ISO_ALPHA 0: submission.csv is not touched.
-# Any failure restores the pre-ISO submission.csv byte for byte (WARNING). Report: iso_report.json, one 'ISO ...' line.
+# Any failure restores the pre-ISO submission.csv byte for byte (WARNING). Report: iso_report.json, one 'ISO <status> | ...'
+# line ('ISO applied' only when ISO ran; a fallback reports zero changes, the aborted attempt as attempted_*).
+# Commit run (not IS_RERUN, ISO_ALPHA > 0): an 'ISO dryrun' line too, the same rerank with the library skip off, written to
+# a scratch file that is read back and deleted (the visible molecules all have library match 1.0, so the real path skips
+# them). PF_MID_W > 0: a 'PF_MID trace' line, how many molecules the final layer's hook re-ranked (pf_mid_trace.json).
 import io, os, json, math, time, shutil, hashlib, traceback
 from functools import lru_cache
 from pathlib import Path
@@ -148,13 +152,78 @@ def iso_summary(rep):
             f"{rep.get('protected', 0)} | {rep.get('seconds', 0)} s")
 
 
+ISO_OUTCOME = ('reranked', 'changed_rows', 'top1_changed', 'protected', 'moved_candidates')
+
+
+def iso_frame(lists):
+    """Answer frame (molecule_id, smiles) of [(molecule_id, [SMILES, ...]), ...]."""
+    return pd.DataFrame({'molecule_id': [m for m, _ in lists], 'smiles': [';'.join(v) for _, v in lists]})
+
+
+def iso_write_checked(frame, tmp):
+    """Write frame as CSV to tmp and check that it reads back equal."""
+    frame.to_csv(tmp, index=False)
+    assert pd.read_csv(tmp, dtype=str, keep_default_na=False).equals(frame), 'CSV roundtrip'
+
+
+def iso_dryrun(sub, lists, sub_path, sample_ids, pf_of, lib_max, alpha, scope, train_keys, keep_train, considered,
+               formula_of=iso_formula, key_of=iso_key14):
+    """Check of the rerank path the commit run cannot reach (its visible molecules all have library match 1.0): the same
+    rerank with the library skip off, validated, written to a scratch CSV that is read back, moved with os.replace and
+    deleted. submission.csv is not touched; never raises. Returns its counts (status 'ok' or 'failed')."""
+    tmp, dst = Path(sub_path).with_name('iso_dryrun.csv.tmp'), Path(sub_path).with_name('iso_dryrun.csv')
+    try:
+        new_lists, st = iso_rerank(lists, pf_of, lib_max, alpha, math.inf, scope, train_keys, keep_train, considered,
+                                   formula_of, key_of)
+        new = iso_frame(new_lists)
+        iso_check(sub, new, sample_ids)
+        iso_write_checked(new, tmp)
+        data = tmp.read_bytes()
+        os.replace(tmp, dst)
+        assert dst.read_bytes() == data, 'dry-run file changed in the move'
+        out = dict(status='ok', **{k: st[k] for k in ('considered', 'skipped_lib', 'skipped_pf', 'skipped_short') + ISO_OUTCOME},
+                   changed_ids=[m for (m, a), (_, b) in zip(lists, new_lists) if a != b][:50])
+    except Exception as exc:
+        traceback.print_exc()
+        out = dict(status='failed', error=f'{type(exc).__name__}: {str(exc)[:400]}')
+    finally:
+        for p in (tmp, dst):
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+    if out['status'] == 'ok':
+        print(f"ISO dryrun ok | library skip off | molecules considered {out['considered']} | skipped pf {out['skipped_pf']} | "
+              f"reranked {out['reranked']} | changed rows {out['changed_rows']} | top1 changed {out['top1_changed']} | "
+              f"protected {out['protected']} | moved candidates {out['moved_candidates']}", flush=True)
+    else:
+        print(f"WARNING ISO dryrun failed (submission.csv not touched): {out['error']}", flush=True)
+    return out
+
+
+def iso_pf_mid_trace(nf, score_fn):
+    """Trace of the final layer's PF_MID_W hook (diagnostic only): per molecule of neural_candidate_features, whether
+    score_fn (the hook) gave a score other than neural_score (PF used) and a different stable neural order."""
+    st = dict(molecules=0, pf_used=0, order_changed=0)
+    for _, g in nf.groupby('molecule_id', sort=False):
+        base = g['neural_score'].to_numpy(float)
+        sc = np.asarray(score_fn(g), float)
+        assert sc.shape == base.shape, (sc.shape, base.shape)
+        st['molecules'] += 1
+        st['pf_used'] += int(not np.array_equal(sc, base, equal_nan=True))
+        st['order_changed'] += int(not np.array_equal(np.argsort(-base, kind='stable'), np.argsort(-sc, kind='stable')))
+    return st
+
+
 def iso_apply(sub_path, nf_path, out_path, pf_path, train_path, sample_ids, alpha, lib_skip=0.9, keep_train=True,
               scope='formula', report_path=None, skip=None, processed_only=True, formula_of=iso_formula,
-              key_of=iso_key14):
+              key_of=iso_key14, dryrun=False):
     """Rerank the answer file sub_path in place (all inputs are arguments; no notebook globals). skip: a status string
     that leaves the file untouched (e.g. 'skipped_fast_commit'). processed_only: rerank only the molecules the pipeline
     processed (neural_candidate_features.processed; the 12 visible molecules in the smoke commit, all in the rerun).
-    Never fatal: on any exception the input bytes are written back (WARNING). Returns the report (also report_path)."""
+    dryrun: also run iso_dryrun (library skip off, scratch file only; report key 'dryrun').
+    Never fatal: on any exception the input bytes are written back (WARNING) and the outcome counters are reported as 0
+    (the aborted attempt's as attempted_*). Returns the report (also report_path)."""
     t0 = time.time()
     sub_path = Path(sub_path)
     rep = dict(status='off', alpha=alpha, scope=scope, lib_skip=lib_skip, keep_train=keep_train, considered=0,
@@ -180,20 +249,24 @@ def iso_apply(sub_path, nf_path, out_path, pf_path, train_path, sample_ids, alph
             frames = [nf] + [pd.read_parquet(p) if p is not None and Path(p).is_file() else None for p in (out_path, pf_path)]
             pf_of = iso_pf_lookup(frames)
             train = iso_train_keys(train_path) if keep_train else frozenset()
-            new_lists, st = iso_rerank([(m, s.split(';')) for m, s in zip(sub.molecule_id, sub.smiles)], pf_of, lib_max,
-                                       alpha, lib_skip, scope, train, keep_train, considered, formula_of, key_of)
-            new = pd.DataFrame({'molecule_id': [m for m, _ in new_lists], 'smiles': [';'.join(v) for _, v in new_lists]})
+            lists = [(m, s.split(';')) for m, s in zip(sub.molecule_id, sub.smiles)]
+            new_lists, st = iso_rerank(lists, pf_of, lib_max, alpha, lib_skip, scope, train, keep_train, considered,
+                                       formula_of, key_of)
+            new = iso_frame(new_lists)
             iso_check(sub, new, sample_ids)
             rep.update(st, status='applied', train_keys=len(train), pf_keys=len(pf_of))
+            if dryrun:
+                rep['dryrun'] = iso_dryrun(sub, lists, sub_path, sample_ids, pf_of, lib_max, alpha, scope, train, keep_train,
+                                           considered, formula_of, key_of)
             if st['changed_rows']:
                 shutil.copyfile(sub_path, sub_path.with_name(sub_path.stem + '_pre_iso.csv'))
                 tmp = sub_path.with_name(sub_path.name + '.iso.tmp')
-                new.to_csv(tmp, index=False)
-                assert pd.read_csv(tmp, dtype=str, keep_default_na=False).equals(new), 'CSV roundtrip'
+                iso_write_checked(new, tmp)
                 os.replace(tmp, sub_path)
     except Exception as exc:
         traceback.print_exc()
-        rep.update(status='fallback', error=f'{type(exc).__name__}: {str(exc)[:400]}')
+        rep.update({'attempted_' + k: rep.get(k, 0) for k in ISO_OUTCOME})   # nothing was applied: outcome counters 0
+        rep.update(dict.fromkeys(ISO_OUTCOME, 0), status='fallback', error=f'{type(exc).__name__}: {str(exc)[:400]}')
         try:
             if sub_path.read_bytes() != before:
                 tmp = sub_path.with_name(sub_path.name + '.iso.tmp')
@@ -219,8 +292,10 @@ def iso_apply(sub_path, nf_path, out_path, pf_path, train_path, sample_ids, alph
 # ---- run (everything above is definitions) ----
 _iso_sub = ROOT / 'submission.csv'
 _iso_before = _iso_sub.read_bytes()
+_iso_fast = True                                                # until the guards below are read
 try:
-    if not PIPELINE_DONE and not IS_RERUN and COMMIT_MODE == 'fast':
+    _iso_fast = not PIPELINE_DONE and not IS_RERUN and COMMIT_MODE == 'fast'
+    if _iso_fast:
         _iso_skip = 'skipped_fast_commit'
     elif float(ISO_ALPHA) != 0.0 and time.time() - NB_T0 > 8.7 * 3600:
         _iso_skip = 'skipped_time_guard'
@@ -228,7 +303,7 @@ try:
         _iso_skip = None
     ISO_REPORT = iso_apply(_iso_sub, ROOT / 'neural_candidate_features.parquet', ROOT / 'outsider_neural_features.parquet',
                            ROOT / 'pf_scores.parquet', COMP / 'train.parquet', SAMPLE_IDS, ISO_ALPHA, ISO_LIB_SKIP,
-                           ISO_KEEP_TRAIN, ISO_SCOPE, ROOT / 'iso_report.json', skip=_iso_skip)
+                           ISO_KEEP_TRAIN, ISO_SCOPE, ROOT / 'iso_report.json', skip=_iso_skip, dryrun=not IS_RERUN)
 except Exception as _iso_exc:                                   # iso_apply is fail-safe itself; this guards the call
     traceback.print_exc()
     ISO_REPORT = dict(status='fallback', alpha=globals().get('ISO_ALPHA'), scope=globals().get('ISO_SCOPE'),
@@ -241,6 +316,24 @@ except Exception as _iso_exc:                                   # iso_apply is f
     print(iso_summary(ISO_REPORT), flush=True)
     try:
         (ROOT / 'iso_report.json').write_text(json.dumps(ISO_REPORT, indent=2, default=str))
+    except Exception:
+        traceback.print_exc()
+
+try:
+    _iso_mid_on = float(globals().get('PF_MID_W', 0.0) or 0.0) > 0 and not _iso_fast
+except Exception:
+    _iso_mid_on = False
+if _iso_mid_on:                                                 # diagnostic only; reads, never writes answers
+    try:
+        PF_MID_TRACE = dict(w=PF_MID_W, **iso_pf_mid_trace(pd.read_parquet(ROOT / 'neural_candidate_features.parquet'),
+                                                           globals()['_mid_neural_score']))
+        print(f"PF_MID trace | w {PF_MID_W} | molecules {PF_MID_TRACE['molecules']} | PF used "
+              f"{PF_MID_TRACE['pf_used']} | neural order changed {PF_MID_TRACE['order_changed']}", flush=True)
+    except Exception as _iso_exc:
+        PF_MID_TRACE = dict(w=PF_MID_W, error=f'{type(_iso_exc).__name__}: {str(_iso_exc)[:300]}')
+        print(f"WARNING PF_MID trace failed: {PF_MID_TRACE['error']}", flush=True)
+    try:
+        (ROOT / 'pf_mid_trace.json').write_text(json.dumps(PF_MID_TRACE, indent=2, default=str))
     except Exception:
         traceback.print_exc()
 

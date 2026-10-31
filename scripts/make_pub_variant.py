@@ -10,7 +10,11 @@ Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for ever
     (_mid_neural_score: ranks 2-25 neural rank from (1 - w) z(neural_score_saner) + w z(pf_fz); 0 = midx exactly) and
     comment glue; its configuration lines (POP_W .. OUTSIDER_FILL) go to cell 1;
   - cell 11 (PF-syn): OURS_MODE 'columns' adds only neural_score_saner / pf_fz, neural_score stays byte-identical;
-  - new cell 17 (scripts/pub_variant/iso_cell.py): ISO isomer reranker on the final submission.csv (ISO_* in cell 1).
+    'blend' / 'replace' cast neural_score to float64 first (pandas >= 3 refuses float64 values in a float32 column);
+    the PF-SYN line and pf_blend_report.json carry the pandas version;
+  - new cell 17 (scripts/pub_variant/iso_cell.py): ISO isomer reranker on the final submission.csv (ISO_* in cell 1),
+    with a commit-run dry run of the rerank path and a trace of the PF_MID_W hook;
+  - markdown cells 0 and 18: a note on what this version runs.
 Writes kernels/<slug>/notebook.ipynb + kernel-metadata.json (id bryantyu/<slug>, private, GPU / image / datasets of
 casmi26-pub480pf). Nothing is executed: the cells are only checked with ast.parse.
 """
@@ -63,6 +67,18 @@ PF = [("# fragment check and Variant M read the blended order unchanged. Any fai
        "    mode 'columns': neural_score is left exactly as it is; only neural_score_saner and pf_fz are added.\n"
        "    Returns (new_main, new_outs, stats); neural_score_saner and pf_fz are added for the audit.\"\"\"\n"
        "    assert mode in ('blend', 'replace', 'columns'), mode\n"),
+      ("    main = main.copy()\n"
+       "    main['neural_score_saner'] = main.neural_score.astype(float)\n",
+       "    main = main.copy()\n"
+       "    main['neural_score_saner'] = main.neural_score.astype(float)\n"
+       "    if mode != 'columns':     # float64 before the blend: the public scorer writes float32 when every molecule is\n"
+       "        main['neural_score'] = main.neural_score.astype(float)   # processed, and pandas >= 3 refuses float64 in it\n"),
+      ("        outs = outs.copy()\n"
+       "        outs['neural_score_saner'] = outs.neural_score.astype(float)\n",
+       "        outs = outs.copy()\n"
+       "        outs['neural_score_saner'] = outs.neural_score.astype(float)\n"
+       "        if mode != 'columns':\n"
+       "            outs['neural_score'] = outs.neural_score.astype(float)\n"),
       ("        s = g.neural_score_saner.to_numpy(float)\n"
        "        zs_of, zp_of = zmap(s), zmap(p)\n"
        "        new = mix(zs_of(s), zp_of(p))\n"
@@ -89,6 +105,13 @@ PF = [("# fragment check and Variant M read the blended order unchanged. Any fai
       ('    """Score the neural-fusion candidates with PF-syn and blend into neural_score in place; never fatal."""\n',
        '    """Score the neural-fusion candidates with PF-syn and blend into neural_score in place (OURS_MODE \'columns\': add\n'
        '    the audit columns only, neural_score byte-identical); never fatal."""\n'),
+      ("    rep = dict(status='off', mode=OURS_MODE, w=PF_W, molecules=0, candidates=0, failures=0)\n",
+       "    rep = dict(status='off', mode=OURS_MODE, w=PF_W, molecules=0, candidates=0, failures=0, pandas=pd.__version__)\n"),
+      ("        print('PF-SYN off (OURS = False): saner-only neural term', flush=True)\n",
+       "        print(f'PF-SYN off (OURS = False): saner-only neural term | pandas {pd.__version__}', flush=True)\n"),
+      ("f\"skipped {rep.get('skipped_no_pf', 0)} | failures {rep['failures']} | {rep['seconds']} s\", flush=True)\n",
+       "f\"skipped {rep.get('skipped_no_pf', 0)} | failures {rep['failures']} | {rep['seconds']} s | \"\n"
+       "          f\"pandas {pd.__version__}\", flush=True)\n"),
       ("        assert OURS_MODE in ('blend', 'replace'), f'OURS_MODE {OURS_MODE!r}'\n",
        "        assert OURS_MODE in ('blend', 'replace', 'columns'), f'OURS_MODE {OURS_MODE!r}'\n"),
       ("            assert np.isfinite(new.neural_score.astype(float)).all(), 'non-finite neural score'\n",
@@ -132,6 +155,24 @@ MIDX = [(MOJI(HEAD),
          '    return pop_map, spec_map, np_map\n\n\n' + HOOK + '\n\ndef pxm_merge('),
         ("order = np.argsort(-g['neural_score'].to_numpy(), kind='stable')",
          "order = np.argsort(-_mid_neural_score(g), kind='stable')")]
+
+
+# ---- markdown (cells 0 and 17 of the template): say what this version runs ----
+TITLE = ('# LB 0.480+ · Variant M Core + Calibrated Documentation Prior (w_pop=0.14) + Formula-Gated Isomer Swaps + '
+         'In-Pool InChIKey14 Deduplication\n')
+MD0 = [(TITLE,
+        '# Variant M core + midx final layer + PF-syn + ISO isomer reranker\n\n'
+        '> **This version** (made by scripts/make_pub_variant.py; every setting is in cell 1): the final layer (cell 16) is\n'
+        '> cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479: documentation prior 0.10 / 0.05 / 0.02 on\n'
+        '> ranks 2-25, library bonus only from a best library match of 0.87, the old leader pinned at rank 2 after a\n'
+        '> fragment-check leader move, metric-exact deduplication, empty slots filled with scored outside candidates; no\n'
+        '> formula-gated swaps) plus our PF_MID_W hook; cell 11 scores the candidates with our PF-syn PeakFormer; cell 17 is\n'
+        '> our ISO isomer reranker. The notes below are the forked notebook\'s and describe its earlier final layer\n'
+        '> (w_pop = 0.14, formula-gated isomer swaps), which this version does not run.\n')]
+MD17 = [('and is not shown to anyone.',
+         'and is not shown to anyone.\nIn this version the last row also holds the final layer\'s documentation prior, '
+         'deduplication and outside-candidate fill\n(cell 16) and, when ISO_ALPHA > 0, the ISO reranker (cell 17); the '
+         'MERGE and ISO log lines (merge_report.json, iso_report.json)\ngive their own counts.')]
 
 
 def splice(text, edits, what):
@@ -186,6 +227,8 @@ midx = open(os.path.join(here, 'midx_cell15.txt'), encoding='utf-8', newline='')
 assert hashlib.sha256(midx.encode()).hexdigest() == MIDX_SHA256, 'midx_cell15.txt differs from the pulled source'
 cells[16]['source'] = splice(midx, MIDX, 'cell 16 (midx)')
 cells[11]['source'] = splice(cells[11]['source'], PF, 'cell 11 (PF-syn)')
+cells[0]['source'] = splice(cells[0]['source'], MD0, 'cell 0 (title)')
+cells[17]['source'] = splice(cells[17]['source'], MD17, 'cell 17 (section 4)')
 c1 = splice(cells[1]['source'], CFG, 'cell 1 (config)')
 defaults = config_values(c1)
 settings = {}
