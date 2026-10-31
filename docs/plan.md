@@ -763,7 +763,7 @@ their slots). Kernels differ only in cell-1 config, so every slot is paired with
 A kernel not COMPLETE and verified (log lines PF-SYN / ISO applied / SUBMISSION READY) by 00:05 is replaced, in order, by
 casmi26-own-s2v18cue and casmi26-probe18cue-coco (verified Oct 31); otherwise those two eligible reads move to Nov 2.
 
-Offline ISO simulation (workflow wf_93f05b9b-7c1, 06:20; independent verifier reproduced every number byte-identically).
+Offline ISO simulation (workflow wf_93f05b9b-7c1, 06:05; independent verifier reproduced every number byte-identically).
 Base B0 = house stage-1 recipe without pf_* (fp_* kept as the saner stand-in) on ret18cu train, val 979 structure-disjoint
 queries: MRR@25 0.8006, truth in top 25 96%, in-list misses 239 of which 94.1% have the leader's formula (public claim 98%).
 Within the leader-formula group the truth is first: base order 0.748, PF alone 0.460, our FP 0.246, GLACIER 0.560.
