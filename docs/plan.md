@@ -814,6 +814,11 @@ Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2
       >= +0.004: alpha 1.0 scope all. D2. LB(1.5) <= -0.004 < LB(0.75) < +0.004: alpha 0.5 scope all.
       D3. LB(0.75) <= -0.004 < LB(1.5): alpha 0.75 scope all ISO_FREEZE_LEADER.
   ISO_COS_W and ISO_FREEZE_LEADER are being added to the ISO cell (defaults = current behaviour).
+- ISO knobs added (workflow wf_df5f0ebc-597; reviewer found no defects): ISO_COS_W (term z(pf_fz) + w z(pf_cos), pf_cos
+  from pf_scores.parquet; skip the molecule if missing) and ISO_FREEZE_LEADER; defaults identical to the Nov 1 cell (0
+  mismatches on 30,000 random lists + byte-identical 400-molecule runs). Generator --out-dir; refuses bad values.
+  Pre-built for Nov 2 (likeliest outcome D1/B): casmi26-pubm-iso075all (alpha 0.75 scope all) and casmi26-pubm-iso05cos
+  (alpha 0.5 scope all ISO_COS_W 1.0); pushed once GPU sessions free up.
 - Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
   and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
 
