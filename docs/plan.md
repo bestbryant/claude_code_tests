@@ -763,6 +763,34 @@ their slots). Kernels differ only in cell-1 config, so every slot is paired with
 A kernel not COMPLETE and verified (log lines PF-SYN / ISO applied / SUBMISSION READY) by 00:05 is replaced, in order, by
 casmi26-own-s2v18cue and casmi26-probe18cue-coco (verified Oct 31); otherwise those two eligible reads move to Nov 2.
 
+Offline ISO simulation (workflow wf_93f05b9b-7c1, 06:20; independent verifier reproduced every number byte-identically).
+Base B0 = house stage-1 recipe without pf_* (fp_* kept as the saner stand-in) on ret18cu train, val 979 structure-disjoint
+queries: MRR@25 0.8006, truth in top 25 96%, in-list misses 239 of which 94.1% have the leader's formula (public claim 98%).
+Within the leader-formula group the truth is first: base order 0.748, PF alone 0.460, our FP 0.246, GLACIER 0.560.
+ISO-PF dMRR (skip lib >= 0.9, in_train protected) [paired bootstrap 95% CI]:
+| alpha | formula scope | all scope | flips good/bad (formula) |
+|---|---|---|---|
+| 0.5 | +0.0024 [+.0006,+.0044] | +0.0028 | 2/0 |
+| 0.75 | +0.0040 [+.0001,+.0083] | +0.0050 [+.0006,+.0098] | 6/2 |
+| 1 | +0.0020 | +0.0029 | 10/8 |
+| 1.5 | -0.0014 [-.0088,+.0062] | -0.0003 | 16/20 |
+| 3 | -0.0159 | -0.0168 | 26/43 |
+- Regimes (formula / all at alpha 0.75 | 1.5): seed-1 base +.0022 | +.0016; GLACIER-fused base +.0025/+.0056 | -.0034/+.0004;
+  no-fp base +.0082 | +.0116; half of class-2 truths documentation-transplanted (hidden-like) +.0065/+.0084 | +.0083/+.0109;
+  all transplanted +.0099/+.0128 | +.0181/+.0233 (still rising at alpha 3). alpha 0.75 is positive in all six PF-free regimes;
+  alpha 1.5 pays only under documentation shift (the hidden test is documentation-poor per HL-val, so it is a live bet).
+- Controls: base that already uses pf_* (B1): ISO hurts (-0.0067 at 0.75, -0.0243 at 1.5: double counting); ISO with our
+  FP model instead of PF: -0.016 at 0.75 (FP-type scores do not separate isomers); PF + FP sum: -0.0055.
+- Guards: lib-skip threshold immaterial (0.87 / 0.9 / off within 0.0003); protection off costs class 1 (-0.0045 at 1.5);
+  leader frozen (ranks 2-25 only): +0.0018 at 0.75, never below -0.003.
+- Reading rule for Nov 1: LB(1.5) >= LB(0.75) >= +0.004 -> doc-poor regime, try alpha 2-3 scope all; LB(0.75) >= +0.004 >
+  LB(1.5) -> alpha 0.75-1.0 scope all; both <= -0.004 -> the public base already carries isomer evidence like B1 -> ranks
+  2-25 only or drop ISO. 0.75 vs 1.5 differ by <= ~2 public flips: the pair decides the sign better than the optimum.
+- Caveats: our lists are not the public lists; 977 / 979 val truths are syn2 structures (as are 96% of pool pids, so it
+  matches pool-reachable hidden answers); CIs exclude retrain noise (~0.002-0.003).
+- Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
+  and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
