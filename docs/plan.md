@@ -110,11 +110,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-30 | casmi26-probe18cr1-train v1 | v18cr1 lists restricted to training structures | 0.156 |
 | 10-30 | casmi26-own-s2v18ce v1 | seed ensemble of v18c and v18cr1 (mean stage-1 / stage-2 scores) | 0.342 (not adopted) |
 | 10-30 | casmi26-probe18ce-coco v1 | v18ce lists restricted to COCONUT-not-train | 0.207 |
-| 10-31 | casmi26-specpftpu-coco v1 | TPU PF-syn PeakFormer (pf_tpu_p) score alone, COCONUT-not-train | pending |
-| 10-31 | casmi26-specpfsynp-coco v1 | CPU PF-syn production pair score alone, COCONUT-not-train | pending |
-| 10-31 | casmi26-own-s2v18cte v1 | PeakFormer swap to pf_tpu_p, 2-seed ensemble v18ct + v18ctr1 | pending |
-| 10-31 | casmi26-probe18cte-coco v1 | v18cte lists restricted to COCONUT-not-train | pending |
-| 10-31 | casmi26-probe18cte-train v1 | v18cte lists restricted to training structures | pending |
+| 10-31 | casmi26-specpftpu-coco v1 | TPU PF-syn PeakFormer (pf_tpu_p) score alone, COCONUT-not-train | **0.189** |
+| 10-31 | casmi26-specpfsynp-coco v1 | CPU PF-syn production pair score alone, COCONUT-not-train | 0.186 |
+| 10-31 | casmi26-own-s2v18cte v1 | PeakFormer swap to pf_tpu_p, 2-seed ensemble v18ct + v18ctr1 | **0.348** (best eligible; bar 0.350) |
+| 10-31 | casmi26-probe18cte-coco v1 | v18cte lists restricted to COCONUT-not-train | **0.221** |
+| 10-31 | casmi26-probe18cte-train v1 | v18cte lists restricted to training structures | 0.157 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -292,6 +292,30 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
   COCONUT probe 0.208 / 0.215 / 0.201 (peak at 2). The full score is flat from 2 to 3 -> dose line closed at 2. Open
   question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
 - The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
+
+## Lessons from the Oct 31 submissions
+| kernel | prediction | LB | pair | rule outcome |
+|---|---|---|---|---|
+| specpftpu-coco | 0.188 +- 0.015 | 0.189 | specpfb-coco 0.160: +0.029; pilot specpfsyn 0.173: +0.016 | >= 0.180: TPU-scale gain TRANSFERS (LB / offline ratio 0.029 / 0.047 = 0.62) |
+| specpfsynp-coco | 0.175 +- 0.012 | 0.186 | specpfb-coco 0.160: +0.026; pilot 0.173: +0.013 | CPU production > pilot (full-pool simulation helps; LB / offline 1.1) |
+| s2v18cte | 0.348 +- 0.008 | 0.348 | v18ce 0.342: +0.006; v18c 0.339: +0.009 | < 0.350: NOT adopted (bar missed by 0.002); > 0.338: the gain survives the pipeline |
+| probe18cte-coco | 0.220 +- 0.008 | 0.221 | probe18ce-coco 0.207: +0.014; probe18c-coco 0.215: +0.006 | >= 0.212: COCONUT answers up (best COCONUT probe of the eligible line) |
+| probe18cte-train | 0.155 +- 0.006 | 0.157 | probe18c / cr1-train 0.157 / 0.156 | >= 0.150: no class-1 cost |
+- PF-syn works end to end: spectral COCONUT +0.029 (TPU) / +0.026 (CPU pair) over PF-b; in the pipeline +0.006 over the
+  2-seed baseline, all of it from COCONUT answers (+0.014 coco probe), class 1 flat. Every prediction landed inside its
+  interval (best calibration of the project). Pipeline / spectral ratio ~0.2-0.3 (as PF-d -> PF-b: 0.005 / 0.031).
+- Not adopted by the pre-registered bar; the confirming read is the stronger PeakFormer (pf_tpu_f: offline COCONUT +0.013
+  over pf_tpu_p) on Nov 1. Pick #1 stays v18c until a swap clears 0.350 with its probes.
+
+## Nov 1 slots (pre-registered Oct 31 01:35, after the Oct 31 reading; all kernels except slots 4-5 already verified)
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-own-s2v18cue (swap pair with pf_tpu_f: v18cu + v18cur1, seed ensemble) | v18cte 0.348, v18ce 0.342 | 0.351 +- 0.008 | ADOPT (new pick #1) >= 0.350 with slot 2 >= 0.215 and slot 3 >= 0.150 and slot 5 >= 0.126; if < 0.350 but slot 2 >= 0.221: adopt the better of v18cte / v18cue by the sum of the two days' readings only after a 3rd confirming read |
+| 2 | casmi26-probe18cue-coco | probe18cte-coco 0.221 | 0.225 +- 0.008 | COCONUT answers up again |
+| 3 | casmi26-probe18cue-train | 0.157 | 0.157 +- 0.006 | cap >= 0.150 |
+| 4 | casmi26-specpftpuf-coco (pf_tpu_f alone, COCONUT) | specpftpu-coco 0.189 | 0.196 +- 0.012 | >= 0.192: the full-syn2 / 3x-longer run transfers beyond pf_tpu_p |
+| 5 | casmi26-mask18cue-train (masked class-1 probe of slot 1) | mask18c-train 0.132 | 0.131 +- 0.008 | class-1 interleaving cap >= 0.126 (a stronger PeakFormer could push training answers below COCONUT isomers) |
+Any kernel not COMPLETE and verified by 00:05 is replaced by nothing.
 
 ## PF-syn production results (Oct 30 08:30) and REVISED Oct 31 slots (pre-registered 08:50, before any LB read)
 Runs (all PF-b init, PF_SYN_P 0.25, logs complete):
