@@ -727,6 +727,42 @@ NOV 1 SLOTS AMENDED (05:05, before any Nov 1 reading; replaces the Oct 31 01:35 
 | 5 | casmi26-pub480pf variant (PF_W 1.0 'replace') if verified, else casmi26-specpftpuf-coco | slot 1 | slot 1 + 0.004 +- 0.010 | the better of slots 2 / 5 sets the PF mode |
 probe18cue-train, mask18cue-train and specpftpuf-coco move to Nov 2 or later.
 
+Workflow wf_55c3ee8b-957 results (05:30):
+- casmi26-pub480 commit run COMPLETE (smoke, 12 molecules, 1,452 s; SUBMISSION READY 400 rows; V1 rebuilt = public 0.466
+  file row for row). Full-run cost is dominated by in-kernel ranker training (Engine 2 ~700 s fixed), so adding our whole
+  CPU pipeline (GLACIER budget 4 h) to the same notebook is not feasible; PF scoring is (58 s / 400 molecules on 4 CPUs).
+- casmi26-pub480pf built (new cell 11: PF scorer subprocess on CPU, neural_score = (1-w) z(saner) + w z(pf f.z) per
+  molecule in both neural files before build_consensus; fail-safe to saner-only; 20-min cap); reviewer: no blockers
+  (pf_tpu_f in casmi26-models byte-identical, code dataset root layout tested, 400-molecule test 392 blended, failure paths
+  byte-identical). Pushed 05:40 as an environment test of the PF cell (expect "PF-SYN applied ... molecules scored 12").
+- Researcher (35 public notebooks + full LB): the fork is probably 0.477-0.478, not 0.480 (Kunal's team best 0.478; none
+  of the 0.480 teams scored after his last run). Best confirmed public line 0.479 = baidalinadilzhan/casmi26-midx-exact-
+  dedup-fill (final layer: POP_W .10 / SPEC_W .05 / NP_W .02, library bonus gated at best match >= 0.87, old leader
+  pinned at rank 2 after a fragment-check leader move, empty slots filled with scored outsiders, no isomer swaps).
+  LB-flat or harmful in the lineage: rank-1 weight changes (0.50: 0.448), w_mid 0.875 / 1.0, offset 1, tail rescue,
+  GLACIER weight 1.5 (-0.020), REPLACING saner with a long-trained version (-0.019 despite offline 0.484 -> 0.718), NX isomer
+  reranker (-0.058). The visible top-10 method: heliosli (team 0.486) = learned same-formula isomer reranker after the final
+  layer, guards: skip molecules with best library match >= 0.9, training-set structures keep their slots, reorder the rest
+  by z(-log rank) + alpha z(model). Udam: 98% of wrong in-list answers have the right formula; the gap to 0.517 is ~5-10
+  more right first answers on ~125 public molecules (rank 2 -> 1 on one molecule = +0.004).
+- Implication: our PF-syn (the only model here whose gain was measured ON THE HIDDEN TEST: spectral COCONUT 0.160 -> 0.189,
+  isomer-heavy candidates) is the isomer reranker; the replace mode is dropped (same kind of change as the -0.019 swap).
+
+NOV 1 SLOTS, SECOND AMENDMENT (05:45, before any Nov 1 reading; replaces the 05:05 table). All five kernels come from one
+template (scripts/make_pub_variant.py, workflow wf_6615bbec-fb7): the midx final layer + our PF cell (modes columns /
+blend) + our ISO cell (heliosli-style isomer reranker with PF f.z; formula scope = only same-formula, non-training isomers of
+the current leader are re-sorted in the positions they hold; skip best library match >= 0.9; training structures keep
+their slots). Kernels differ only in cell-1 config, so every slot is paired with slot 1.
+| slot | kernel | config | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-pubm | OURS off, midx final layer | 0.479 +- 0.004 | the rank control; < 0.472: port broken -> debug before any variant reading |
+| 2 | casmi26-pubm-pfmid | PF columns, PF_MID_W 0.5 (ranks 2-25 only) | slot 1 + 0.002 +- 0.006 | rank 1 identical by construction; >= +0.002: keep for ranks 2-25 |
+| 3 | casmi26-pubm-iso075 | PF columns, ISO alpha 0.75, formula scope | slot 1 + 0.004 +- 0.010 | >= +0.004: PF isomer reranking transfers -> tune alpha / scope / learned reranker next; <= -0.004: rank-1 PF moves hurt -> ranks 2-25 only |
+| 4 | casmi26-pubm-pfall | PF blend PF_W 0.5 in the neural term | slot 1 + 0.003 +- 0.010 | rank-1 effect through the existing fusion / fragment check; compare with slot 2 |
+| 5 | casmi26-pubm-iso150 | as slot 3 with alpha 1.5 | slot 1 + 0.006 +- 0.015 | dose-response with slot 3 |
+A kernel not COMPLETE and verified (log lines PF-SYN / ISO applied / SUBMISSION READY) by 00:05 is replaced, in order, by
+casmi26-own-s2v18cue and casmi26-probe18cue-coco (verified Oct 31); otherwise those two eligible reads move to Nov 2.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
