@@ -19,5 +19,6 @@
   "kernel_sources": [],
   "competition_sources": [],
   "model_sources": [],
-  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461"
+  "docker_image": "gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0f2a7e0a33943c95754b1b7af6b30d65221633a284b6b601cd84a",
+  "docker_image_pinning_type": "original"
 }

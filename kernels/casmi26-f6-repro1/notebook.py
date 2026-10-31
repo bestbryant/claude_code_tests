@@ -31,22 +31,28 @@ Steps; each prints 'F6 CHECK <name>: OK | FAIL | INFO {...}'; the record is /kag
       res_fragnet.py --step rec | sets --nspec 32000 --seed 0 | countA | featB | fitA | fitB
                                                           -> fragnet/{rec_*.npy, sets.pkl, countsA.npz, featB.npz, stageA.npz, stageB.txt}
       res_analog_struct.py --step rec | str               -> analog_struct/{pool,train}_{hash,num,fvec,elsmi_*,coresmi_*}.npy
-    Compared with the published files: sha256 against MANIFEST (.npy, caps.txt: np.save is byte-deterministic), content
-    for sets.pkl (decoded with a numpy-only unpickler), arrays for the .npz files (zip containers / compression may
-    differ), tree text for stageB.txt; the deterministic summary lines of his logs (timings stripped) must reappear.
+    Compared with the published files: sha256 against MANIFEST (.npy: np.save is byte-deterministic), text with line
+    endings normalised for caps.txt (his Windows text-mode write left CRLF; ours is LF, so CONTENT-EQUAL is the best
+    possible there), content for sets.pkl (decoded with a numpy-only unpickler), arrays for the .npz files (zip
+    containers / compression may differ), tree text for stageB.txt (his file ends with two CRLF lines from lightgbm's
+    Python text-mode append of pandas_categorical, so on Linux it is CONTENT-EQUAL at best, never BIT-EXACT); the
+    deterministic summary lines of his logs (timings stripped) must reappear.
     countA merges worker results with imap_unordered, so its float64 decoy weights are order-dependent in the last bits
     even on his machine: tolerance 1e-12 relative there, and everything downstream of it is judged at float tolerance /
-    model agreement. featB uses our frag2 f1 table (published copy if the f1 step did not finish; recorded).
+    model agreement. featB uses our frag2 f1 table only if it reproduced (BIT-EXACT / CONTENT-EQUAL); otherwise the
+    published copy, so an f1 drift (already reported by frag2_f1) cannot leak into the featB verdict (recorded).
  6. Models on the PUBLISHED featB rows (his own _groups / _mrr harness): published stageB must give his logged V MRR
     (harness parity: fr_int 0.6465, frag2_mix 0.7022, stageA_pk_fcu 0.7549, fragnet 0.7712); refit-from-published (rep),
     seed+1000 reference (ref) and full-chain refit (chain) are compared with it (V MRR, per-group Spearman, top-1).
     A non-identical stageB counts as EQUIVALENT only if |V MRR - 0.7712| <= 0.002 and it agrees with the published model
     at least as well as the seed reference does.
-Budget: 3 h wall clock (F6_BUDGET_MIN, default 170 min). A step starts only if its estimate fits in the remaining time,
-dependent steps are skipped after a failure, and each step has a timeout (its process group is killed). Expected
-~80-120 min on a 4-vCPU CPU session: the per-step estimates in STEPS are his laptop seconds (~24 min in total with 4
-processes) x ~3, plus ~5 min of input hashing. Order: fits from the published files, frag2, fragnet chain, analog_struct
-(so a slow session loses analog_struct first; it is independent of the rest).
+Budget: 5.5 h wall clock (F6_BUDGET_MIN, default 330 min; Kaggle's CPU session limit is 12 h, so the budget only
+guards against a pathological slowdown). A step starts only if its estimate fits in the remaining time, dependent steps
+are skipped after a failure, and each step has a timeout (its process group is killed). Expected ~80-120 min on a
+4-vCPU CPU session: the per-step estimates in STEPS are his laptop seconds (~24 min in total with 4 processes) x ~3,
+plus ~5 min of input hashing (Kaggle's 4 vCPUs are 2 hyper-threaded cores, so x4-5 is possible). Order: fits from the
+published files, frag2, fragnet chain, analog_struct (so a slow session loses analog_struct first; it is independent of
+the rest).
 """
 import difflib, hashlib, importlib.metadata, io, json, os, pickle, re, shutil, signal, subprocess, sys, threading, time
 import traceback, zipfile
@@ -61,7 +67,7 @@ REPO_PUB = RW / 'repo_pub'      # fitA / fitB from the published intermediates
 SEEDREF = RW / 'seedref'        # fitB with seed + SEED_REF_OFFSET on the published featB
 LOGS = RW / 'logs'
 REPORT_PATH = WORKING / 'repro_report.json'
-BUDGET_MIN = float(os.environ.get('F6_BUDGET_MIN', '170'))
+BUDGET_MIN = float(os.environ.get('F6_BUDGET_MIN', '330'))
 RESERVE_MIN = 8                 # kept free for the model comparison and the report
 PROCS = 4                       # README commands
 SEED_REF_OFFSET = 1000
@@ -877,16 +883,19 @@ def run_step(name, folder, script, args, est, deps):
 
 
 def _ensure_f1_table():
-    """featB reads res/frag2/pool_f1_*.npy. Use ours when the f1 step finished, else link the published table."""
+    """featB reads res/frag2/pool_f1_*.npy. Use ours when the f1 step finished AND reproduced the published table, else
+    link the published table (an f1 drift is reported by frag2_f1 and must not leak into the featB comparison)."""
     d = REPO / FE_REL / 'res' / 'frag2'
-    ours_ok = REPORT['steps'].get('frag2_f1', {}).get('status') == 'ok' and (d / 'pool_f1_off.npy').is_file()
+    ours_ok = REPORT['steps'].get('frag2_f1', {}).get('status') == 'ok' and (d / 'pool_f1_off.npy').is_file() and \
+        REPORT['artefacts'].get('frag2_f1', {}).get('status') in ('BIT-EXACT', 'CONTENT-EQUAL')
     if not ours_ok:
         d.mkdir(parents=True, exist_ok=True)
         for f in ('pool_f1_off.npy', 'pool_f1_mass.npy'):
             if (d / f).exists() or (d / f).is_symlink():
                 (d / f).unlink()
             (d / f).symlink_to(ROOTS['v4b'] / 'code' / 'fe_v4' / 'res' / 'frag2' / f)
-    REPORT['featB_f1_table'] = 'regenerated (frag2_f1 step)' if ours_ok else 'PUBLISHED (frag2_f1 step not ok)'
+    REPORT['featB_f1_table'] = 'regenerated (frag2_f1 step, reproduced)' if ours_ok else \
+        'PUBLISHED (frag2_f1 step not ok or not reproduced)'
     log(f'featB uses the {REPORT["featB_f1_table"]} frag2 f1 table')
 
 
@@ -921,8 +930,10 @@ def cmp_table_step(step):
                 r['array'] = array_diff(a, b)
                 if rel in PACKED:
                     r['per_structure'] = packed_diff(np.load(out / PACKED[rel]), a, np.load(_pub(PACKED[rel])), b)
-            else:
-                r['text_equal'] = ours.read_bytes() == pub.read_bytes()
+            else:   # caps.txt: his Windows text-mode write has CRLF line ends, ours LF -> compare normalised text
+                ob, pb = ours.read_bytes(), pub.read_bytes()
+                r['text_equal'] = ob.replace(b'\r\n', b'\n') == pb.replace(b'\r\n', b'\n')
+                r['line_endings'] = dict(ours='CRLF' if b'\r\n' in ob else 'LF', published='CRLF' if b'\r\n' in pb else 'LF')
         rows[rel] = r
     content = all(r['bit_exact'] or r.get('array', {}).get('equal') or r.get('text_equal') for r in rows.values())
     status = 'BIT-EXACT' if n_exact == len(files) else ('CONTENT-EQUAL' if content else 'DIFFERENT')
@@ -954,6 +965,12 @@ def cmp_stageB_text(step, path):
         check(step, False, error=f'{path} not written'); artefact(step, 'FAILED'); return None
     d = compare_lgb_text(path.read_text(), _pub('fragnet/stageB.txt').read_text())
     d['file_sha256'] = sha256(path)
+    # read_text() folds CRLF into LF (his file ends with two CRLF lines from lightgbm's Python text-mode append of
+    # pandas_categorical), so 'file_identical' is a text verdict; BIT-EXACT needs the MANIFEST sha256 as well
+    d['file_sha256_equal'] = d['file_sha256'] == MANIFEST['files'][RES_KEY + 'fragnet/stageB.txt']
+    if d['status'] == 'BIT-EXACT' and not d['file_sha256_equal']:
+        d['status'] = 'CONTENT-EQUAL'
+        d['bytes_note'] = 'text identical after newline normalisation; bytes differ (CRLF trailer of his Windows file)'
     lg = compare_log(_his_log('res_fragnet_fitB.log'), _our_log(step))
     d['fitB_log_reproduced'] = lg['ok']
     REPORT.setdefault('stageB_text', {})[step] = d
@@ -983,7 +1000,9 @@ def cmp_npz_step(step, fname, logname, rtol, exact):
     ours_p = REPO / FE_REL / 'res' / 'fragnet' / fname
     if not ours_p.is_file():
         check(step, False, error=f'{fname} not written'); artefact(step, 'FAILED'); return
-    A = dict(np.load(ours_p, allow_pickle=False)); B = dict(np.load(_pub(f'fragnet/{fname}'), allow_pickle=False))
+    # npz_load: plain members without pickle, object members (none expected; his fitB opens featB with allow_pickle=True)
+    # through the numpy-only unpickler, so an object member cannot abort the comparison
+    A = npz_load(ours_p); B = npz_load(_pub(f'fragnet/{fname}'))
     status, det = compare_named_arrays(A, B, float_rtol=rtol, exact_keys=exact(A))
     file_same = sha256(ours_p) == MANIFEST['files'][RES_KEY + f'fragnet/{fname}']
     if status == 'CONTENT-EQUAL' and file_same:
@@ -1034,8 +1053,8 @@ def step_models():
     log('== 6. stageB models on the published featB rows (his _groups / _mrr harness)')
     import numpy as np, lightgbm as lgb
     F, R = his_modules()
-    z = np.load(_pub('fragnet/featB.npz'), allow_pickle=False)
-    sets = z['set']; y = z['y']; same = z['same'].astype(bool); part = z['part']; md = z['mode']
+    z = npz_load(_pub('fragnet/featB.npz'))     # numpy-only decoding (see cmp_npz_step)
+    sets = z['set']; y = z['y']; same = z['same'].astype(bool); part = np.asarray(z['part']).astype(str); md = z['mode']
     st, en = R._groups(sets)
     agg = z['agg_' + R.STAGEB_CFG].astype(np.float64)
     X = np.zeros((len(y), len(F.BNAMES)), np.float32)
