@@ -110,6 +110,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-30 | casmi26-probe18cr1-train v1 | v18cr1 lists restricted to training structures | 0.156 |
 | 10-30 | casmi26-own-s2v18ce v1 | seed ensemble of v18c and v18cr1 (mean stage-1 / stage-2 scores) | 0.342 (not adopted) |
 | 10-30 | casmi26-probe18ce-coco v1 | v18ce lists restricted to COCONUT-not-train | 0.207 |
+| 10-31 | casmi26-specpftpu-coco v1 | TPU PF-syn PeakFormer (pf_tpu_p) score alone, COCONUT-not-train | pending |
+| 10-31 | casmi26-specpfsynp-coco v1 | CPU PF-syn production pair score alone, COCONUT-not-train | pending |
+| 10-31 | casmi26-own-s2v18cte v1 | PeakFormer swap to pf_tpu_p, 2-seed ensemble v18ct + v18ctr1 | pending |
+| 10-31 | casmi26-probe18cte-coco v1 | v18cte lists restricted to COCONUT-not-train | pending |
+| 10-31 | casmi26-probe18cte-train v1 | v18cte lists restricted to training structures | pending |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
