@@ -10,8 +10,13 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   notebook patched and re-pinned (no Engine 2: Engine 1's own lists in its place; SRC_BITS 0; no external reference
   spectra; display cells skipped; receipt tagged), SPEC_W 0 and ELIG = 0 in cell 1 (the final layer then skips the
   src_spectral_library column), the mount / hash check plus null_engine.py appended to cell 8, and markdown cells 0, 6
-  and 8 (statement, attached datasets). ELIG=1 (F2b) is reserved, e.g.
+  and 8 (statement, attached datasets), e.g.
   python scripts/make_pub_variant.py casmi26-pube0 ELIG=0 OURS=False PF_MID_W=0 ISO_ALPHA=0
+  ELIG=1 builds elig1 = elig0 with fix F2b instead of F2a: frozen cell 32 runs OUR stage 1 (python -m casmi.run_eng2,
+  the s2v18cue stage 1, from bryantyu/casmi26-elig-assets on bryantyu/casmi26-pool-v18c) as Engine 2 in its own process
+  (eng2_merge.py, written by cell 8), cells 39 / 45 merge its top 40 with the null engine where it has no list;
+  dataset_sources = the upstream set + those two datasets (never casmi26-code / -models), e.g.
+  python scripts/make_pub_variant.py casmi26-pube1 ELIG=1 OURS=False PF_MID_W=0 ISO_ALPHA=0
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -39,8 +44,8 @@ elig_args = [a.split('=', 1)[1] for a in args if a.startswith('ELIG=')]
 args = [a for a in args if not a.startswith('ELIG=')]
 assert len(elig_args) <= 1, 'ELIG given twice'
 ELIG = int(elig_args[0]) if elig_args else None
-if ELIG is not None and ELIG != 0:
-    sys.exit(f'ELIG={ELIG}: only ELIG=0 (F1 + F2a + F3 + F4) is built; ELIG=1 (F2b, our stage 1 as Engine 2) is reserved')
+if ELIG is not None and ELIG not in (0, 1):
+    sys.exit(f'ELIG={ELIG}: ELIG=0 (F1 + F2a + F3 + F4) or ELIG=1 (F1 + F2b + F3 + F4: our stage 1 as Engine 2)')
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
 dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
 assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
@@ -256,7 +261,7 @@ if ELIG is not None:
     import importlib.util as _ilu
     _spec = _ilu.spec_from_file_location('pub_variant_elig', os.path.join(here, 'elig.py'))
     elig = _ilu.module_from_spec(_spec); _spec.loader.exec_module(elig)       # our generator code, not notebook code
-    c1 = splice(c1, elig.cell1_edits(), 'cell 1 (elig)')
+    c1 = splice(c1, elig.cell1_edits(ELIG) if ELIG else elig.cell1_edits(), 'cell 1 (elig)')
 defaults = config_values(c1)
 settings = {}
 for a in args:
@@ -292,7 +297,10 @@ nb['metadata']['casmi']['ours'] = {
     'pf_checkpoint': 'bryantyu/casmi26-models/pf_tpu_f.pt', 'template': 'scripts/make_pub_variant.py',
     'final_layer': 'baidalinadilzhan/casmi26-midx-exact-dedup-fill cell 15 + PF_MID_W hook (cell 16)',
     'iso': 'scripts/pub_variant/iso_cell.py (cell 17)', 'config': 'cell 1'}
-if elig_report and not cfg['OURS']:
+if elig_report and ELIG == 1:
+    nb['metadata']['casmi']['ours']['pf_checkpoint'] = ('bryantyu/casmi26-elig-assets/models/pf_tpu_f.pt (ELIG=1: the same '
+                                                        'file; PF-syn ' + ('on' if cfg['OURS'] else 'off: OURS = False') + ')')
+elif elig_report and not cfg['OURS']:
     nb['metadata']['casmi']['ours']['pf_checkpoint'] += ' (not attached in this ELIG build: OURS = False)'
 os.makedirs(dst, exist_ok=True)
 with open(os.path.join(dst, 'notebook.ipynb'), 'w', encoding='utf-8') as f:

@@ -13,7 +13,13 @@ code: the frozen 0.465 notebook is base64-decoded, its cell text patched by exac
       does not load src_spectral_library (NP_W / NP_BONUS kept: NPAtlas is host-allowed).
   F4  frozen cell 36: the knowledge table's external reference spectra are not built.
   Markdown: cell 0 eligibility statement, section 6 / 8 (run it yourself, credits) name the attached datasets.
-ELIG=1 (F2b: our stage 1 as Engine 2) is reserved.
+ELIG=1 = elig0 with F2b instead of F2a (our stage 1 as Engine 2): the same F1 / F3 / F4 patches, plus
+  F2b frozen cell 32 runs casmi.run_eng2 (our stage 1, the s2v18cue chain) from bryantyu/casmi26-elig-assets on
+      bryantyu/casmi26-pool-v18c in its own process where the original Engine 2 ran (eng2_merge.py, written by cell 8);
+      cells 39 and 45 re-check its keys with chem.score_key and merge its lists with elig0's null-engine lists (molecules
+      it does not cover), so Engine 2's whole data flow (ICE union, fuse2, cells 48-53, export_evidence, outsiders)
+      runs on our lists. dataset_sources: the upstream set + our two datasets (never casmi26-code / -models, also with
+      OURS = True: PF-syn then reads the PeakFormer and its code from casmi26-elig-assets). Cell 9 labels stage 32.
 """
 import ast
 import base64
@@ -38,6 +44,19 @@ OURS_DATASETS = ['bryantyu/casmi26-code', 'bryantyu/casmi26-models']   # read on
 DETACHED = ['dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets',
             'dmitriigluzdov/casmi26-natural-product-knowledge-table',
             'dmitriigluzdov/casmi26-natural-product-panel-benchmark', 'sanpier/catalogue-experiment-saner']
+# ELIG=1 (F2b): our Engine 2. casmi26-elig-assets = scripts/pub_variant/make_elig_assets.py (the import closure of
+# casmi.run_eng2 + fp_model_v1r.pt, pf_tpu_f.pt, ret_ranker_v18cu / v18cur1; MANIFEST.sha256 checked at run time);
+# casmi26-pool-v18c = scripts/build_v18c.sh stage A (CC BY 4.0 on Kaggle), mounted as published.
+ELIG1_DATASETS = ['bryantyu/casmi26-elig-assets', 'bryantyu/casmi26-pool-v18c']
+POOL_V18C_SHA256 = {'coconut_prior.parquet': '3bf89c32f8f904e7c3b1167eae2271fab93d77c04fb9ff8f77095bcf3c6fe43c',
+                    'pool.parquet': 'a3ae588bf270e6af642d88f2ffeb997c415e04147f2df8d27c0c8ab9fbb4fb6d',
+                    'pool_fp.npy': 'f124a52b46808e50d2c4aacb60d63055df760e082a10fdecf2bdc1a770f6725b'}
+# Engine 2 settings (frozen cell 32): the s2v18cue stage 1 with k 40 (+8 so that 40 remain after the score_key
+# re-keying); cap 45 min from the subprocess start (libraries ~260 s + 400 molecules ~1,250 s on 4 Kaggle CPUs), then
+# 5 min grace before the process group is killed; stall: no molecule finished for 15 min; procs 0 = min(4, CPUs).
+ENG2_CFG = dict(cap_s=2700.0, grace_s=300.0, stall_s=900.0, procs=0, k=40, margin=8,
+                ranker='ret_ranker_v18cu,ret_ranker_v18cur1', fp='fp_model_v1r.pt', pf='pf_tpu_f.pt', lib_cap=10,
+                work='/tmp/eng2_ours', omp_threads=None, pool_sha256=POOL_V18C_SHA256)
 # Upstream versions checked on 2026-10-31 (kernel-metadata cannot pin a version; Kaggle pins the version current at
 # push time): lastUpdated of each dataset as `kaggle datasets list --user <owner>` showed it.
 CHECKED_VERSIONS = {
@@ -146,6 +165,75 @@ C45 = [("FUSION_OVERFLOW = {}\nif ENG:\n",
         "print('NULL ENGINE 2 step 2 (main list + Engine 1 tail, fused below) |', _null_engine.summary(ENG), flush=True)\n"
         "if ENG:\n")]
 
+# ---- ELIG=1 (F2b): our stage 1 as Engine 2 (cells 32, 39, 45; eng2_merge.py written by notebook cell 8) ----
+C32_NEW1 = (C32_HEAD +
+            "# elig1 (ours, fix F2b of docs/fork_eligibility.md): Engine 2 is OUR stage 1, casmi.run_eng2 from\n"
+            "# bryantyu/casmi26-elig-assets (stage 1 of casmi26-own-s2v18cue: candidate pool bryantyu/casmi26-pool-v18c, FP\n"
+            "# fp_model_v1r.pt, PeakFormer pf_tpu_f.pt, LightGBM seed ensemble ret_ranker_v18cu + v18cur1), run here in its own\n"
+            "# process where the original Engine 2 ran: before the PubChem channel and Engine 1, CPU only, own process group,\n"
+            "# time cap ENG2_CFG['cap_s'] (commit run: the 12 smoke molecules of COMP; rerun: all). It writes the top 40 per\n"
+            "# molecule in Engine 2's schema, keys with chem.score_key's semantics (re-checked with chem.score_key in cell 39).\n"
+            "# Cells 39 (step 1: ICE / GLACIER input union) and 45 (step 2: fusion, cells 48-53, evidence export, outsiders)\n"
+            "# use these lists, and elig0's null-engine lists (null_engine.py) for molecules without a list of ours. The original\n"
+            "# Engine 2's inputs (prvsiyan, megayak, sergiomalv, franciscoangulo) are not mounted. Nothing here can stop the\n"
+            "# pipeline: any failure leaves ENG2_OURS empty, i.e. elig0.\n"
+            "import eng2_merge as _eng2\n"
+            "ENG = {}\n"
+            "Path('/kaggle/working/eng_lists.json').unlink(missing_ok=True)\n"
+            f"ENG2_CFG = {ENG2_CFG!r}\n"
+            "ENG2_OURS, ENG2_REPORT = _eng2.run_engine2(os.path.join(COMP, 'test.parquet'), os.path.join(COMP, 'train.parquet'),\n"
+            "                                          '/kaggle/working/eng2_ours.json', ENG2_CFG)\n"
+            "_eng2.write_json(ENG2_REPORT, '/kaggle/working/eng2_ours_report.json')\n"
+            "print(_eng2.report_line(ENG2_REPORT), flush=True)\n"
+            "if ENG2_REPORT.get('log_tail'):\n"
+            "    print(ENG2_REPORT['log_tail'], flush=True)\n")
+
+C39_1 = [("BASE_TAIL_CANDIDATES = {str(k): list(v[0]) for k, v in BASE.items()}\n",
+          "BASE_TAIL_CANDIDATES = {str(k): list(v[0]) for k, v in BASE.items()}\n"
+          "\n"
+          "# elig1 (ours, fix F2b): Engine 2, step 1 of 2. Our keys are re-checked with the pipeline's own chem.score_key (exact\n"
+          "# identity: a different key is replaced, a duplicate or unparseable entry dropped): every key in the commit run;\n"
+          "# in the rerun the first 10 of each list when the subprocess ran this RDKit version (~20 ms per key), and every key\n"
+          "# as soon as one of them differs. ENG := our list where we have one, else elig0's null-engine list (Engine 1's top\n"
+          "# 40 with Engine 1's keys). The ICE / GLACIER input union of cell 41 then adds Engine 2's same-formula candidates to\n"
+          "# the simulator input, as it did for the original Engine 2.\n"
+          "import null_engine as _null_engine\n"
+          "import eng2_merge as _eng2\n"
+          "_t_e2 = time.time()\n"
+          "_e2_head = 10 if IS_RERUN and ((ENG2_REPORT.get('meta') or {}).get('versions') or {}).get('rdkit') == rdkit.__version__ \\\n"
+          "    else None\n"
+          "ENG2_OURS, ENG2_KEYCHECK = _eng2.verify_keys(ENG2_OURS, chem.score_key, head=_e2_head)\n"
+          "_e2_mids = te.molecule_id.astype(str).unique()\n"
+          "_e2_null = _null_engine.null_engine_lists(_eng2.fallback_ids(_e2_mids, ENG2_OURS),\n"
+          "                                          {str(m): v[0] for m, v in BASE.items()},\n"
+          "                                          keys={str(m): v[1] for m, v in BASE.items()}, n=40)\n"
+          "ENG, ENG2_STEP1 = _eng2.merge(_e2_mids, ENG2_OURS, _e2_null)\n"
+          "_null_engine.write_lists(ENG, '/kaggle/working/eng_lists_step1.json')\n"
+          "print(_eng2.step_line('step 1 (read by the ICE union)', ENG2_STEP1, ENG2_REPORT,\n"
+          "                      f\"key check ({ENG2_KEYCHECK['mode']}): entries {ENG2_KEYCHECK['entries']}, checked \"\n"
+          "                      f\"{ENG2_KEYCHECK['checked']}, mismatches {ENG2_KEYCHECK['mismatches']}, \"\n"
+          "                      f\"dropped {ENG2_KEYCHECK['dropped']}, emptied {ENG2_KEYCHECK['emptied']} \"\n"
+          "                      f\"({time.time() - _t_e2:.0f} s) | \" + _null_engine.summary(ENG)), flush=True)\n")]
+
+C45_1 = [("FUSION_OVERFLOW = {}\nif ENG:\n",
+          "FUSION_OVERFLOW = {}\n"
+          "# elig1 (ours, fix F2b): Engine 2, step 2 of 2. ENG := our list (as in step 1) where we have one, else elig0's step-2\n"
+          "# null list (PREFUSION_LISTS = Engine 1 + the gated PubChem merge, verbatim, then Engine 1's tail; keys\n"
+          "# chem.score_key(s) or s as fuse2 computes them). Written to eng_lists.json, the file Engine 2 wrote; fuse2 below,\n"
+          "# cells 48-53, export_evidence and outsiders read this ENG as they read the original Engine 2's.\n"
+          "import null_engine as _null_engine\n"
+          "import eng2_merge as _eng2\n"
+          "_e2_mids = te.molecule_id.astype(str).unique()\n"
+          "_e2_null = _null_engine.null_engine_lists(_eng2.fallback_ids(_e2_mids, ENG2_OURS), PREFUSION_LISTS,\n"
+          "                                          tails=BASE_TAIL_CANDIDATES, key_of=lambda s: chem.score_key(s) or s, n=40)\n"
+          "ENG, ENG2_STEP2 = _eng2.merge(_e2_mids, ENG2_OURS, _e2_null)\n"
+          "_null_engine.write_lists(ENG, '/kaggle/working/eng_lists.json')\n"
+          "ENG2_SUMMARY = dict(subprocess=ENG2_REPORT, key_check=ENG2_KEYCHECK, step1=ENG2_STEP1, step2=ENG2_STEP2)\n"
+          "_eng2.write_json(ENG2_SUMMARY, '/kaggle/working/eng2_ours_report.json')\n"
+          "print(_eng2.step_line('step 2 (fused below; eng_lists.json)', ENG2_STEP2, ENG2_REPORT, _null_engine.summary(ENG)),\n"
+          "      flush=True)\n"
+          "if ENG:\n")]
+
 V43_OLD = ("V43_DATASET_SOURCES = ['dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets', "
            "'dmitriigluzdov/casmi26-pubchem-popularity-prior', 'dmitriigluzdov/casmi26-natural-product-panel-benchmark', "
            "'dmitriigluzdov/casmi26-natural-product-knowledge-table', 'dmitriigluzdov/casmi26-fold-safe-fpnet']\n")
@@ -167,6 +255,27 @@ C54 = [(V43_OLD,
         "# elig0 (ours): the receipt says what of its method string this build does not run\n"
         f"V43_ELIG = {V43_ELIG!r}\n"),
        (V43_METHOD, V43_METHOD + "        elig=V43_ELIG,\n")]
+V43_ELIG1 = dict(level=1, fixes=['F1', 'F2b', 'F3', 'F4'], doc='docs/fork_eligibility.md (bryantyu)',
+                 engine2='ours: casmi.run_eng2 = stage 1 of casmi26-own-s2v18cue (pool bryantyu/casmi26-pool-v18c, '
+                         'fp_model_v1r.pt, pf_tpu_f.pt, ret_ranker_v18cu + v18cur1; bryantyu/casmi26-elig-assets), top 40 '
+                         'per molecule, keys re-checked with chem.score_key; the elig0 null engine (F2a) for molecules '
+                         'without a list of ours (engine2_run.step2.fallback); no prvsiyan / megayak / sergiomalv / '
+                         'franciscoangulo inputs',
+                 src_bits=0, spec_w=0.0, external_reference_spectra='off',
+                 mounts='upstream datasets + bryantyu/casmi26-elig-assets + bryantyu/casmi26-pool-v18c (mounted_datasets); '
+                        'no v4g container, knowledge table or panel benchmark',
+                 method_note='method names the upstream E006 recipe. In elig1 its e2_* parts run on our Engine 2 '
+                             '(engine2_lists / engine2_nonempty count ours plus the null-engine fallback), chebi_lmsd and '
+                             'pubchemlite are those of our pool v18c (our ChEBI r255 + LMSD build, PubChemLite v3.3.0), '
+                             'spectral_bonus is off (SRC_BITS 0) and extlib is off (F4)')
+C54_1 = [(V43_OLD,
+          "# elig1 (ours, fixes F1 + F2b): the receipt hashes the upstream datasets mounted instead of the v4g container (was:\n"
+          "# the five dmitriigluzdov datasets) and our two Engine 2 datasets; compare v43_mounted_input_hashes.json with\n"
+          "# casmi26-pubm's by path inside each dataset.\n"
+          f"V43_DATASET_SOURCES = {UPSTREAM + ELIG1_DATASETS!r}\n"
+          "# elig1 (ours): the receipt says what of its method string this build runs differently, and what Engine 2 did\n"
+          f"V43_ELIG = {V43_ELIG1!r}\n"),
+         (V43_METHOD, V43_METHOD + "        elig=dict(V43_ELIG, engine2_run=scope.get('ENG2_SUMMARY')),\n")]
 
 
 def splice(text, edits, what):
@@ -182,8 +291,10 @@ def as_lines(text):
     return [p + '\n' for p in parts[:-1]] + ([parts[-1]] if parts[-1] else [])
 
 
-def patch_frozen(raw):
-    """Patched frozen notebook bytes (same JSON serialisation as the original) and a record of what changed."""
+def patch_frozen(raw, level=0):
+    """Patched frozen notebook bytes (same JSON serialisation as the original) and a record of what changed.
+    level 1 (F2b): cells 32 / 39 / 45 / 54 get the elig1 patches instead of elig0's; every other cell is elig0's."""
+    assert level in (0, 1), level
     assert hashlib.sha256(raw).hexdigest() == FROZEN_ORIGINAL_SHA256, 'not the pinned frozen 0.465 notebook'
     nb = json.loads(raw)
     assert json.dumps(nb, separators=(',', ':'), ensure_ascii=True).encode() == raw, 'serialisation differs'
@@ -198,11 +309,11 @@ def patch_frozen(raw):
     new[5] = splice(text[5], C5, 'frozen cell 5')
     new[26] = splice(text[26], C26, 'frozen cell 26')
     assert text[32].startswith(C32_HEAD) and text[32].count("ENG = {}\ntry:\n") == 1 and 'eng_runner.py' in text[32]
-    new[32] = C32_NEW
+    new[32] = C32_NEW if level == 0 else C32_NEW1
     new[36] = splice(text[36], C36, 'frozen cell 36')
-    new[39] = splice(text[39], C39, 'frozen cell 39')
-    new[45] = splice(text[45], C45, 'frozen cell 45')
-    new[54] = splice(text[54], C54, 'frozen cell 54')
+    new[39] = splice(text[39], C39 if level == 0 else C39_1, 'frozen cell 39')
+    new[45] = splice(text[45], C45 if level == 0 else C45_1, 'frozen cell 45')
+    new[54] = splice(text[54], C54 if level == 0 else C54_1, 'frozen cell 54')
     for i, t in new.items():
         assert cells[i]['cell_type'] == 'code', i
         compile(t, f'frozen cell {i}', 'exec', dont_inherit=True)    # syntax only (compile, never exec)
@@ -213,7 +324,16 @@ def patch_frozen(raw):
     return out, info, {i: (text[i], new[i]) for i in sorted(new)}
 
 
-def cell1_edits():
+def cell1_edits(level=0):
+    if level == 1:
+        return [("POP_W, SPEC_W, NP_W = 0.10, 0.05, 0.02\n",
+                 "POP_W, SPEC_W, NP_W = 0.10, 0.0, 0.02   # elig (F3): SPEC_W 0.0 (was 0.05; spectral-library depositor flag\n"
+                 "                                        # includes the NIST MS Data Center); NP_W kept (NPAtlas is host-allowed)\n"),
+                ("# ── Configuration ─────────────────────────────────────────────────────────────────────────────\n",
+                 "# ── Configuration ─────────────────────────────────────────────────────────────────────────────\n"
+                 "ELIG = 1                      # eligibility build (docs/fork_eligibility.md): 1 = F1 upstream mounts + F2b our\n"
+                 "                              # stage 1 as Engine 2 (frozen cell 32; null engine where it has no list) + F3 no\n"
+                 "                              # NIST depositor flag + F4 no external spectra; 0 = the same with F2a (null Engine 2)\n")]
     return [("POP_W, SPEC_W, NP_W = 0.10, 0.05, 0.02\n",
              "POP_W, SPEC_W, NP_W = 0.10, 0.0, 0.02   # elig0 (F3): SPEC_W 0.0 (was 0.05; spectral-library depositor flag\n"
              "                                        # includes the NIST MS Data Center); NP_W kept (NPAtlas is host-allowed)\n"),
@@ -273,6 +393,65 @@ def md0(ours):
 """
 
 
+def md0_elig1(ours):
+    """Markdown cell 0 of ELIG=1: the eligibility statement (elig0 with F2b in place of F2a)."""
+    if ours:
+        pf = ("PF-syn (cell 11, OURS = True) reads its PeakFormer pf_tpu_f.pt and the casmi code from casmi26-elig-assets "
+              "as well")
+    else:
+        pf = "with OURS = False, PF-syn (cell 11) and ISO (cell 17) are off"
+    return f"""# Eligible fork elig1 · Variant M core + midx final layer, our stage 1 as Engine 2, upstream datasets only
+
+> **Eligibility build elig1** (scripts/make_pub_variant.py with ELIG=1; the audit and fixes F1-F8 are in
+> docs/fork_eligibility.md of our repository): elig0 (casmi26-pube0) with fix F2b in place of F2a. Changed against
+> casmi26-pubm:
+> - **F1, upstream datasets.** The CC BY-NC-SA container dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets, the
+>   natural-product knowledge table, the panel benchmark and sanpier/catalogue-experiment-saner are no longer attached.
+>   The pipeline reads the original datasets: ahmedberatozer casmi26-v4b-models, casmi26-v3-models, casmi26-fpnet-full1,
+>   casmi26-v2-pool, casmi26-iceberg and casmi26-glacier; dmitriigluzdov casmi26-pubchem-popularity-prior and
+>   casmi26-fold-safe-fpnet; sanpier/casmi-spectrum-model-v1; metric/rdkit-2026-3-3-wheel. Engine 2 reads our two
+>   datasets: bryantyu/casmi26-elig-assets (its code and models, nothing else) and bryantyu/casmi26-pool-v18c (its
+>   candidate pool). Our bryantyu/casmi26-code and casmi26-models, which also hold older models, are not attached;
+>   {pf}. The frozen pipeline's display cells 9, 12, 14, 16 and 18 are skipped. Before the pipeline runs, cell 8 checks
+>   the mounted upstream files against the hashes of the casmi26-pubm run (files up to 32 MiB in full, larger ones by
+>   size and their first and last 4 MiB) and hashes the larger files of the re-mounted datasets in full (log only);
+>   Engine 2 checks our files against the MANIFEST.sha256 of casmi26-elig-assets and the pool against pinned SHA-256
+>   values (log only). The pipeline's receipt carries an `elig` field with Engine 2's counts.
+> - **F2b, our stage 1 as Engine 2.** The original Engine 2 (prvsiyan fingerprint models, ranker rows and COCONUT bank,
+>   megayak ranker rows, sergiomalv ChEBI/LMSD, franciscoangulo PubChemLite) is not run. In its place, frozen cell 32
+>   runs stage 1 of our own pipeline (kernels/casmi26-own-s2v18cue: pool v18c = training structures, COCONUT 10-2026,
+>   PubChemLite v3.3.0 and our ChEBI r255 / LIPID MAPS build; library, analog, fragment and documentation evidence;
+>   fingerprint model fp_model_v1r; PF-syn PeakFormer pf_tpu_f; LightGBM seed ensemble ret_ranker_v18cu + v18cur1) in
+>   its own process, as the original Engine 2 ran, on CPU and capped at 45 minutes. It writes its top 40 per molecule in
+>   Engine 2's schema, keyed by the pipeline's own InChIKey14 identity (chem.score_key, re-checked in frozen cell 39).
+>   Every reader of Engine 2 gets these lists, as it got the original's: the ICEBERG / GLACIER input union (cell 41),
+>   the reciprocal-rank fusion (cell 45), the safe tail, metric-identity fusion, fragment-gap and window-40 cells
+>   (48-52), the rank-2 placement of Engine 2's leader (cell 53), the evidence export and the outside candidates.
+>   Molecules our stage 1 does not cover (no usable spectra, no candidate, an error or the time cap) get elig0's
+>   null-engine lists (frozen cells 32, 39 and 45; eng2_merge.py, null_engine.py). How each of our files was built is
+>   in the README of casmi26-elig-assets and in docs/reproduce.md section 6.
+> - **F3.** No PubChem depositor-source bonus (SRC_BITS 0: that bit groups the NIST Mass Spectrometry Data Center's
+>   deposits with MassBank / MoNA) and SPEC_W 0 in the final layer, which then does not load the flag column. The
+>   PubChem channel's delta / growth supplement stores still memory-map their source-mask arrays, which no score reads.
+>   NP_W / NP_BONUS stay: NPAtlas is on the host's list.
+> - **F4.** The knowledge table's external reference spectra are not added to the library (frozen cell 36).
+> - Sections 6 and 8 name the datasets attached here. Not part of the fixes: the ISO cell (cell 17, off with
+>   ISO_ALPHA 0 in both builds) and two of its cell-1 knobs (ISO_COS_W, ISO_FREEZE_LEADER) come from a newer generator
+>   version than casmi26-pubm's. Log lines of the inherited F1 / F3 / F4 patches still say "elig0".
+>
+> **Still open (this build is not eligible until they are closed):** F5a, the ICEBERG / GLACIER runner glue
+> (ice_runner.py, fuse.py, gl_runner.py, gl_fuse.py, shim/ in ahmedberatozer casmi26-iceberg / casmi26-glacier) carries
+> no OSI licence yet: an owner question to its author. F6, a host question: do reconstructed, not bit-exact retrains with
+> public code (Engine 1's ranker_v4b and fe_v4 tables, saner, our own G4 / G5: G5 is the 5-hour wall-clock stop of
+> PF-b, the initialisation of pf_tpu_f) meet the reproducibility rule, and does a PubChem depositor flag naming the NIST
+> MS Data Center count as using NIST? F7, a demonstrated retrain of saner's spectrum model. F8, the licence and
+> attribution package: an MIT LICENSE for our code, a NOTICE for the Apache-2.0 and MIT sources, the fork's ATTRIBUTION
+> and reproduce files (with the PF-syn chain of pf_tpu_f, docs/reproduce.md section 7), and the Kaggle licences of our
+> datasets (G19; casmi26-elig-assets still has to be created with its licence set).
+
+"""
+
+
 # Section 6 (run it yourself) and 8 (credits): name the datasets this build attaches; the forked notebook's table stays as
 # upstream lineage, not attached.
 RUN_EDIT = [("Copy & Edit this notebook (the competition data and the datasets in the credits stay\nattached).",
@@ -308,25 +487,49 @@ ATTACHED_OURS = [('bryantyu/casmi26-code', 'us', 'PF-syn: the casmi package (OUR
                  ('bryantyu/casmi26-models', 'us', 'PF-syn PeakFormer pf_tpu_f.pt (OURS = True)', 'ours; Kaggle "unknown" (G19)')]
 
 
-def credits_edit(text, ours):
+ATTACHED_ELIG1 = [
+    ('bryantyu/casmi26-elig-assets', 'us', "Engine 2 (F2b): our stage-1 code (the casmi modules casmi.run_eng2 imports) "
+     "and models (fp_model_v1r.pt, PF-syn PeakFormer pf_tpu_f.pt, LightGBM rankers ret_ranker_v18cu / v18cur1); "
+     "README and MANIFEST.sha256 give each file's provenance", 'ours: code MIT; models trained on train.parquet '
+     '(CC BY-NC 4.0) and the permitted data of docs/ATTRIBUTION.md; Kaggle licence still to be set (G19, F8)'),
+    ('bryantyu/casmi26-pool-v18c', 'us', "Engine 2's candidate pool (1,160,133 structures: training structures, COCONUT "
+     "10-2026, PubChemLite v3.3.0, our ChEBI r255 / LIPID MAPS build; PubChem documentation counts) with its "
+     "fingerprints and COCONUT priors", 'CC BY 4.0 (COCONUT CC0; ChEBI CC BY 4.0; PubChemLite CC BY 4.0; PubChem: '
+     'courtesy of the U.S. NLM; LIPID MAPS terms)')]
+
+
+def credits_edit(text, ours, level=0):
     """Section 8: the attached datasets first; the forked notebook's table kept as upstream lineage (not attached)."""
-    rows = ATTACHED + (ATTACHED_OURS if ours else [])
-    assert sorted(r[0] for r in rows) == sorted(UPSTREAM + (OURS_DATASETS if ours else []))
+    if level == 1:
+        rows = ATTACHED + ATTACHED_ELIG1
+        assert sorted(r[0] for r in rows) == sorted(UPSTREAM + ELIG1_DATASETS)
+    else:
+        rows = ATTACHED + (ATTACHED_OURS if ours else [])
+        assert sorted(r[0] for r in rows) == sorted(UPSTREAM + (OURS_DATASETS if ours else []))
     table = CREDITS_HEAD + ''.join(f'| [{r}]({KG}{r}) | {a} | {u} | {l} |\n' for r, a, u, l in rows)
     i, j = text.index(CREDITS_HEAD), text.index(CREDITS_TAIL)
     assert text.count(CREDITS_HEAD) == 1 and text.count(CREDITS_TAIL) == 1 and i < j
     old = [line for line in text[i + len(CREDITS_HEAD):j].split('\n') if line.startswith('| [')]
     lineage = [line for line in old if line.split('](', 1)[0][3:] in DETACHED]
     assert len(old) == 7 and len(lineage) == len(DETACHED), (len(old), len(lineage))
-    gone = ("In this build the second engine does not run (fix F2a; its lists are the pipeline's own), hengck23's DreaMS "
-            "resource and the\nknowledge table are not attached, and the external reference spectra are not added (F4).\n\n")
+    if level == 1:
+        gone = ("In this build the second engine is our own stage 1 (fix F2b: bryantyu/casmi26-elig-assets on "
+                "bryantyu/casmi26-pool-v18c;\nthe original's prvsiyan / megayak / sergiomalv / franciscoangulo inputs are not "
+                "used), hengck23's DreaMS resource and the\nknowledge table are not attached, and the external reference "
+                "spectra are not added (F4).\n\n")
+        who, ours_code = 'elig1', ("(mount and hash check, the null Engine 2 module, the Engine 2 glue eng2_merge.py) and "
+                                   "Engine 2 itself\n(our stage 1, casmi26-elig-assets).")
+    else:
+        gone = ("In this build the second engine does not run (fix F2a; its lists are the pipeline's own), hengck23's DreaMS "
+                "resource and the\nknowledge table are not attached, and the external reference spectra are not added (F4).\n\n")
+        who, ours_code = 'elig0', "(mount and hash check, the null Engine 2 module)."
     return (text[:i] + gone + "**Datasets attached to this build** (kernel-metadata.json; licence as the Kaggle page shows "
             "it, with the component\nlicences of docs/fork_eligibility.md):\n\n" + table +
-            "\n**Upstream lineage, not attached here.** The forked notebook was built on these datasets; elig0 neither mounts "
+            f"\n**Upstream lineage, not attached here.** The forked notebook was built on these datasets; {who} neither mounts "
             "nor reads\nthem (fix F1). They are listed for the lineage's attribution only:\n\n" +
             CREDITS_HEAD.replace('| used for |', '| used for (forked notebook) |') +
-            '\n'.join(lineage) + '\n\n' + CREDITS_TAIL + " In this build we also wrote the eligibility code of cell 8\n"
-            "(mount and hash check, the null Engine 2 module)." + text[j + len(CREDITS_TAIL):])
+            '\n'.join(lineage) + '\n\n' + CREDITS_TAIL + " In this build we also wrote the eligibility code of cell 8\n" +
+            ours_code + text[j + len(CREDITS_TAIL):])
 
 
 # Final layer (notebook cell 16, F3): with SPEC_W 0 the NIST-including flag src_spectral_library is not loaded at all.
@@ -342,38 +545,92 @@ C16 = [("            cols = ['inchikey14', 'pop', 'src_spectral_library', 'np_co
         "                print('elig0 F3: src_spectral_library not loaded (SPEC_W 0)', flush=True)\n")]
 
 
-def build_cell(frozen_info, null_engine_src, mounts):
-    """Code appended to notebook cell 8: pinned data + scripts/pub_variant/elig_cell.py."""
+# ELIG=1: splices of elig_cell.py's text (the ELIG=0 cell stays byte-identical): also write eng2_merge.py (pinned) and
+# name F2b in the mount line and the report.
+CELL8_ELIG1 = [
+    ("#  1. writes null_engine.py next to the pipeline modules (SHA-256 pinned). The patched frozen cells 39 and 45 import it\n",
+     "#  1. writes null_engine.py and (elig1) eng2_merge.py next to the pipeline modules (SHA-256 pinned): frozen cell 32 runs\n"
+     "#     our stage 1 as Engine 2 through eng2_merge.py; cells 39 and 45 merge its lists with null_engine.py's.\n"
+     "#     null_engine.py: the patched frozen cells 39 and 45 import it\n"),
+    ("    path = _elig_write_null_engine()\n",
+     "    path = _elig_write_null_engine()\n"
+     "    eng2_path = _elig_write_eng2_merge()          # elig1 (F2b): Engine 2 glue of frozen cells 32 / 39 / 45\n"),
+    ("    rep = dict(elig=ELIG, null_engine=str(path), null_engine_sha256=NULL_ENGINE_SHA256, frozen=ELIG_FROZEN,\n",
+     "    rep = dict(elig=ELIG, null_engine=str(path), null_engine_sha256=NULL_ENGINE_SHA256, frozen=ELIG_FROZEN,\n"
+     "               eng2_merge=str(eng2_path), eng2_merge_sha256=ENG2_MERGE_SHA256, engine2_datasets=ELIG1_DATASETS,\n"),
+    ("| F2a null Engine 2 (null_engine.py {NULL_ENGINE_SHA256[:12]}) | \"\n",
+     "| F2b our stage 1 as Engine 2 (eng2_merge.py {ENG2_MERGE_SHA256[:12]}; \"\n"
+     "          f\"null engine where it has no list: null_engine.py {NULL_ENGINE_SHA256[:12]}) | \"\n"),
+    ("(elig0_report.json)\", flush=True)", "(elig1_report.json)\", flush=True)"),
+    ("    (ROOT / 'elig0_report.json').write_text(", "    (ROOT / 'elig1_report.json').write_text("),
+    ("the metric wheels) are recorded in elig0_report.json.\n", "the metric wheels) are recorded in elig1_report.json.\n"),
+    ("ELIG WARNING: this run is not the elig0 configuration", "ELIG WARNING: this run is not the elig1 configuration")]
+CELL8_ELIG1_HEAD = """ELIG1_DATASETS = {datasets!r}
+ENG2_MERGE_SHA256 = {sha!r}
+ENG2_MERGE_SRC = {src!r}
+
+
+def _elig_write_eng2_merge():
+    path = CODE / 'eng2_merge.py'
+    path.write_text(ENG2_MERGE_SRC, encoding='utf-8')
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == ENG2_MERGE_SHA256, 'eng2_merge.py differs from its pin'
+    return path
+
+
+"""
+
+
+def build_cell(frozen_info, null_engine_src, mounts, level=0, eng2_src=None):
+    """Code appended to notebook cell 8: pinned data + scripts/pub_variant/elig_cell.py (level 1: + eng2_merge.py)."""
     v43_text = open(os.path.join(HERE, V43_FILE), 'rb').read()
     assert hashlib.sha256(v43_text).hexdigest() == V43_SHA256, f'{V43_FILE} differs from its pin'
     rows = json.loads(v43_text)
     assert len(rows) == 593, len(rows)
     compact = json.dumps(rows, separators=(',', ':'))
     assert null_engine_src.isascii() and compact.isascii()
-    head = ("# ── Eligibility (ours, elig0): mounted datasets, input hash check, null Engine 2 module ─────────────────────\n"
-            "# Generated by scripts/make_pub_variant.py ELIG=0 (scripts/pub_variant/elig.py, elig_cell.py, null_engine.py).\n"
-            f"ELIG_DATASETS = {mounts!r}\n"
-            f"ELIG_UPSTREAM = {UPSTREAM!r}\n"
-            f"ELIG_DETACHED = {DETACHED!r}\n"
-            f"ELIG_CHECKED_VERSIONS = {CHECKED_VERSIONS!r}\n"
-            "# full SHA-256 of larger files (v4g container MANIFEST.json 2593c1e95b98...; v3 fpnet_0 / 1 = v4b fe_A / fe_B)\n"
-            f"ELIG_FULL_REFS = {FULL_REFS!r}\n"
-            f"ELIG_FULL_DATASETS = {FULL_DATASETS!r}\n"
-            f"ELIG_FROZEN = {frozen_info!r}\n"
-            f"NULL_ENGINE_SHA256 = {hashlib.sha256(null_engine_src.encode()).hexdigest()!r}\n"
-            f"NULL_ENGINE_SRC = {null_engine_src!r}\n"
-            f"V43_HASHES_SHA256 = {hashlib.sha256(compact.encode()).hexdigest()!r}   # compact copy of casmi26-pubm's file "
-            f"(original sha256 {V43_SHA256[:12]}...)\n"
-            f"V43_HASHES_JSON = {compact!r}\n")
-    return head + open(os.path.join(HERE, 'elig_cell.py'), encoding='utf-8').read()
+    if level == 1:
+        head = ("# ── Eligibility (ours, elig1): mounted datasets, input hash check, null Engine 2 and Engine 2 glue modules ──────\n"
+                "# Generated by scripts/make_pub_variant.py ELIG=1 (scripts/pub_variant/elig.py, elig_cell.py, null_engine.py,\n"
+                "# eng2_merge.py).\n")
+    else:
+        head = ("# ── Eligibility (ours, elig0): mounted datasets, input hash check, null Engine 2 module ─────────────────────\n"
+                "# Generated by scripts/make_pub_variant.py ELIG=0 (scripts/pub_variant/elig.py, elig_cell.py, null_engine.py).\n")
+    head += (f"ELIG_DATASETS = {mounts!r}\n"
+             f"ELIG_UPSTREAM = {UPSTREAM!r}\n"
+             f"ELIG_DETACHED = {DETACHED!r}\n"
+             f"ELIG_CHECKED_VERSIONS = {CHECKED_VERSIONS!r}\n"
+             "# full SHA-256 of larger files (v4g container MANIFEST.json 2593c1e95b98...; v3 fpnet_0 / 1 = v4b fe_A / fe_B)\n"
+             f"ELIG_FULL_REFS = {FULL_REFS!r}\n"
+             f"ELIG_FULL_DATASETS = {FULL_DATASETS!r}\n"
+             f"ELIG_FROZEN = {frozen_info!r}\n"
+             f"NULL_ENGINE_SHA256 = {hashlib.sha256(null_engine_src.encode()).hexdigest()!r}\n"
+             f"NULL_ENGINE_SRC = {null_engine_src!r}\n"
+             f"V43_HASHES_SHA256 = {hashlib.sha256(compact.encode()).hexdigest()!r}   # compact copy of casmi26-pubm's file "
+             f"(original sha256 {V43_SHA256[:12]}...)\n"
+             f"V43_HASHES_JSON = {compact!r}\n")
+    body = open(os.path.join(HERE, 'elig_cell.py'), encoding='utf-8').read()
+    if level == 1:
+        assert eng2_src is not None and eng2_src.isascii()
+        head += CELL8_ELIG1_HEAD.format(datasets=ELIG1_DATASETS, sha=hashlib.sha256(eng2_src.encode()).hexdigest(),
+                                        src=eng2_src)
+        body = splice(body, CELL8_ELIG1, 'cell 8 (elig1)')
+    return head + body
+
+
+# notebook cell 9 (stage machinery): the compact trace's label of frozen cell 32 (ELIG=1 only)
+C9_ELIG1 = [("32: 'Engine 2 · two rankers'", "32: 'Engine 2 · our stage 1 (elig1)'")]
+OPEN1 = OPEN[:1] + ['F6 host question (reconstructed retrains incl. our G4 / G5 = PF-b init of pf_tpu_f; NIST depositor flag)',
+                    OPEN[2], 'F8 licence and attribution package (MIT LICENSE, NOTICE, fork ATTRIBUTION / reproduce incl. '
+                    'the PF-syn chain, Kaggle licences of our datasets G19: casmi26-elig-assets not created yet)']
 
 
 def apply(nb, meta, level, cfg):
     """Turn the generated pub variant (nb, meta) into the eligibility build `level` in place; returns a report.
-    cfg: the build's cell-1 configuration (OURS decides whether our bryantyu datasets are attached)."""
-    assert level == 0, 'ELIG=1 (F2b: our stage 1 as Engine 2) is reserved and not built yet'
+    cfg: the build's cell-1 configuration (ELIG=0: OURS decides whether our bryantyu datasets are attached; ELIG=1
+    attaches casmi26-elig-assets + casmi26-pool-v18c and never casmi26-code / -models)."""
+    assert level in (0, 1), f'ELIG={level}: only 0 (F2a) and 1 (F2b) exist'
     ours = bool(cfg['OURS'])
-    mounts = UPSTREAM + (OURS_DATASETS if ours else [])
+    mounts = UPSTREAM + (OURS_DATASETS if ours else []) if level == 0 else UPSTREAM + ELIG1_DATASETS
     cells = nb['cells']
     weights = [n for n in ast.parse(cells[1]['source']).body if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Tuple)
                and [t.id for t in n.targets[0].elts] == ['POP_W', 'SPEC_W', 'NP_W']]
@@ -385,15 +642,22 @@ def apply(nb, meta, level, cfg):
     start = c8.index(head) + len(head)
     end = c8.index("'\n", start)
     raw = base64.b64decode(c8[start:end])
-    patched, info, changes = patch_frozen(raw)
+    patched, info, changes = patch_frozen(raw, level)
     b64 = base64.b64encode(patched).decode()
+    tag = f'elig{level}'
     cells[i8]['source'] = (c8[:c8.index(head)] + "FROZEN_SHA256 = '" + info['patched_sha256'] +
-                           "'   # elig0: frozen 0.465 notebook with the elig0 patches (original " +
+                           f"'   # {tag}: frozen 0.465 notebook with the {tag} patches (original " +
                            FROZEN_ORIGINAL_SHA256[:12] + "...)\nFROZEN_B64 = '" + b64 + c8[end:])
     assert base64.b64decode(b64) == patched
     src = open(os.path.join(HERE, 'null_engine.py'), encoding='utf-8').read()
+    eng2_src = open(os.path.join(HERE, 'eng2_merge.py'), encoding='utf-8').read() if level == 1 else None
     # appended to cell 8 (pinned sources), so every other cell keeps its number and the run order is unchanged
-    cells[i8]['source'] = cells[i8]['source'].rstrip('\n') + '\n\n\n' + build_cell(info, src, mounts)
+    cells[i8]['source'] = cells[i8]['source'].rstrip('\n') + '\n\n\n' + build_cell(info, src, mounts, level, eng2_src)
+    edited = {0, 1, i8}
+    if level == 1:                              # the compact trace names frozen cell 32's new stage
+        i9 = next(i for i, c in enumerate(cells) if c.get('id') == 'ac4866c0')
+        cells[i9]['source'] = splice(cells[i9]['source'], C9_ELIG1, f'cell {i9} (stage labels)')
+        edited.add(i9)
     # F3 in the final layer (the midx cell, our cell 16): src_spectral_library not loaded when SPEC_W is 0
     i16 = next(i for i, c in enumerate(cells) if c.get('id') == 'busyaprime-variant-m-merge')
     cells[i16]['source'] = splice(cells[i16]['source'], C16, f'cell {i16} (midx, F3)')
@@ -401,18 +665,32 @@ def apply(nb, meta, level, cfg):
     rest = cells[0]['source'].split('\n', 1)[1].lstrip('\n')
     rest = splice(rest, [('documentation prior 0.10 / 0.05 / 0.02 on', 'documentation prior 0.10 / 0.05 (0 here, F3) / 0.02 on')],
                   'cell 0')
-    cells[0]['source'] = md0(ours) + rest
+    cells[0]['source'] = (md0(ours) if level == 0 else md0_elig1(ours)) + rest
     i6 = next(i for i, c in enumerate(cells) if c['cell_type'] == 'markdown' and c['source'].startswith('## 6. Run it yourself'))
     cells[i6]['source'] = splice(cells[i6]['source'], RUN_EDIT, f'cell {i6} (run it yourself)')
     i23 = next(i for i, c in enumerate(cells) if c['cell_type'] == 'markdown' and c['source'].startswith('## 8. Credits'))
-    cells[i23]['source'] = credits_edit(cells[i23]['source'], ours)
+    cells[i23]['source'] = credits_edit(cells[i23]['source'], ours, level)
+    edited |= {i16, i6, i23}
     casmi = nb['metadata']['casmi']
     casmi['frozen_source_sha256'] = info['patched_sha256']
-    casmi['elig'] = dict(level=0, fixes=['F1', 'F2a', 'F3', 'F4'], doc='docs/fork_eligibility.md',
-                         frozen_original_sha256=FROZEN_ORIGINAL_SHA256, frozen_patched_sha256=info['patched_sha256'],
-                         frozen_patched_cells=info['patched_cells'], skipped_frozen_cells=info['skipped_cells'],
-                         null_engine_sha256=hashlib.sha256(src.encode()).hexdigest(), cell=8,
-                         notebook_cells_edited=sorted({0, 1, i8, i16, i6, i23}), datasets=mounts, detached=DETACHED,
-                         not_attached_ours=[] if ours else OURS_DATASETS, open=OPEN)
+    if level == 0:
+        casmi['elig'] = dict(level=0, fixes=['F1', 'F2a', 'F3', 'F4'], doc='docs/fork_eligibility.md',
+                             frozen_original_sha256=FROZEN_ORIGINAL_SHA256, frozen_patched_sha256=info['patched_sha256'],
+                             frozen_patched_cells=info['patched_cells'], skipped_frozen_cells=info['skipped_cells'],
+                             null_engine_sha256=hashlib.sha256(src.encode()).hexdigest(), cell=8,
+                             notebook_cells_edited=sorted(edited), datasets=mounts, detached=DETACHED,
+                             not_attached_ours=[] if ours else OURS_DATASETS, open=OPEN)
+    else:
+        casmi['elig'] = dict(level=1, fixes=['F1', 'F2b', 'F3', 'F4'], fallback='F2a null engine for molecules without '
+                             'a list of ours', doc='docs/fork_eligibility.md',
+                             frozen_original_sha256=FROZEN_ORIGINAL_SHA256, frozen_patched_sha256=info['patched_sha256'],
+                             frozen_patched_cells=info['patched_cells'], skipped_frozen_cells=info['skipped_cells'],
+                             null_engine_sha256=hashlib.sha256(src.encode()).hexdigest(),
+                             eng2_merge_sha256=hashlib.sha256(eng2_src.encode()).hexdigest(), cell=8,
+                             engine2=dict(entry='python -m casmi.run_eng2 (bryantyu/casmi26-elig-assets)',
+                                          pool='bryantyu/casmi26-pool-v18c', config=ENG2_CFG,
+                                          assets_builder='scripts/pub_variant/make_elig_assets.py'),
+                             notebook_cells_edited=sorted(edited), datasets=mounts, detached=DETACHED,
+                             not_attached_ours=OURS_DATASETS, open=OPEN1)
     meta['dataset_sources'] = mounts
     return dict(frozen=info, changes=changes, frozen_patched=patched)
