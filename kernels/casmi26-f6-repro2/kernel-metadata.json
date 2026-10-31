@@ -1,0 +1,28 @@
+{
+  "id": "bryantyu/casmi26-f6-repro2",
+  "title": "casmi26-f6-repro2",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [],
+  "dataset_sources": [
+    "ahmedberatozer/casmi26-training-code",
+    "ahmedberatozer/casmi26-v4b-models",
+    "ahmedberatozer/casmi26-v3-models",
+    "ahmedberatozer/casmi26-fpnet-full1",
+    "ahmedberatozer/casmi26-v2-pool",
+    "ahmedberatozer/casmi26-spec-cache",
+    "metric/rdkit-2026-3-3-wheel"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "enveda-CASMI26-molecule-id-mass-spectra"
+  ],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461",
+  "machine_shape": "NvidiaTeslaT4"
+}
