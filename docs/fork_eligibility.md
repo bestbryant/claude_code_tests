@@ -277,6 +277,10 @@ There is no eligible replacement short of our own pipeline. That would cost abou
 | Runtime | 0 |
 | LB cost | 0 if kept. A swap is not free: the lineage lost 0.019 when the neural model changed (e1 0.472 → e3 0.453). |
 
+**Status (Oct 31 14:03): CLOSED.** kernels/casmi26-saner-repro v1 reproduced the published final_model.pt bit-exactly
+(sha256 44436b2d...) from the published train.py / prepare.py with the one-line normalized_smiles alias; holdout MRR@25
+0.48441 = published; data audit and manifests identical. The published weights stay in the fork.
+
 ### F8. Licence and attribution package (all eligible code rows; G19)
 
 **Path.**

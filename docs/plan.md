@@ -882,6 +882,13 @@ G4 / G5) and whether a PubChem depositor-metadata flag naming the NIST MS Data C
 Work order: elig0 build + LB read vs pubm (Nov 2-3) -> elig1 (F2b) paired read -> PF-syn settings on the better base ->
 F5b only if no glue licence by Nov 7 -> F7 / F8 -> final eligible version scored by Nov 19-20.
 
+F7 CLOSED (Oct 31 14:03, kernels/casmi26-saner-repro v1, T4, 66 min): sanpier's published train.py / prepare.py (in the
+dataset itself), one-line alias patch ('normalized_smiles') + launcher, published config (seed 20261023, 16 x 500 + refit):
+data audit, 273,833 molecules and the 2,430,327-row spectrum manifest identical; holdout MRR@25 0.48441 = published (diff
+0.0); final_model.pt sha256 44436b2d... = the published file BIT-EXACT (Spearman 1.0, top-1 agreement 1.0). Seed+1000
+reference 0.48597 (per-query Spearman 0.87 to the published model: the seed spread a non-identical retrain would show).
+The saner neural scorer of the fork is reproducible from public code + competition data.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
