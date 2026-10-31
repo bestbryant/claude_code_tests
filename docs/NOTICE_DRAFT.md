@@ -23,10 +23,12 @@ notebooks read keep their own terms (fork_ATTRIBUTION_DRAFT.md); this NOTICE doe
 Copies of public Kaggle notebook code. Apache-2.0 is Kaggle's licence for public notebooks, and the embedded 0.465
 notebook declares it itself. Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0 (the full text ships with
 the notebook). "Changed" lists our modifications (Apache-2.0 §4(b)). All of them were made by scripts/make_pub_variant.py
-of the bryantyu repository, and each patched cell is marked "ours" in a comment.
+of the bryantyu repository, except the guarded PF-syn call in cell 12, which comes from our earlier casmi26-pub480pf
+build. Each patched code cell is marked "ours" or "elig0 / elig1" in a comment; the changed markdown cells describe
+this build in their text.
 
 1. **Notebook body**: configuration, session and stage machinery, run, fragment-check and merge cells, and the text of
-   sections 1-7 (cells 0-7, 9, 12, 13, 15 and 18-23).
+   sections 1-7 (cells 0-9, 12, 13, 15 and 18-23).
    - Authors:
      - Roman Tamrazov, Spectral Parallax, version 22 (https://www.kaggle.com/code/romantamrazov/casmi-2026-spectral-parallax);
      - extended to "Variant M" by Kaggle user busyaprime (kernel 33-casmi26-px-m1);
@@ -38,7 +40,9 @@ of the bryantyu repository, and each patched cell is marked "ours" in a comment.
      - cell 0 (eligibility notes);
      - cell 1 (switches ELIG, OURS, PF_W, OURS_MODE, PF_MID_W and ISO_*; final-layer weights, SPEC_W 0.0);
      - cell 8 (pinned sources: the patched frozen notebook and the eligibility code of part 4);
-     - cells 20, 21 and 23 (text naming this build and its datasets).
+     - cell 12 (a guarded call of the PF-syn cell 11; it returns at once with OURS = False);
+     - cells 18, 21 and 23 (text naming this build and its datasets); in casmi26-pube1 also cell 9 (the label of
+       stage 32) and cell 20 (text).
    - The figure helpers and field record of cells 4-6 (busyaprime, engine/33_style.py at commit 4ebb73e9) are unchanged.
 2. **Helper modules** runner.py, export_evidence.py, neural_scores.py, submission.py, ranking.py and bundle.py (cell 8,
    `MODULES`). Saner Turhaner, PubChem + Neural025 (https://www.kaggle.com/code/sanpier/pubchem-neural025-lb-0-466).
@@ -51,7 +55,7 @@ of the bryantyu repository, and each patched cell is marked "ours" in a comment.
    - Changed:
      - casmi26-pube0, sha256 47db922027a44fcc91c96095e05ef743263bef805b86e117cc8ecdb745515e2a, cells 5, 9, 12, 14, 16,
        18, 26, 32, 36, 39, 45 and 54:
-       - upstream datasets located instead of the v4g container (5, 26);
+       - upstream datasets located instead of the v4g container (5);
        - display cells skipped (9, 12, 14, 16, 18);
        - the second engine replaced by a null engine that returns the pipeline's own lists (32, 39, 45);
        - PubChem depositor-source bits off (26);
@@ -118,8 +122,10 @@ the MIT `casmi` package. The copyright lines are listed here so that they travel
 3. **ms-pred inference subset** @708148c2a8eb (ahmedberatozer/casmi26-iceberg and casmi26-glacier, `src/ms_pred/`).
    Copyright (c) 2023 Samuel Goldman. MIT (`src/ms_pred/LICENSE`). The ICEBERG and GLACIER MassSpecGym checkpoints of
    the ms-pred authors are used under the same licence.
-4. **einops 0.8.2** (wheel in ahmedberatozer/casmi26-iceberg, unmodified). Copyright (c) 2018 Alex Rogozhnikov. MIT.
-5. **LinSATNet** (Wang et al., ICML 2023; MIT, Copyright (c) 2023 Thinklab@SJTU). Not copied:
+4. **einops 0.8.2** (wheel in ahmedberatozer/casmi26-iceberg, unmodified). MIT. Copyright (c) 2018 Alex Rogozhnikov (from
+   the einops project; not in the audit copies, check the wheel's dist-info LICENSE before shipping).
+5. **LinSATNet** (Wang et al., ICML 2023; MIT, Copyright (c) 2023 Thinklab@SJTU: from the LinSATNet repository, not in
+   the audit copies; check before shipping). Not copied:
    ahmedberatozer/casmi26-glacier ships an independent re-implementation of `linsat_layer` in `shim/`. Credited only.
 
 Not MIT and not covered by this NOTICE:
@@ -163,8 +169,8 @@ PENDING THE OWNER'S LICENSE DECISION (MIT planned: the competition requires winn
 Our code in these notebooks:
 - cell 11, the PF-syn scorer, off in these builds;
 - cell 17, the ISO isomer reranker, off;
-- the eligibility code of cell 8: mount and hash check, null_engine.py, and eng2_merge.py in pube1 (the module headers
-  say "Ours, MIT");
+- the eligibility code of cell 8: mount and hash check, null_engine.py, and eng2_merge.py in pube1 (the null_engine.py
+  and eng2_merge.py headers say "Ours, MIT");
 - the patches listed in part 1;
 - in pube1, the `casmi` modules of bryantyu/casmi26-elig-assets (LICENSE.txt prepared as MIT, "Copyright (c) 2026
   bryantyu").

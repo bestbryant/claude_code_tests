@@ -35,7 +35,7 @@ run. Image: `gcr.io/kaggle-private-byod/python@sha256:37c64f7d...` (A2), GPU T4,
 
 ### 2.1 Mounted by both kernels
 
-**ahmedberatozer/casmi26-v4b-models** (A6, A8-A11; A6 U through A10, A8 E, A9 E with caveat, A10 U, A11 U)
+**ahmedberatozer/casmi26-v4b-models** (A6, A8-A11; A6 U, only through A10; A8 E, A9 E with caveat, A10 U, A11 U)
 - URL: https://www.kaggle.com/datasets/ahmedberatozer/casmi26-v4b-models
 - Used for: Engine 1, that is the `casmi` package, the fe_v4 families and tables, FPNet A / B, fe_D and ranker_v4b.
 - Licence: Kaggle "other". The card (licence section updated 2026-10-13) puts all of Ahmed Berat Özer's code under MIT,
@@ -142,8 +142,8 @@ run. Image: `gcr.io/kaggle-private-byod/python@sha256:37c64f7d...` (A2), GPU T4,
 
 **sanpier/casmi-spectrum-model-v1** (A37, E with caveat; F7 open)
 - URL: https://www.kaggle.com/datasets/sanpier/casmi-spectrum-model-v1
-- Used for: the neural spectrum-candidate scorer, read as model.py, features.py, config.json and final_model.pt.
-  `MODEL_PINS` in cell 8 holds their sha256: a97ad9b3..., 25474188..., 563fb2a2... and 44436b2d....
+- Used for: the neural spectrum-candidate scorer, read as features.py, model.py, config.json and final_model.pt.
+  `MODEL_PINS` in cell 8 holds their sha256, in that order: a97ad9b3..., 25474188..., 563fb2a2... and 44436b2d....
 - Licence: Kaggle "apache-2.0". The card: "The original PyTorch checkpoints, author-created training scripts,
   configurations, and supporting artifacts distributed in this release are licensed under the Apache License, Version
   2.0"; third-party dependencies and datasets keep their licences. The model is trained on the competition data.
@@ -208,23 +208,24 @@ run. Image: `gcr.io/kaggle-private-byod/python@sha256:37c64f7d...` (A2), GPU T4,
 All third-party code below is notebook code published on Kaggle. The audit rates it as Apache-2.0, Kaggle's licence for
 public notebooks; that rating was not re-checked against the Kaggle terms page. The embedded 0.465 notebook states this
 itself: "The public notebook declares Apache-2.0; upstream datasets/components retain their own licences."
-- **Modified by us** means patched by `scripts/make_pub_variant.py` (ELIG=0 / ELIG=1).
+- **Modified by us** means patched by `scripts/make_pub_variant.py` (ELIG=0 / ELIG=1), or for cell 12 inherited from our
+  earlier casmi26-pub480pf build.
 - **Runs** means it executes in the pube0 / pube1 run.
 
 | part | where | author and source | licence | modified by us | runs |
 |---|---|---|---|---|---|
-| Notebook body (configuration, session and stage machinery, run, fragment-check and merge cells, sections 1-7 text) | cells 0-3, 7, 9, 12, 13, 15, 18-22 | Roman Tamrazov, [Spectral Parallax](https://www.kaggle.com/code/romantamrazov/casmi-2026-spectral-parallax) v22, the notebook this one runs. It was extended to "Variant M" (0.477; merge cell, run table, docs) by busyaprime (kernel 33-casmi26-px-m1; slug as named in section 5 of the notebook, not opened) and published as kunaldesale2408/enveda-casmi-2026-mid (https://www.kaggle.com/code/kunaldesale2408/enveda-casmi-2026-mid, URL built from the slug in plan.md). Lineage credits (Kozykorpesh, Roman Rozen, alex chilton, Saner Turhaner, Dmitrii Gluzdov) are in cell 23. The authorship of individual cells is only as these credits state. | Apache-2.0 (A42) | yes: cell 0 (eligibility notes), cell 1 (ELIG, OURS, PF, ISO and final-layer knobs, SPEC_W 0), cells 20, 21 and 23 (text) | yes |
+| Notebook body (configuration, session and stage machinery, run, fragment-check and merge cells, sections 1-7 text) | cells 0-3, 7, 9, 12, 13, 15, 18-22 | Roman Tamrazov, [Spectral Parallax](https://www.kaggle.com/code/romantamrazov/casmi-2026-spectral-parallax) v22, the notebook this one runs. It was extended to "Variant M" (0.477; merge cell, run table, docs) by busyaprime (kernel 33-casmi26-px-m1; slug as named in section 5 of the notebook, not opened) and published as kunaldesale2408/enveda-casmi-2026-mid (https://www.kaggle.com/code/kunaldesale2408/enveda-casmi-2026-mid, URL built from the slug in plan.md). Lineage credits (Kozykorpesh, Roman Rozen, alex chilton, Saner Turhaner, Dmitrii Gluzdov) are in cell 23. The authorship of individual cells is only as these credits state. | Apache-2.0 (A42) | yes: cell 0 (eligibility notes), cell 1 (ELIG, OURS, PF, ISO and final-layer knobs, SPEC_W 0), cell 12 (the guarded `ours_pf_blend()` call, inherited from our casmi26-pub480pf build; it returns at once with OURS False), cells 18, 21 and 23 (text); pube1 also cell 9 (the stage-32 label) and cell 20 (text) | yes |
 | Figure helpers and the public-score field record (FIELD, taken 2026-10-28) | cells 4-6 | busyaprime (`engine/33_style.py` at their repo commit 4ebb73e9) | Apache-2.0 | no | display only |
 | Six helper modules: runner.py, export_evidence.py, neural_scores.py, submission.py, ranking.py, bundle.py | cell 8 `MODULES` (sha256 pinned in `MODULE_SHA256`) | Saner Turhaner, [PubChem + Neural025](https://www.kaggle.com/code/sanpier/pubchem-neural025-lb-0-466) | Apache-2.0 (A39) | no (byte-identical, hash-checked) | yes |
 | consensus.py (leader-safe RRF), outsiders.py | cell 8 `MODULES` | Roman Rozen, [From Peaks to Structures](https://www.kaggle.com/code/romanrozen/0-468-casmi-from-peaks-to-structures) | Apache-2.0 (A40) | no | yes |
-| The frozen 0.465 pipeline notebook (`FROZEN_B64`; original sha256 d1e757c2b71b46e6...) | cell 8, run by runner.py | Dmitrii Gluzdov, [The Data Behind Spectra to Structures](https://www.kaggle.com/code/dmitriigluzdov/casmi-26-the-data-behind-spectra-to-structures). It embeds code by the authors in its own section 6 table and credits cell, kept unchanged (list in NOTICE_DRAFT.md part 1) | Apache-2.0 as declared by that notebook (A25, A26, A27) | yes. pube0: cells 5, 9, 12, 14, 16, 18, 26, 32, 36, 39, 45, 54 (sha256 47db9220...). pube1: the same plus cell 31 (sha256 67764f55...). Each patched cell starts with an "elig0 / elig1 (ours, fix F#)" comment. | yes; display cells 9, 12, 14, 16 and 18 skipped |
+| The frozen 0.465 pipeline notebook (`FROZEN_B64`; original sha256 d1e757c2b71b46e6...) | cell 8, run by runner.py | Dmitrii Gluzdov, [The Data Behind Spectra to Structures](https://www.kaggle.com/code/dmitriigluzdov/casmi-26-the-data-behind-spectra-to-structures). It embeds code by the authors in its own section 6 table and credits cell, kept unchanged (list in NOTICE_DRAFT.md part 1) | Apache-2.0 as declared by that notebook (A25, A26, A27) | yes. pube0: cells 5, 9, 12, 14, 16, 18, 26, 32, 36, 39, 45, 54 (sha256 47db9220...). pube1: the same plus cell 31 (sha256 67764f55...). Each patched cell carries an "elig0 / elig1 (ours, fix F#)" comment. | yes; display cells 9, 12, 14, 16 and 18 skipped |
 | frag_rescore.py (untrained MetFrag-lite fragment scorer) | cell 10 (`_physical`, sha256-checked) and FZ cell 51 | Huseyin Emre Aksoy ([profile](https://www.kaggle.com/huseyinemreaksoy)), reached through Ahmed Berat Özer's [v7c notebook](https://www.kaggle.com/code/ahmedberatozer/casmi26-v7c-e006-fraggap) | Apache-2.0 (A24) | no | yes |
 | parallax_physical.py (fragment check) | cell 10 (`_post`) | Roman Tamrazov, Spectral Parallax v22 | Apache-2.0 (A41) | no | yes (PHYSICAL True) |
 | Provenance-aware reranker (parallax_public_provenance.py) | cells 14-15 | Roman Tamrazov, Spectral Parallax v22; idea credited there to heliosli | Apache-2.0 (A41) | no | no (PROVENANCE False) |
 | midx final layer | cell 16 | baidalinadilzhan, casmi26-midx-exact-dedup-fill, its cell 15 (https://www.kaggle.com/code/baidalinadilzhan/casmi26-midx-exact-dedup-fill, URL built from the slug in cell 1) | Apache-2.0 (A42) | yes: our `_mid_neural_score` hook (PF_MID_W; 0 here = midx exactly); configuration lines moved to cell 1; SPEC_W 0 (F3) | yes |
 | PF-syn cell | cell 11 | ours | pending owner (MIT planned) | n/a | no (OURS False) |
 | ISO isomer reranker ("heliosli-style" idea; our code) | cell 17 | ours | pending owner | n/a | no (ISO_ALPHA 0) |
-| Eligibility code: mount and hash check, `ELIG_*` tables, `V43_HASHES_JSON` (hashes of casmi26-pubm's mounted inputs), null_engine.py; pube1 also eng2_merge.py | cell 8 | ours (`scripts/pub_variant/elig.py`, `elig_cell.py`, `null_engine.py`, `eng2_merge.py`; module headers say "Ours, MIT") | pending owner (MIT in the module headers) | n/a | yes |
+| Eligibility code: mount and hash check, `ELIG_*` tables, `V43_HASHES_JSON` (hashes of casmi26-pubm's mounted inputs), null_engine.py; pube1 also eng2_merge.py | cell 8 | ours (`scripts/pub_variant/elig_cell.py`, `null_engine.py`, `eng2_merge.py`, embedded by `elig.py`; the null_engine.py and eng2_merge.py headers say "Ours, MIT") | pending owner (MIT in those two headers) | n/a | yes |
 
 Ideas credited without code: alex chilton (rank 2-25 weight 0.75, [notebook](https://www.kaggle.com/code/alexchilton/casmi26-lb-0-472-leader-safe-ranks-2-25-at-0-75)),
 Kozykorpesh (V2 consensus pipeline, [notebook](https://www.kaggle.com/code/kozykappa/lb-0-468-balanced-acquisition-evidence)) and heliosli
