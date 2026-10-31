@@ -178,7 +178,7 @@ The evidence for that range:
 | | |
 |---|---|
 | Work | 10-16 h: new cell, memory check (1.16M-row pool), key and schema check, review |
-| Runtime | +25 min CPU (s2v18c: libraries 260 s + stage 1 1,249 s for 400 molecules) − 12 min for Engine 2 = **+13 min** |
+| Runtime | +22-27 min CPU − 12 min for Engine 2 = **+10 to +15 min**. Basis: s2v18c's 1,249 s for 400 molecules on 4 Kaggle CPUs is the all-in time (its `stage 1 done` clock starts before the 260 s library build), plus ~1 min of score_key re-keying (~16 ms per key, 15.5k keys, in the 4 workers), with the stage-1 part scaled by up to 1.24 for the hidden test's ~1,500 spectra (1,213 visible). The 45-min cap of elig1 leaves a 1.7-2.0x margin. |
 | LB cost | Unknown, est. −0.005 to +0.005 against pubm |
 
 On the LB estimate:
@@ -300,7 +300,7 @@ There is no eligible replacement short of our own pipeline. That would cost abou
 |---|---|---:|---|---|
 | F1 upstream mounts | A5, A20, A38, A45 | 4-6 | 0 | 0 (hash-verified) |
 | F2a null Engine 2 | A28-A36 | 3-4 | −12 min | −0.005 to −0.020 |
-| F2b our stage 1 as Engine 2 | A28-A36 | 10-16 | +13 min net | −0.005 to +0.005 |
+| F2b our stage 1 as Engine 2 | A28-A36 | 10-16 | +10 to +15 min net | −0.005 to +0.005 |
 | F3 SRC_BITS 0 and SPEC_W 0 | A16, A17, A42 | 0.5 (rebuild 6-10) | 0 | 0 to −0.002 |
 | F4 drop external spectra | A19 | 0.5 | ~0 | ~0 |
 | F5a licence grant / F5b own glue | A21, A22 glue | 0.5 / 16-34 | ~0 on GPU | 0 / ±0.005 (−0.004 to −0.008 without ICEBERG) |

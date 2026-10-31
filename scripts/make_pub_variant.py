@@ -298,8 +298,9 @@ nb['metadata']['casmi']['ours'] = {
     'final_layer': 'baidalinadilzhan/casmi26-midx-exact-dedup-fill cell 15 + PF_MID_W hook (cell 16)',
     'iso': 'scripts/pub_variant/iso_cell.py (cell 17)', 'config': 'cell 1'}
 if elig_report and ELIG == 1:
-    nb['metadata']['casmi']['ours']['pf_checkpoint'] = ('bryantyu/casmi26-elig-assets/models/pf_tpu_f.pt (ELIG=1: the same '
-                                                        'file; PF-syn ' + ('on' if cfg['OURS'] else 'off: OURS = False') + ')')
+    nb['metadata']['casmi']['ours']['pf_checkpoint'] = ('bryantyu/casmi26-elig-assets/pf_tpu_f.pt (ELIG=1: the same file, '
+                                                        'at the root of the flat dataset; PF-syn ' +
+                                                        ('on' if cfg['OURS'] else 'off: OURS = False') + ')')
 elif elig_report and not cfg['OURS']:
     nb['metadata']['casmi']['ours']['pf_checkpoint'] += ' (not attached in this ELIG build: OURS = False)'
 os.makedirs(dst, exist_ok=True)

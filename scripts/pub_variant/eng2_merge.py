@@ -3,7 +3,10 @@
 Written next to the pipeline modules by notebook cell 8 (SHA-256 pinned) and imported by the patched frozen cells:
   cell 32  run_engine2(): casmi.run_eng2 (our stage 1, from bryantyu/casmi26-elig-assets, on bryantyu/casmi26-pool-v18c)
            in its own process, where the original Engine 2 ran: before the PubChem channel and Engine 1, CPU only, in its
-           own process group, with a time cap. Returns ({mid: {smiles, keys}}, report) and never raises.
+           own process group, with a time cap. Returns ({mid: {smiles, keys}}, report) and never raises. Before the run
+           check_files() hashes the assets against their MANIFEST.sha256 (the upload's self-consistency), our code and
+           models against the notebook's own pins (cfg asset_sha256: the files as built and tested) and the pool against
+           cfg pool_sha256; log only (a mismatch is reported, the run goes ahead).
   cell 39  verify_keys(): every key recomputed with the pipeline's own chem.score_key (exact identity for the ICE union
            and the fusions); merge(): ENG = our lists, and elig0's null-engine step-1 lists (Engine 1's top 40) for the
            molecules ours does not cover; read by the ICE / GLACIER input union of cell 41.
@@ -26,7 +29,7 @@ from pathlib import Path
 ASSETS, POOL = 'casmi26-elig-assets', 'casmi26-pool-v18c'
 DEFAULT_CFG = dict(cap_s=2700.0, grace_s=300.0, stall_s=900.0, procs=0, k=40, margin=8,
                    ranker='ret_ranker_v18cu,ret_ranker_v18cur1', fp='fp_model_v1r.pt', pf='pf_tpu_f.pt', lib_cap=10,
-                   work='/tmp/eng2_ours', omp_threads=None, pool_sha256={})
+                   work='/tmp/eng2_ours', omp_threads=None, pool_sha256={}, asset_sha256={})
 # environment variables our stage-1 code reads (casmi/own.py, retrieval.py, fpscore.py): never inherited
 _DROP = ('OWN_', 'PC_', 'FP_PMI', 'DREAMS_DIR', 'ZEN_', 'VENDOR_PATH', 'LIB_CAP', 'PYTHONPATH', 'PYTHONHOME',
          'PYTHONSTARTUP', 'PYTHONSAFEPATH')
@@ -68,9 +71,22 @@ def _sha256(path):
     return h.hexdigest()
 
 
-def check_files(assets, pool_dir, pool_sha256):
-    """sha256 of every file in the assets MANIFEST (sha256sum format) and of the pinned pool files; log only."""
-    rep = dict(manifest_files=0, manifest_match=0, mismatches=[], missing=[], pool_match=0, pool_files=len(pool_sha256))
+def check_files(assets, pool_dir, pool_sha256, asset_sha256=None):
+    """Log-only file checks: every file of the assets MANIFEST (sha256sum format; self-consistency of the upload), the
+    files the notebook pins (asset_sha256 {name: sha256}: *.py in the code dir, everything else in the models dir, i.e.
+    the files casmi.run_eng2 actually uses) and the pinned pool files."""
+    asset_sha256 = asset_sha256 or {}
+    rep = dict(manifest_files=0, manifest_match=0, mismatches=[], missing=[], pool_match=0, pool_files=len(pool_sha256),
+               pinned_files=len(asset_sha256), pinned_match=0,
+               pinned_models=sum(1 for n in asset_sha256 if not n.endswith('.py')), pinned_models_match=0)
+    seen = {}
+
+    def sha(f):
+        key = str(Path(f).resolve())
+        if key not in seen:
+            seen[key] = _sha256(f)
+        return seen[key]
+
     if assets.get('manifest') is not None:
         for line in Path(assets['manifest']).read_text().splitlines():
             if not line.strip() or line.startswith('#'):
@@ -84,15 +100,25 @@ def check_files(assets, pool_dir, pool_sha256):
             rep['manifest_files'] += 1
             if not f.is_file():
                 rep['missing'].append(rel)
-            elif _sha256(f) == want:
+            elif sha(f) == want:
                 rep['manifest_match'] += 1
             else:
                 rep['mismatches'].append(rel)
+    for name, want in sorted(asset_sha256.items()):
+        code = name.endswith('.py')
+        f = Path(assets['code' if code else 'models']) / name
+        if not f.is_file():
+            rep['missing'].append(f'pin/{name}')
+        elif sha(f) == want:
+            rep['pinned_match'] += 1
+            rep['pinned_models_match'] += 0 if code else 1
+        else:
+            rep['mismatches'].append(f'pin/{name}')
     for name, want in sorted(pool_sha256.items()):
         f = Path(pool_dir) / name
         if not f.is_file():
             rep['missing'].append(f'pool/{name}')
-        elif _sha256(f) == want:
+        elif sha(f) == want:
             rep['pool_match'] += 1
         else:
             rep['mismatches'].append(f'pool/{name}')
@@ -149,7 +175,7 @@ def run_engine2(test, train, out, cfg=None, input_root='/kaggle/input', python=N
         Path(out).unlink(missing_ok=True)
         assets = find_assets(input_root, cfg['ranker'])
         rep['assets'] = {k: str(v) for k, v in assets.items()}
-        rep['files'] = check_files(assets, assets['pool'], cfg.get('pool_sha256') or {})
+        rep['files'] = check_files(assets, assets['pool'], cfg.get('pool_sha256') or {}, cfg.get('asset_sha256') or {})
         work = Path(cfg['work'])
         pkg = work / 'pkg'
         if pkg.exists():
@@ -273,8 +299,10 @@ def fallback_ids(mids, ours):
 def report_line(rep):
     """Cell 32: one line on the subprocess."""
     c, meta, f = rep.get('counts') or {}, rep.get('meta') or {}, rep.get('files') or {}
-    files = (f"assets MANIFEST {f.get('manifest_match')}/{f.get('manifest_files')}, pool {f.get('pool_match')}/"
-             f"{f.get('pool_files')}{' MISMATCH ' + str(f.get('mismatches') + f.get('missing')) if f and not f.get('ok') else ''}"
+    files = (f"assets MANIFEST {f.get('manifest_match')}/{f.get('manifest_files')}, pinned {f.get('pinned_match', 0)}/"
+             f"{f.get('pinned_files', 0)} (models {f.get('pinned_models_match', 0)}/{f.get('pinned_models', 0)}), pool "
+             f"{f.get('pool_match')}/{f.get('pool_files')}"
+             f"{' MISMATCH ' + str(f.get('mismatches') + f.get('missing')) if f and not f.get('ok') else ''}"
              if f else 'files not checked')
     s = (f"ENGINE 2 OURS subprocess | status {rep.get('status')} | rc {rep.get('rc')} | molecules {rep.get('molecules')} | "
          f"ok {rep.get('ok')} | no_query {c.get('no_query', 0)} | no_keys {c.get('no_keys', 0)} | error {c.get('error', 0)} | "

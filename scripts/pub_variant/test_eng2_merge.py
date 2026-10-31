@@ -5,7 +5,7 @@ python scripts/pub_variant/test_eng2_merge.py      (plain asserts; prints 'eng2_
 Covers the merge of our Engine 2 lists with elig0's null engine (scripts/pub_variant/null_engine.py) in both steps,
 the key re-check, the output validation, the coverage asserts of frozen cells 48 / 50 (re-stated here), and
 run_engine2's subprocess paths with stub entry points: normal run, cap + grace kill (partial lists kept, the process
-group killed), crash, missing datasets, a package imported from the wrong place, and the assets / pool checks.
+group killed), crash, missing datasets, a package imported from the wrong place, and the assets / pins / pool checks.
 """
 import importlib.util
 import json
@@ -164,9 +164,11 @@ def lines_have_the_logged_format():
     assert line.startswith('ENGINE 2 OURS | molecules 12 | ours 11 | fallback 1 | 301.4 s | step 2'), line
     assert 'engine lists 1 ' in line                     # the kernel's compact-trace filter (KEY_LINE) shows it
     r = em.report_line(dict(status='done', rc=0, molecules=12, ok=12, counts=dict(ok=12), seconds=300.0, procs=4,
-                            meta=dict(seconds_libs=250.0, seconds_stage1=40.0), files=dict(ok=True, manifest_files=23,
-                            manifest_match=23, pool_files=3, pool_match=3, mismatches=[], missing=[])))
+                            meta=dict(seconds_libs=250.0, seconds_stage1=40.0), files=dict(ok=True, manifest_files=26,
+                            manifest_match=26, pinned_files=22, pinned_match=22, pinned_models=6, pinned_models_match=6,
+                            pool_files=3, pool_match=3, mismatches=[], missing=[])))
     assert r.startswith('ENGINE 2 OURS subprocess | status done | rc 0 | molecules 12 | ok 12') and 'MISMATCH' not in r
+    assert r.endswith('| assets MANIFEST 26/26, pinned 22/22 (models 6/6), pool 3/3'), r
     r = em.report_line(dict(status='failed', error='FileNotFoundError: x', files={}))
     assert 'FAILED FileNotFoundError' in r
 
@@ -222,13 +224,18 @@ def _tree(d, with_pool=True, with_assets=True, nested=False):
     return root, test
 
 
+PINS = {'run_eng2.py': STUB, 'helper.py': 'X = 1\n', 'ret_ranker_v18cu.txt': 'tree\n', 'big_model.pt': '0' * 1000}
+PINS = {n: __import__('hashlib').sha256(v.encode()).hexdigest() for n, v in PINS.items()}
+
+
 def _run(d, mode, **cfg):
     root, test = _tree(d, **{k: cfg.pop(k) for k in ('with_pool', 'with_assets', 'nested') if k in cfg})
     os.environ['STUB_MODE'] = mode
     os.environ['STUB_PIDFILE'] = os.path.join(d, 'pid')
     os.environ['OWN_PF_INST'] = '1'                    # must not reach the subprocess
     try:
-        c = dict(work=os.path.join(d, 'work'), cap_s=30, grace_s=5, pool_sha256={'pool.parquet': __import__('hashlib').sha256(b'pool').hexdigest()})
+        c = dict(work=os.path.join(d, 'work'), cap_s=30, grace_s=5, pool_sha256={'pool.parquet': __import__('hashlib').sha256(b'pool').hexdigest()},
+                 asset_sha256=dict(PINS))
         c.update(cfg)
         return em.run_engine2(test, os.path.join(d, 'train.parquet'), os.path.join(d, 'eng2.json'), c, input_root=root)
     finally:
@@ -244,6 +251,9 @@ def run_engine2_normal():
         assert rep['status'] == 'done' and rep['rc'] == 0 and rep['molecules'] == 3 and rep['ok'] == 2
         assert rep['counts'] == dict(ok=2, no_query=1) and not rep.get('error')
         assert rep['files']['ok'] and rep['files']['manifest_match'] == 4 and rep['files']['pool_match'] == 1
+        assert (rep['files']['pinned_files'], rep['files']['pinned_match'], rep['files']['pinned_models'],
+                rep['files']['pinned_models_match']) == (4, 4, 2, 2), rep['files']
+        assert '| assets MANIFEST 4/4, pinned 4/4 (models 2/2), pool 1/1' in em.report_line(rep)
         meta = json.load(open(os.path.join(d, 'eng2.json')))['meta']
         assert meta['env']['PYTHONPATH'] == os.path.join(d, 'work', 'pkg') and meta['env']['CUDA'] == ''
         assert '--cap' in meta['argv'] and meta['argv'][meta['argv'].index('--k') + 1] == '40'
@@ -257,6 +267,7 @@ def run_engine2_nested_layout():
     with tempfile.TemporaryDirectory() as d:
         lists, rep = _run(d, 'ok', nested=True)
         assert len(lists) == 2 and rep['status'] == 'done' and rep['files']['ok'] and rep['files']['manifest_match'] == 4
+        assert rep['files']['pinned_match'] == 4 and rep['files']['pinned_models_match'] == 2   # code dir / models dir
         assert rep['assets']['code'].endswith('casmi') and rep['assets']['models'].endswith('models')
 
 
@@ -297,6 +308,29 @@ def run_engine2_reports_file_mismatch():
         assert not f['ok'] and f['mismatches'] == ['pool/pool.parquet'] and f['missing'] == ['pool/pool_fp.npy']
         assert len(lists) == 2                            # log only: the run itself goes ahead
         assert 'MISMATCH' in em.report_line(rep)
+
+
+@test
+def run_engine2_reports_pin_mismatch():
+    """A self-consistent upload of other files (regenerated MANIFEST) passes the MANIFEST check but not the pins."""
+    import hashlib
+    with tempfile.TemporaryDirectory() as d:
+        pins = dict(PINS, **{'helper.py': '0' * 64, 'big_model.pt': '1' * 64, 'absent.pt': '2' * 64})
+        lists, rep = _run(d, 'ok', asset_sha256=pins)
+        f = rep['files']
+        assert f['manifest_match'] == f['manifest_files'] == 4 and not f['ok'], f
+        assert f['mismatches'] == ['pin/big_model.pt', 'pin/helper.py'] and f['missing'] == ['pin/absent.pt'], f
+        assert (f['pinned_files'], f['pinned_match'], f['pinned_models'], f['pinned_models_match']) == (5, 2, 3, 1), f
+        assert len(lists) == 2 and rep['status'] == 'done'                  # log only
+        r = em.report_line(rep)
+        assert 'pinned 2/5 (models 1/3)' in r and 'MISMATCH' in r, r
+    with tempfile.TemporaryDirectory() as d:                                  # no pins given: nothing pinned, still ok
+        lists, rep = _run(d, 'ok', asset_sha256={})
+        assert rep['files']['ok'] and rep['files']['pinned_files'] == 0 and 'pinned 0/0 (models 0/0)' in em.report_line(rep)
+    a = dict(code='/nonexistent', models='/nonexistent', assets='/nonexistent', manifest=None)
+    f = em.check_files(a, '/nonexistent', {}, {'x.py': '0' * 64})
+    assert not f['ok'] and f['missing'] == ['pin/x.py'] and f['manifest_files'] == 0
+    assert hashlib.sha256(b'').hexdigest() == em._sha256(os.devnull)
 
 
 if __name__ == '__main__':
