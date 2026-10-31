@@ -708,6 +708,25 @@ python3 /tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929
   6. If the smoke test passes and f2 is still QUEUED, delete f2 and push casmi26-pfx-tpu.
 - Step budget: if the strategy probe's s/step x 1.6 exceeds 0.34 s, set `PF_STEPS = floor(6.3 h / (1.6 x probe s/step))`, rounded down to the nearest 1,000. Print it before the main run starts.
 
+## RANK PIVOT (Oct 31 05:00) -- the owner: "you should be able to win; take responsibility"
+Leaderboard Oct 31: ~4,400 teams; #1 0.517, #20 ~0.482; the public lineage is at 0.477-0.480 (rank ~50); our best
+0.451 (old fork) and eligible 0.348. The eligible-only strategy and one-careful-change-per-day pace cost the rank. From now
+on: maximise the public score first (fork the best public notebook, add our unique PF-syn PeakFormer and other assets),
+keep the eligible line as the second final pick (prize insurance), never idle (always something useful running).
+- casmi26-pub480 = unchanged fork of kunaldesale2408/enveda-casmi-2026-mid (claims LB 0.480: 0.465 base pipeline + saner
+  neural fusion CUSTOM w_top .25 / w_mid .75 + fragment check + Variant M doc prior / isomer swaps / dedup), pushed 04:58 (T4).
+- workflow wf_55c3ee8b-957: integrator builds casmi26-pub480pf (neural term = blend of z(saner) and z(pf_tpu_f fz), PF_W 0.5,
+  fallback to saner-only), researcher surveys what moves the lineage above 0.48, reviewer checks before push.
+NOV 1 SLOTS AMENDED (05:05, before any Nov 1 reading; replaces the Oct 31 01:35 table where they differ):
+| slot | kernel | pair | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-pub480 (fork baseline) | its public page 0.480 | 0.479 +- 0.004 | the rank baseline; < 0.470: fork broken in our account, debug |
+| 2 | casmi26-pub480pf (fork + PF-syn blend, PF_W 0.5) if verified by 00:05 | slot 1 | slot 1 + 0.006 +- 0.008 | >= slot 1 + 0.004: PF-syn adds to the public lineage -> tune PF_W / mode next; <= slot 1 - 0.004: drop the blend, try an extra RRF term |
+| 3 | casmi26-own-s2v18cue (eligible line) | v18cte 0.348 | 0.351 +- 0.008 | eligible pick #1 if >= 0.350 with slot 4 >= 0.215 (Oct 31 table rule) |
+| 4 | casmi26-probe18cue-coco | 0.221 | 0.225 +- 0.008 | |
+| 5 | casmi26-pub480pf variant (PF_W 1.0 'replace') if verified, else casmi26-specpftpuf-coco | slot 1 | slot 1 + 0.004 +- 0.010 | the better of slots 2 / 5 sets the PF mode |
+probe18cue-train, mask18cue-train and specpftpuf-coco move to Nov 2 or later.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
