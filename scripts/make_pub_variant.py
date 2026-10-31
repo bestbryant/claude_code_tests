@@ -1,10 +1,17 @@
 """Build kernels/<slug>: casmi26-pub480pf with the midx final layer (+ our PF_MID_W hook), PF-syn OURS_MODE 'columns' and
 our ISO isomer reranker; every kernel made here differs from the others only in the configuration cell (cell 1).
 
-Usage: python scripts/make_pub_variant.py <slug> [KEY=VALUE ...] [--out-dir=DIR]
+Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out-dir=DIR]
   KEY is any `NAME = value` line of cell 1 (VALUE a Python literal, a bare word is a string), e.g.
   python scripts/make_pub_variant.py casmi26-pubm-iso075 OURS=True OURS_MODE=columns PF_MID_W=0 ISO_ALPHA=0.75 ISO_SCOPE=formula
   --out-dir=DIR writes DIR/<slug> instead of kernels/<slug> (test builds; the kernel id is bryantyu/<slug> either way).
+  ELIG=0 builds the eligible fork elig0 (fixes F1 + F2a + F3 + F4 of docs/fork_eligibility.md; scripts/pub_variant/elig.py):
+  upstream dataset_sources instead of the v4g container (our bryantyu datasets only with OURS=True), the frozen 0.465
+  notebook patched and re-pinned (no Engine 2: Engine 1's own lists in its place; SRC_BITS 0; no external reference
+  spectra; display cells skipped; receipt tagged), SPEC_W 0 and ELIG = 0 in cell 1 (the final layer then skips the
+  src_spectral_library column), the mount / hash check plus null_engine.py appended to cell 8, and markdown cells 0, 6
+  and 8 (statement, attached datasets). ELIG=1 (F2b) is reserved, e.g.
+  python scripts/make_pub_variant.py casmi26-pube0 ELIG=0 OURS=False PF_MID_W=0 ISO_ALPHA=0
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -17,7 +24,8 @@ Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for ever
     with a commit-run dry run of the rerank path and a trace of the PF_MID_W hook;
   - markdown cells 0 and 18: a note on what this version runs.
 Writes kernels/<slug>/notebook.ipynb + kernel-metadata.json (id bryantyu/<slug>, private, GPU / image / datasets of
-casmi26-pub480pf). Nothing is executed: the cells are only checked with ast.parse.
+casmi26-pub480pf, or the ELIG datasets). Nothing is executed: the cells are only checked with ast.parse (and the patched
+frozen cells with compile()).
 """
 import ast, hashlib, json, math, os, re, sys
 
@@ -27,6 +35,12 @@ slug = sys.argv[1]
 out_dirs = [a.split('=', 1)[1] for a in sys.argv[2:] if a.startswith('--out-dir=')]
 args = [a for a in sys.argv[2:] if not a.startswith('--out-dir=')]
 assert len(out_dirs) <= 1 and all(out_dirs), f'--out-dir given {len(out_dirs)} times or empty'
+elig_args = [a.split('=', 1)[1] for a in args if a.startswith('ELIG=')]
+args = [a for a in args if not a.startswith('ELIG=')]
+assert len(elig_args) <= 1, 'ELIG given twice'
+ELIG = int(elig_args[0]) if elig_args else None
+if ELIG is not None and ELIG != 0:
+    sys.exit(f'ELIG={ELIG}: only ELIG=0 (F1 + F2a + F3 + F4) is built; ELIG=1 (F2b, our stage 1 as Engine 2) is reserved')
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
 dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
 assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
@@ -238,6 +252,11 @@ cells[11]['source'] = splice(cells[11]['source'], PF, 'cell 11 (PF-syn)')
 cells[0]['source'] = splice(cells[0]['source'], MD0, 'cell 0 (title)')
 cells[17]['source'] = splice(cells[17]['source'], MD17, 'cell 17 (section 4)')
 c1 = splice(cells[1]['source'], CFG, 'cell 1 (config)')
+if ELIG is not None:
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location('pub_variant_elig', os.path.join(here, 'elig.py'))
+    elig = _ilu.module_from_spec(_spec); _spec.loader.exec_module(elig)       # our generator code, not notebook code
+    c1 = splice(c1, elig.cell1_edits(), 'cell 1 (elig)')
 defaults = config_values(c1)
 settings = {}
 for a in args:
@@ -264,6 +283,8 @@ cells[1]['source'] = c1
 cells.insert(17, {'cell_type': 'code', 'execution_count': None, 'id': ISO_ID,
                   'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
                   'source': open(os.path.join(here, 'iso_cell.py'), encoding='utf-8').read()})
+elig_report = elig.apply(nb, meta, ELIG, cfg) if ELIG is not None else None   # F1 / F2a / F3 / F4 (cells 0, 8, 16, 21,
+                                                                               # 23; metadata; datasets per OURS)
 for i, c in enumerate(cells):
     if c['cell_type'] == 'code':
         ast.parse(c['source'], f'cell {i}')                   # syntax only; nothing here is executed
@@ -271,6 +292,8 @@ nb['metadata']['casmi']['ours'] = {
     'pf_checkpoint': 'bryantyu/casmi26-models/pf_tpu_f.pt', 'template': 'scripts/make_pub_variant.py',
     'final_layer': 'baidalinadilzhan/casmi26-midx-exact-dedup-fill cell 15 + PF_MID_W hook (cell 16)',
     'iso': 'scripts/pub_variant/iso_cell.py (cell 17)', 'config': 'cell 1'}
+if elig_report and not cfg['OURS']:
+    nb['metadata']['casmi']['ours']['pf_checkpoint'] += ' (not attached in this ELIG build: OURS = False)'
 os.makedirs(dst, exist_ok=True)
 with open(os.path.join(dst, 'notebook.ipynb'), 'w', encoding='utf-8') as f:
     f.write(json.dumps(nb, ensure_ascii=False, separators=(',', ':')))
@@ -280,3 +303,7 @@ with open(os.path.join(dst, 'kernel-metadata.json'), 'w') as f:
 print('wrote', dst, json.dumps({k: cfg[k] for k in ('OURS', 'OURS_MODE', 'PF_W', 'PF_MID_W', 'ISO_ALPHA', 'ISO_LIB_SKIP',
                                                      'ISO_KEEP_TRAIN', 'ISO_SCOPE', 'ISO_COS_W', 'ISO_FREEZE_LEADER')}),
       'set', json.dumps(settings))
+if elig_report:
+    print('ELIG', ELIG, '| frozen', elig_report['frozen']['original_sha256'][:12], '->',
+          elig_report['frozen']['patched_sha256'][:12], '| patched frozen cells', elig_report['frozen']['patched_cells'],
+          '| datasets', len(meta['dataset_sources']))

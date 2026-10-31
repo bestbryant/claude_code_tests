@@ -1,0 +1,3560 @@
+[
+  {
+    "path": "/kaggle/input/competitions/enveda-CASMI26-molecule-id-mass-spectra/sample_submission.csv",
+    "bytes": 43619,
+    "sha256": "34c45718efeb03b9d130c7f1ed5a1a72f92c8818479a49d5feef08b5a9f18e04",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/competitions/enveda-CASMI26-molecule-id-mass-spectra/test.parquet",
+    "bytes": 4848729,
+    "sha256": "2fa29c4aa06e93b48e0cd6619fd2de3f4e956f0019d242141678b7287f2b43e0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/competitions/enveda-CASMI26-molecule-id-mass-spectra/train.parquet",
+    "bytes": 3033286496,
+    "sha256_head_tail": "df3579eb4bd7f3b55f6f39f769fd3137abb7cb1ff2e6d9243297f38273ed2fa1",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/ATTRIBUTION.md",
+    "bytes": 5124,
+    "sha256": "6918a04bda1d78fee311ac2acf29b1a3736321e74b68c44d05bcb98f7062b728",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/MANIFEST.json",
+    "bytes": 45195,
+    "sha256": "2593c1e95b989309e9c5057d1c00216c22c75f50d87a960b363d24f99f1bad8f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/README.md",
+    "bytes": 9323,
+    "sha256": "db3790cee6e5ba1afe228f6fc30b4ccfeb48c993b09fac673877ab498f6c6d12",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/SOURCE-LICENSES.md",
+    "bytes": 1962,
+    "sha256": "0343e31e5a9e064b524491bfe02a5f0f127ad9643a049882cd7e74bdd7014b94",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/ATTRIBUTION.md",
+    "bytes": 2428,
+    "sha256": "fb49f6a959f562b7edb50a9103eccbbdf55a2c38327f09b989a369311fd280d7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/bio_fp.npy",
+    "bytes": 85341539,
+    "sha256_head_tail": "037d393c90b5d7ca9b20a289c1ed94553cf955616db6062d1cd77e0816e1528b",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/bio_mass.npy",
+    "bytes": 787592,
+    "sha256": "2407a2ee04bd6bc468db876e7c0569842e7652432386cf1101dc85ef5a5611df",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/bio_meta.pkl",
+    "bytes": 14266637,
+    "sha256": "bfc92d81dafe8244a86f3a7b74b0da66b61605a9581b78c60acea619908404d4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/bio_structures.parquet",
+    "bytes": 5407545,
+    "sha256": "6bef7106d640ed370046e79d67b86932ba26da3a3632e6901e3b040fad56aa88",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi-chebi-lmsd-structures/stats.json",
+    "bytes": 608,
+    "sha256": "dd0d5686dd54824a40857b75338ed03dc922a2580031d246bf1995b43af57a5e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-fp-models-v2/fp_merged_m1.pt",
+    "bytes": 144110255,
+    "sha256_head_tail": "d21da200e05f5de323e7fd2b69e9106e182842b28066e87dd939d3b3bdb6a3b1",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-fp-models-v2/fp_single_s2.pt",
+    "bytes": 144110255,
+    "sha256_head_tail": "d8399f203383cfd1325b47e04bbba4a76ec80c3ddb658a36c7828c1f8a483c48",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-fpnet-full1/fpnet_full1.pt",
+    "bytes": 198791233,
+    "sha256_head_tail": "9f3d11798b4e9051bdc1bff3478fe0a7a81b865a6ba84f3b5194ee0511f44256",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/LICENSE-NOTICE.txt",
+    "bytes": 1489,
+    "sha256": "563c9951ffb47543beeff63df8006b0ba5ab9785a23acfb5311a6b4ceaf44f55",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/MANIFEST.json",
+    "bytes": 6286,
+    "sha256": "53bf3f8724cb0d8ddbb104254deda88b0a90502e3ab031aa42cbbf010b38634d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/README.md",
+    "bytes": 2423,
+    "sha256": "430b17c774e84f76204aa83b2672d39d31de9f1479eff8a2a3663bcc8ce000ac",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/ckpt/glacier.pt",
+    "bytes": 60531887,
+    "sha256_head_tail": "ec42d203c09a167fc2d0dc9020679f05de07ec5920ff26eca2da21b737b88788",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/gl_fuse.py",
+    "bytes": 7533,
+    "sha256": "ea390f5f29705c015f39c509cc2b86e6a360d0bb90db61c87c507068f38ae58e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/gl_runner.py",
+    "bytes": 39880,
+    "sha256": "5c4f74313ac54263d05d987c39d012d81ec57c5f35e1095ecd49a5bcb6440fca",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/LinSATNet/__init__.py",
+    "bytes": 3656,
+    "sha256": "a0ffdf64f610ad6a86ef560d3ff62f06a9c2b53ed13473d85eae87953f39e6af",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/dgl/__init__.py",
+    "bytes": 10029,
+    "sha256": "35dd2028bbb1fb14442d7a4cbbd9cb260c1063ab05dd556ddaf1f77aa2f3d2e2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/dgl/backend/__init__.py",
+    "bytes": 36,
+    "sha256": "f85e782b33669b9567ba24c46931db87506637870d723c8696e66515ff0f9ee7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/dgl/backend/pytorch.py",
+    "bytes": 964,
+    "sha256": "e7bf3d120f37ebc40fb8dec000f637ec516b75610b21717a4d7abe3cb40f37c7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/dgl/function.py",
+    "bytes": 1803,
+    "sha256": "4dd78301a49129085e3234ff902999c7921979a5e09e5415a3aaf3a0aa9d27ff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/dgl/nn/__init__.py",
+    "bytes": 1958,
+    "sha256": "cd78a6aaee83a58cadb14a9a41f8c8e92a07c3c2bba52f6a83b4eb8ac4fd62a2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/shim/torch_scatter/__init__.py",
+    "bytes": 3120,
+    "sha256": "d8f0b42adc06bb499514f68378c826900cbcb2e9764a4ea403bc160497c842a6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/LICENSE",
+    "bytes": 1092,
+    "sha256": "cb323bf6812b7ebc608d6ded23cf0245ab4633d68b1998010ece3ea3d2810fe3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/__init__.py",
+    "bytes": 266,
+    "sha256": "e4a927730a084dd169e994b1fa712c5e17709e0a869f00aadb4709df9855c487",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/__init__.py",
+    "bytes": 381,
+    "sha256": "521b8cd399abda6a52cd1cc3304d46557035c70f3332be50122c9e68032d1351",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/chem_utils.py",
+    "bytes": 26034,
+    "sha256": "c9842ef76eb831394c53fdd5050d87842edaebd46427a722d43983286495f96e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/denoising_utils.py",
+    "bytes": 3478,
+    "sha256": "34f9658456896a4adcd4302c783d7253727fe527454bec2b7c91f224a4cc0051",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/fingerprint.py",
+    "bytes": 1649,
+    "sha256": "d3032ecff1a43472af33ce1ea307223941b014290b7507c44e9ee028f5d764d3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/misc_utils.py",
+    "bytes": 96988,
+    "sha256": "bbee369888121c45384a4c93c5c0811bd3b4d8ba9bd038aa119f04b1ca4d1122",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/parallel_utils.py",
+    "bytes": 13635,
+    "sha256": "60dbeac1f6d2b52009b40329790d6ca05fdd28efb70a1c23586616d6c984c691",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/common/splitter.py",
+    "bytes": 2676,
+    "sha256": "47ea4c05697ddaa8bafe777c58ebb7ff0d9de762a5ee8345b6ec38cf9496827c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/glacier/dataset.py",
+    "bytes": 46377,
+    "sha256": "547a09d8629a45c8fad43dcb60277a36906b1d382520c959950562d109014360",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/glacier/joint_model.py",
+    "bytes": 76110,
+    "sha256": "9481602423011e830c94b8fcd857ac2be3cb31b2c24d714a3ae0c1edd235c293",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/graphormer/__init__.py",
+    "bytes": 351,
+    "sha256": "b31b131343597bb736ee984291cbe0688383b507cd6b22d4d9ca01159ac440f2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/graphormer/graphormer_graph_encoder.py",
+    "bytes": 6925,
+    "sha256": "074a59296c0a2903fd5018c27705ea1da2393f09c84ba30fb32acbf3827729ea",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/graphormer/graphormer_graph_encoder_layer.py",
+    "bytes": 3593,
+    "sha256": "d98ba908616e231187afe2409409c06269e5d2017bd12c0d85c6ef093e8272f7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/graphormer/graphormer_layers.py",
+    "bytes": 5937,
+    "sha256": "26c8d693bebc8904a975aeb11cf343b9c7a0fd9a120f828ed597bd8180bc606d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/graphormer/multihead_attention.py",
+    "bytes": 2404,
+    "sha256": "f11b79e3e4f8147cbbe97638e27b7046dfb8c2ed714b35409925f9bb4c5f0815",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/iceberg/dag_data.py",
+    "bytes": 36155,
+    "sha256": "80a4f2abd57a59077bf988c9a3f975de36cf856c189aadf9f871382054494814",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/iceberg/graph_mutate.py",
+    "bytes": 9359,
+    "sha256": "06c343312d44eedc1498c5513b33bcf5b1bc950f05dcb87e18827a0a7a81c55d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/magma/fragmentation.py",
+    "bytes": 28327,
+    "sha256": "5fc6ac347a09ea8486154ce827eea0ea810a0c7f6a277279ffd4c5abd1e93744",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/__init__.py",
+    "bytes": 378,
+    "sha256": "2f7f5b3d2537b6bde6a28be84908826901cb2306756b680a57934c39831ade57",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/dgl_graph_ops.py",
+    "bytes": 18955,
+    "sha256": "d65b239032eae4ec8cb2d0b9850fd773542722ff953c96827ab59000d13eba9f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/dgl_modules.py",
+    "bytes": 23408,
+    "sha256": "b98dfc02dad06a67e2c9ee61670ebc0c96a8b2a62859335888f8189d5677e2e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/form_embedder.py",
+    "bytes": 10681,
+    "sha256": "30bb3670c8b21e01ebb3fb2548dac7f8e0cac589fd4cfccc51589ddf55c1ea4b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/mol_graph.py",
+    "bytes": 10573,
+    "sha256": "62d11349b0c9d06335384b6fabfcddffaf78ece4c1d6f5c18ac426746d1e7d89",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/nn_utils.py",
+    "bytes": 41337,
+    "sha256": "f07a9018515ed0204b305741c5b13db9285d400ee7ff3e5bfa12db756a87146f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-glacier/src/ms_pred/nn_utils/transformer_layer.py",
+    "bytes": 30192,
+    "sha256": "8884d91afd479bef9b05d4a4527953ade8fd9353332ca3c6eddb8e1b048d2a92",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/LICENSE-NOTICE.txt",
+    "bytes": 1003,
+    "sha256": "2bdc24cdcfda1c536a17d8af6a85b6028b19369527d84db8cc81800228897bce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/MANIFEST.json",
+    "bytes": 6163,
+    "sha256": "78ab2dff112b1e9a043a8025bf8b57839be3f4b94f2e87fc61becbef4c804f8b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/README.md",
+    "bytes": 3879,
+    "sha256": "1a36864cb19161b84742f9cb8f323f795b5b3e8e1d739474b7b205acd2d8601f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/ckpt/gen.pt",
+    "bytes": 14561244,
+    "sha256": "deef0451c1870d2125653bb212c9d95c5b5d9bf80156dfa9b22fedda7db49bea",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/ckpt/inten.pt",
+    "bytes": 13793037,
+    "sha256": "c49e330e049d3a8b0095026ed694fcf70045c24305354853732aaa5f89d55068",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/fuse.py",
+    "bytes": 8349,
+    "sha256": "6d1bdf0c63ff8844d6994bb83cdadf07951ee40ed87ea5a2d870577c6fc76bb1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/ice_runner.py",
+    "bytes": 31551,
+    "sha256": "dc0d5d1e14053e2e7d9088817c620d6615372abc3afdd02be2fc7ff9ee0b2802",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/dgl/__init__.py",
+    "bytes": 10029,
+    "sha256": "35dd2028bbb1fb14442d7a4cbbd9cb260c1063ab05dd556ddaf1f77aa2f3d2e2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/dgl/backend/__init__.py",
+    "bytes": 36,
+    "sha256": "f85e782b33669b9567ba24c46931db87506637870d723c8696e66515ff0f9ee7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/dgl/backend/pytorch.py",
+    "bytes": 964,
+    "sha256": "e7bf3d120f37ebc40fb8dec000f637ec516b75610b21717a4d7abe3cb40f37c7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/dgl/function.py",
+    "bytes": 1803,
+    "sha256": "4dd78301a49129085e3234ff902999c7921979a5e09e5415a3aaf3a0aa9d27ff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/dgl/nn/__init__.py",
+    "bytes": 1958,
+    "sha256": "cd78a6aaee83a58cadb14a9a41f8c8e92a07c3c2bba52f6a83b4eb8ac4fd62a2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/shim/torch_scatter/__init__.py",
+    "bytes": 3120,
+    "sha256": "d8f0b42adc06bb499514f68378c826900cbcb2e9764a4ea403bc160497c842a6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/LICENSE",
+    "bytes": 1092,
+    "sha256": "cb323bf6812b7ebc608d6ded23cf0245ab4633d68b1998010ece3ea3d2810fe3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/__init__.py",
+    "bytes": 266,
+    "sha256": "e4a927730a084dd169e994b1fa712c5e17709e0a869f00aadb4709df9855c487",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/__init__.py",
+    "bytes": 381,
+    "sha256": "521b8cd399abda6a52cd1cc3304d46557035c70f3332be50122c9e68032d1351",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/chem_utils.py",
+    "bytes": 26034,
+    "sha256": "c9842ef76eb831394c53fdd5050d87842edaebd46427a722d43983286495f96e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/denoising_utils.py",
+    "bytes": 3478,
+    "sha256": "34f9658456896a4adcd4302c783d7253727fe527454bec2b7c91f224a4cc0051",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/fingerprint.py",
+    "bytes": 1649,
+    "sha256": "d3032ecff1a43472af33ce1ea307223941b014290b7507c44e9ee028f5d764d3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/misc_utils.py",
+    "bytes": 96988,
+    "sha256": "bbee369888121c45384a4c93c5c0811bd3b4d8ba9bd038aa119f04b1ca4d1122",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/parallel_utils.py",
+    "bytes": 13635,
+    "sha256": "60dbeac1f6d2b52009b40329790d6ca05fdd28efb70a1c23586616d6c984c691",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/common/splitter.py",
+    "bytes": 2676,
+    "sha256": "47ea4c05697ddaa8bafe777c58ebb7ff0d9de762a5ee8345b6ec38cf9496827c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/iceberg/dag_data.py",
+    "bytes": 36155,
+    "sha256": "80a4f2abd57a59077bf988c9a3f975de36cf856c189aadf9f871382054494814",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/iceberg/gen_model.py",
+    "bytes": 34864,
+    "sha256": "467a117823c4e1885636cbad4d4925f69c68722aea460cf8fc91e08cfcb6c755",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/iceberg/inten_model.py",
+    "bytes": 34601,
+    "sha256": "821942bdcb0282dd229deb6cafcfd6f07ab29eeb9539446acaa88229d6341ff6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/iceberg/joint_model.py",
+    "bytes": 7968,
+    "sha256": "d1cd923d0729e6a0b141f97926e4ed8d4172b01ee4b0212781f3835f2f558f74",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/magma/fragmentation.py",
+    "bytes": 28327,
+    "sha256": "5fc6ac347a09ea8486154ce827eea0ea810a0c7f6a277279ffd4c5abd1e93744",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/magma/run_magma.py",
+    "bytes": 23083,
+    "sha256": "b55f7b3914835e53641ca3e0c337e7b1b5acc61d914268fd26d61263d0f56b6d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/__init__.py",
+    "bytes": 378,
+    "sha256": "2f7f5b3d2537b6bde6a28be84908826901cb2306756b680a57934c39831ade57",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/dgl_graph_ops.py",
+    "bytes": 18955,
+    "sha256": "d65b239032eae4ec8cb2d0b9850fd773542722ff953c96827ab59000d13eba9f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/dgl_modules.py",
+    "bytes": 23408,
+    "sha256": "b98dfc02dad06a67e2c9ee61670ebc0c96a8b2a62859335888f8189d5677e2e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/form_embedder.py",
+    "bytes": 10681,
+    "sha256": "30bb3670c8b21e01ebb3fb2548dac7f8e0cac589fd4cfccc51589ddf55c1ea4b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/mol_graph.py",
+    "bytes": 10573,
+    "sha256": "62d11349b0c9d06335384b6fabfcddffaf78ece4c1d6f5c18ac426746d1e7d89",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/nn_utils.py",
+    "bytes": 41337,
+    "sha256": "f07a9018515ed0204b305741c5b13db9285d400ee7ff3e5bfa12db756a87146f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/src/ms_pred/nn_utils/transformer_layer.py",
+    "bytes": 30192,
+    "sha256": "8884d91afd479bef9b05d4a4527953ade8fd9353332ca3c6eddb8e1b048d2a92",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/wheels/einops-0.8.2-py3-none-any.whl.ice",
+    "bytes": 65638,
+    "sha256": "54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/wheels/lightning_utilities-0.15.3-py3-none-any.whl.ice",
+    "bytes": 31906,
+    "sha256": "6c55f1bee70084a1cbeaa41ada96e4b3a0fea5909e844dd335bd80f5a73c5f91",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/wheels/pytorch_lightning-2.6.6-py3-none-any.whl.ice",
+    "bytes": 853045,
+    "sha256": "71f95c7b22f25c4f91cc659e1734bcdc6c69c8b66543f2ed2d78dbe29ce2f167",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/wheels/rdkit-2025.3.6-cp312-cp312-manylinux_2_28_x86_64.whl.ice",
+    "bytes": 36119142,
+    "sha256_head_tail": "8dd92140c41e70f8199165f5dac0fc0965f7161457cce193a8419fc9fabb5ac3",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-iceberg/wheels/torchmetrics-1.9.0-py3-none-any.whl.ice",
+    "bytes": 983384,
+    "sha256": "bfdcbff3dd1d96b3374bb2496eb39f23c4b28b8a845b6a18c313688e0d2d9ca1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-pubchemlite-cc0-candidate-fingerprints/MANIFEST.json",
+    "bytes": 920,
+    "sha256": "f333f6fa150f807f2981faa7dcb930b90c6f5022015f7314f428cb8bd84e42cb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-pubchemlite-cc0-candidate-fingerprints/pubchemlite_fp.npy",
+    "bytes": 334454048,
+    "sha256_head_tail": "c8348e30bbf8d4b3294cab083e1e55841a49dc8334be9211df2ab59ef5008fe2",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-pubchemlite-cc0-candidate-fingerprints/pubchemlite_mass.npy",
+    "bytes": 3086208,
+    "sha256": "f107bdf361b75fb2f6115abb2a28eda053b476b6c3694f4b0a2bfdadb248730f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-pubchemlite-cc0-candidate-fingerprints/pubchemlite_meta.pkl",
+    "bytes": 23642096,
+    "sha256": "3c9a18c7662022bce51759b1660292b712fe7544459020e38299d2f0747517ce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-ranker-features/rank_train.npz",
+    "bytes": 9553020,
+    "sha256": "41ccec87fba5f8ab255aaf5a723567f25bd766064265c5cc2b83ba2cf15f57f8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/README.md",
+    "bytes": 1879,
+    "sha256": "89757d07af932c35e4d73e505bfc4a0e81655d04a5722903e879b026563336b4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/ours_fpnet_merged_26k.pt",
+    "bytes": 144111564,
+    "sha256_head_tail": "07fe04872abfe41e5bdff101d9c21a70953f56a78aa623d0a1e2c8ab7b9aefbd",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/ours_fpnet_single_16k.pt",
+    "bytes": 144111657,
+    "sha256_head_tail": "e11ea32bdf88866fa32fe1ed86c5f52556aa5815dd14bce8defa20beacde68a1",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/sim_rank_rows_fp16k.npz",
+    "bytes": 25439306,
+    "sha256": "d3cc072767e667b43d5d4d88a1eded08aba4dab5fb56f502353d9e8ed6c42456",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/sim_rank_rows_fppair.npz",
+    "bytes": 25437252,
+    "sha256": "20e5d7d0c5a4ed63b8e79884d5cc681fd60e8bfa94ecac103994354385432801",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-simulated-ranker-rows/sim_rank_rows_nofp.npz",
+    "bytes": 26872207,
+    "sha256": "c19ae76f69c7a3f23e67d2e27441830213eee941aa5658b47b1798872a61a7e9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/TRAINING.md",
+    "bytes": 3536,
+    "sha256": "a3a6d86205670948e8ea2518bafa5b8af6e4b160a51dc3b68b5768ddffaae097",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/held_out_molecules.csv",
+    "bytes": 18738,
+    "sha256": "c846c7e58ac65201dc57ef1ea4bd2945f1240bcf1a761ae9d807df255b8f5d61",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/held_out_sids.npy",
+    "bytes": 2248,
+    "sha256": "dc8dd384ebdfcc2c301d7ac02b3a8f2306d21a3eea96f02f75bfcd239d85dc30",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/history.json",
+    "bytes": 3269,
+    "sha256": "4dfb1931601ea8a81f87574395abcc8da102c73bb7e79b6a3a774d2758e38398",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/prep.py",
+    "bytes": 5583,
+    "sha256": "e0734797a108817a9c3880f81750430fb8e891cbbaf0d6acb8214797659e216f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/spec2mol.pt",
+    "bytes": 66731290,
+    "sha256_head_tail": "82422cc76f831e52c6dcc84ffcda11e9c658169c61ef3d78fe1ed2c9f3d1cf77",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/spec2mol_features.py",
+    "bytes": 1512,
+    "sha256": "0fd9286aff5564dc327511f17a4af23b3d52eb14515e92ea828024cab9ae80be",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/spec2mol_model.py",
+    "bytes": 2528,
+    "sha256": "c2bfc970392ec862f684d2fc2e0d2f77a80863cc87b40ef3f442d0218ff5e1e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol/train.py",
+    "bytes": 6724,
+    "sha256": "83f0be770170d3f7ceaf5b32a9221461c34ba05ec5636d6640d420802bac5283",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/TRAINING.md",
+    "bytes": 2255,
+    "sha256": "c90b1b069c0b4d8eeec0c58a4a426e7f42bf375443cff365e2717c37fc59a79a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/history_val.json",
+    "bytes": 430,
+    "sha256": "1f693695917f82597d84608aa6ae2dc9035e1dbab8f3f2833e91636b98347402",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/prep_morgan.py",
+    "bytes": 1360,
+    "sha256": "ebb201f064e10d13056d743b09025b4bbca65f7f2317bd48063d9e7eb0a19ecc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/spec2mol_r.pt",
+    "bytes": 11893127,
+    "sha256": "b78ec5949fec91678dc5b8c8c4b4dca00b38adf9454c36b2cfe7d81500a53cdf",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/spec2mol_r_features.py",
+    "bytes": 870,
+    "sha256": "c31cfc0730dd1208b1644c96070ee20731dcc4ef6e62fa9077f05dd304867dcd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/spec2mol_r_model.py",
+    "bytes": 2707,
+    "sha256": "a688a23ce0533508cb08e103a29d932ff6597ae4fc20c46d9309e2a3f63ed372",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/spec2mol_r_spectrum.py",
+    "bytes": 1512,
+    "sha256": "0fd9286aff5564dc327511f17a4af23b3d52eb14515e92ea828024cab9ae80be",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-spec2mol-r/train_r.py",
+    "bytes": 6961,
+    "sha256": "938a4352ec63a3a106a4fc98b30d2e865ef20e7731e46d0e1753714d1fe15db0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/fp_bits.npy",
+    "bytes": 41032,
+    "sha256": "c3869e86449d6fed6e79e9655f8a7d35bd55c3138ecddfc1dae5072627e78677",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/pool_fp.npy",
+    "bytes": 908986707,
+    "sha256_head_tail": "21008c78d9625b4c920c47597648521bbb6936cc58707dd5d24f5deb2a4deca0",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/pool_frag_mass.npy",
+    "bytes": 357116708,
+    "sha256_head_tail": "8231024539fe9d63a594ebc04e872dcc10b6254238f7b1833f05dc2edcc8699f",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/pool_frag_off.npy",
+    "bytes": 5685744,
+    "sha256": "354015a6eab8b6762f9124384e959d606e961c35b999d1b088153d69538765e7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/pool_meta.parquet",
+    "bytes": 36692358,
+    "sha256_head_tail": "2e40fd0b297d40014ce18f462ed2c16e0ed60328fe7bd970a40c882fb0528074",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/train_fp_sel.npy",
+    "bytes": 352761118,
+    "sha256_head_tail": "69e68823cce84e6ee20c9f2113468d37249aaa7818825e84e39ded06746dc1a7",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v2-pool/train_structs.parquet",
+    "bytes": 23306834,
+    "sha256": "f20aa1cac23af42e430a6633707fda34e48dea97114bdc3e443897f692df3656",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/__init__.py",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/build.py",
+    "bytes": 4979,
+    "sha256": "86776c14e237dc64dbf965d9bc200cc670dc7226bf946938380729d7e80c56f8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/chem.py",
+    "bytes": 12328,
+    "sha256": "99474f23d8a67040b0c0f8c70e73592a6f7f656f50103e350ca473451e2169f1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/derive.py",
+    "bytes": 6929,
+    "sha256": "7c1e8c3afb4c17a3ae58fbc6c36fd4cfc552da97b9129c9b46cca3cdc6ee4892",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/engine.py",
+    "bytes": 26449,
+    "sha256": "d914bf9d5eb56cfff434b5d53a4d55881b97697aa834a627d9932a4f8c650d27",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/fpnet.py",
+    "bytes": 9551,
+    "sha256": "0ea6e372d1f045a877d350234c2ccf5d93fdd98cb23bd4c22376bf7e99547608",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/frag.py",
+    "bytes": 11172,
+    "sha256": "809f5582494cee4cf6dcace4b04699b8427e81022b78d42162cc0239a57773de",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/graphs.py",
+    "bytes": 2850,
+    "sha256": "8dcbe16bbf3b34b7a08866234eb9abf2de713d21c93c653e7156e94e9debcd55",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/library.py",
+    "bytes": 7577,
+    "sha256": "21ee24dee9f39123da518fb17802a394e6dc46b147d5dbdf276210b60185f831",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/pool.py",
+    "bytes": 2370,
+    "sha256": "279444f6c03834adbbfc0fad321e24187585d7cd5afdc363eff083dc263a0286",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/ranker.py",
+    "bytes": 4189,
+    "sha256": "a7ee491b5a3d3decb3887afe3931adb10c11964468fb204e8c27b42757424fe4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/spectra.py",
+    "bytes": 10057,
+    "sha256": "e2481761cdfb2515e8a945751f85f6b9e885680a8e974d7ac35c78bbf279ae74",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/structs.py",
+    "bytes": 2791,
+    "sha256": "2c70df89e8f96b3e716651fe8815d0a05af3ad26e2b448e552ea53c26ede334a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/traindata.py",
+    "bytes": 9425,
+    "sha256": "cecb329d96362f11d16b40a26f1888f092610ff6202812408c13e2c293c6a2bc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/code/casmi/xenc.py",
+    "bytes": 6938,
+    "sha256": "89fbb470e6fc085f7363bf79e4517c06d43eed3c1df197b7f374b65dacdb7310",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/fpnet_0.pt",
+    "bytes": 198790165,
+    "sha256_head_tail": "9b19b196dc6c90e79880d9e37546d6514b6ac04ad6573fbd4128412a55490ec4",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/fpnet_1.pt",
+    "bytes": 198790165,
+    "sha256_head_tail": "77bd2958d1ccd793b36ea325fb7c11f8f7203b0043775bfd9c242dddec505864",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v3-models/ranker_0.pkl",
+    "bytes": 14162986,
+    "sha256": "b7d5e5bf7a70b35526a78a999def236c795ae1f114e4e360728f1cea068e8e68",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/LICENSE-NOTICE.txt",
+    "bytes": 1363,
+    "sha256": "b9c26d77338c03cb4387ae61bf4f6524eb77ee59c8530bc9f8d33a742a913a3b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/MANIFEST.json",
+    "bytes": 9209,
+    "sha256": "e64b960037769971e146a35932e29ed3f042de1716e4dbe281ebd84a7cfc3b6a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/__init__.py",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/build.py",
+    "bytes": 4979,
+    "sha256": "86776c14e237dc64dbf965d9bc200cc670dc7226bf946938380729d7e80c56f8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/chem.py",
+    "bytes": 12328,
+    "sha256": "99474f23d8a67040b0c0f8c70e73592a6f7f656f50103e350ca473451e2169f1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/derive.py",
+    "bytes": 6929,
+    "sha256": "7c1e8c3afb4c17a3ae58fbc6c36fd4cfc552da97b9129c9b46cca3cdc6ee4892",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/dreams_model.py",
+    "bytes": 32798,
+    "sha256": "5c09c3d22e8d2c09678b796cb1d57a449442437847e094f49f6ed2619a73a83c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/engine.py",
+    "bytes": 26449,
+    "sha256": "d914bf9d5eb56cfff434b5d53a4d55881b97697aa834a627d9932a4f8c650d27",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/fpnet.py",
+    "bytes": 9551,
+    "sha256": "0ea6e372d1f045a877d350234c2ccf5d93fdd98cb23bd4c22376bf7e99547608",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/fpnet6.py",
+    "bytes": 14661,
+    "sha256": "32542bb0039b2d24d9911030559f13221e630cef7df0d10c7d65f54424da2633",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/frag.py",
+    "bytes": 11172,
+    "sha256": "809f5582494cee4cf6dcace4b04699b8427e81022b78d42162cc0239a57773de",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/graphs.py",
+    "bytes": 2850,
+    "sha256": "8dcbe16bbf3b34b7a08866234eb9abf2de713d21c93c653e7156e94e9debcd55",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/library.py",
+    "bytes": 7577,
+    "sha256": "21ee24dee9f39123da518fb17802a394e6dc46b147d5dbdf276210b60185f831",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/pool.py",
+    "bytes": 2370,
+    "sha256": "279444f6c03834adbbfc0fad321e24187585d7cd5afdc363eff083dc263a0286",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/ranker.py",
+    "bytes": 4189,
+    "sha256": "a7ee491b5a3d3decb3887afe3931adb10c11964468fb204e8c27b42757424fe4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/spectra.py",
+    "bytes": 10057,
+    "sha256": "e2481761cdfb2515e8a945751f85f6b9e885680a8e974d7ac35c78bbf279ae74",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/structs.py",
+    "bytes": 2791,
+    "sha256": "2c70df89e8f96b3e716651fe8815d0a05af3ad26e2b448e552ea53c26ede334a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/traindata.py",
+    "bytes": 9425,
+    "sha256": "cecb329d96362f11d16b40a26f1888f092610ff6202812408c13e2c293c6a2bc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/casmi/xenc.py",
+    "bytes": 6938,
+    "sha256": "89fbb470e6fc085f7363bf79e4517c06d43eed3c1df197b7f374b65dacdb7310",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/chemfeat.py",
+    "bytes": 6158,
+    "sha256": "8fedf317042f989b1569ca65c0d6d87a0387f9fc9934504420a95d8d973f8746",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/ctxlib.py",
+    "bytes": 20737,
+    "sha256": "c050e4b0ac937a7d65fa14ac55c6904e2232cb077830a20b653ac6df22922943",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/derive6.py",
+    "bytes": 8635,
+    "sha256": "0e4b436d6b978b2e2e1af8767d6b3c32a6b1fc0e4b64960d5eeeaa8885ddf68a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/__init__.py",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/analog_struct.py",
+    "bytes": 30583,
+    "sha256": "2311219220c65bc83c2cd447a8cdb07db27a984124f6c88d687494556e7337b6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/derivation.py",
+    "bytes": 29276,
+    "sha256": "eb9aa474bef8e1d067cadccec0101042878ebb5aedf50d1168dc9dfd884dceae",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/frag2.py",
+    "bytes": 29368,
+    "sha256": "bf17577ef673f8ab0121caa1c9335dc1e827e2f1eb44b3bbde0b0c0cbe858e6c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/fragnet.py",
+    "bytes": 46806,
+    "sha256": "d0952d34d227013b8486eff36c30a4233f491d2e32c3f816b9d000c493b7234e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fams/model_views.py",
+    "bytes": 3492,
+    "sha256": "aa964b12265bb70144d2d653b600a7f1a4972829032274bab76ea9e39afd7e79",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/fragcaps.py",
+    "bytes": 6766,
+    "sha256": "ba6280f9a46ca28cd72b8a7a0324724a73fd0c67a13acdd82a8193ac30d17a83",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/hooks_v1.py",
+    "bytes": 4338,
+    "sha256": "d0cb1e37566a54bbb3082ccd29579ac47fc2526c5d64ef073dc0e628ee5657e8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_coresmi_buf.npy",
+    "bytes": 19703633,
+    "sha256": "c0b2ce3ff292cae239fbb1f1670f345462dbab31e920b17d2e52bef9f9e5fc53",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_coresmi_off.npy",
+    "bytes": 5685744,
+    "sha256": "570664567fb313291f46e30aecfd9e82e8526eadde651cb2dbb98ead8d2220d5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_elsmi_buf.npy",
+    "bytes": 35033614,
+    "sha256_head_tail": "c3bafd961df9dac067d4adbbe1a83b21eb911e3561dfe194183a7a1464f5b0ee",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_elsmi_off.npy",
+    "bytes": 5685744,
+    "sha256": "4624def96688547f5edf7fa347cf9498ff0ac80a9fb669dd53d4bfc20212602e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_fvec.npy",
+    "bytes": 14214148,
+    "sha256": "8eebe4be5c87aa87a498fb998ce013cdc0d0f9aa251d6184ec22f7aad755e07b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_hash.npy",
+    "bytes": 45484992,
+    "sha256_head_tail": "235265fa351ccc8eae7d841e0133b004430f0a59abcd2d305c3185ece77d5c49",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/pool_num.npy",
+    "bytes": 11371344,
+    "sha256": "08f8831f7abada09392570fc27af1fd625a23dd2391ddca65bcb88b3cb2c7430",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_coresmi_buf.npy",
+    "bytes": 6940196,
+    "sha256": "5352fdcbea2bc09be258cb4047644491919dd289d28422eb51d8f3fdea3a864e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_coresmi_off.npy",
+    "bytes": 2206616,
+    "sha256": "7f72b42397cb1198521cf09caa72ac4c2788544ba2673e8447cc12fbd6d8aece",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_elsmi_buf.npy",
+    "bytes": 10880676,
+    "sha256": "9f2b3d602cb5ada97d86a10790f30bb7c070b6c990dfe7c099551cd60ee79d87",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_elsmi_off.npy",
+    "bytes": 2206616,
+    "sha256": "4d84e388a066c85d3496b16f670ed2b39e3a297c8490d2625dd80e0a0f547854",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_fvec.npy",
+    "bytes": 5516328,
+    "sha256": "f30560e0d23e04a3d9e23828a49ef0b9f08977789e41fb00005835d3d970cca2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_hash.npy",
+    "bytes": 17651968,
+    "sha256": "cf5c28edcf09e0a7a76df1b44db6a4638a42ca826ddacd9b2f2f8429a6293dc7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/analog_struct/train_num.npy",
+    "bytes": 4413088,
+    "sha256": "7267bb0bdc9e4d698328c4430f1cac2afd6e37a549ef597ee2eafb922f16997b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/derivation/parity_fixture.pkl",
+    "bytes": 98158,
+    "sha256": "bc12af267cbcd05942da8903d9058d20cc23d96c91233967d4a20102fe785176",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/derivation/prior_tables.pkl",
+    "bytes": 20738118,
+    "sha256": "217905818dd187da47cb458a60aeae2a5f2b0139904b4e320f70e41a9bd74c90",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/frag2/caps.txt",
+    "bytes": 149,
+    "sha256": "0ebe04b72563f828e4a6391bea393fdeb37777f87fc4c24aa408e41ea3d2ced2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/frag2/pool_cap.npy",
+    "bytes": 15635550,
+    "sha256": "6be43a73f773e50decde505a10e23a3114f09bdc2005fe9c51cc87bf0d851dbe",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/frag2/pool_f1_mass.npy",
+    "bytes": 62531984,
+    "sha256_head_tail": "757faa3a42dfac0253d5dec333274d7133669bee12add2f635b26836aa527e1a",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/frag2/pool_f1_off.npy",
+    "bytes": 5685744,
+    "sha256": "de25d731fd3fb09319538949e07c34135a3671ac7bd48dd2dbf9eece08a3121d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/countsA.npz",
+    "bytes": 1568346,
+    "sha256": "42f37e29b933552175b91e732d9bbbcb08c54bea849976dd55858bc115701f10",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/featB.npz",
+    "bytes": 131473600,
+    "sha256_head_tail": "f6654776d4db28dc4b5705409953903ad3f6b3cee4c3bc65bafa2f1eca52eab8",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/rec_aoff.npy",
+    "bytes": 5685744,
+    "sha256": "9aadeb10c9629498e20679aa24fc403b1e1e2b3b76dd9799ffc9c4c7d0c1187b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/rec_atom.npy",
+    "bytes": 66704036,
+    "sha256_head_tail": "fdcfb68be1b680084d1c58e2d08b4daed5c144f13e42c2471af688fca0874184",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/rec_boff.npy",
+    "bytes": 5685744,
+    "sha256": "0d15c8c4072a3bdd23637edeb24843f6adbf9d9dd270adc8fdf82c00436d91da",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/rec_bond.npy",
+    "bytes": 71602625,
+    "sha256_head_tail": "1dcc4cea749085c36b5d3d0016d7384bda7a9132f287e3bedff63463dfc06f57",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/rec_ok.npy",
+    "bytes": 710829,
+    "sha256": "efa48d27dbc1ee7b512b8b376076bd6a6c544c5b86013166e6a52c352b451c68",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/sets.pkl",
+    "bytes": 9343635,
+    "sha256": "922fafcbb454509f1397de6da7bafb19d46edb43520f54405abdbc994c760551",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/stageA.npz",
+    "bytes": 268385,
+    "sha256": "3a501ecbfae647d86d7fda87605eda2d573475201b2482ca02a130aa2a3d7a68",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/res/fragnet/stageB.txt",
+    "bytes": 544829,
+    "sha256": "6916c25c6f32fdea4a20f5c0b4b5cf45a3f6bbbfa625552195a7909e8ae8685b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/code/fe_v4/v1engine.py",
+    "bytes": 8391,
+    "sha256": "9074546910ba850a98bb95afe531669c62a26c15ab8b6bf9d6b6020c77ea0e8a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/fe_A.pt",
+    "bytes": 198790165,
+    "sha256_head_tail": "9b19b196dc6c90e79880d9e37546d6514b6ac04ad6573fbd4128412a55490ec4",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/fe_B.pt",
+    "bytes": 198790165,
+    "sha256_head_tail": "77bd2958d1ccd793b36ea325fb7c11f8f7203b0043775bfd9c242dddec505864",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/fe_D.pt",
+    "bytes": 486278727,
+    "sha256_head_tail": "3682f9abdbd10199f5a8fd56d5b1a20ac8a277ce63c0a9fad08d7d938b0735f6",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/fpnet_0.pt",
+    "bytes": 198790165,
+    "sha256_head_tail": "9b19b196dc6c90e79880d9e37546d6514b6ac04ad6573fbd4128412a55490ec4",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/casmi26-v4b-models/ranker_v4b.pkl",
+    "bytes": 14301548,
+    "sha256": "6172e926fb2de244f0b9189ed54e1ed8a15e76d166592b724129a4d6a34931da",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/chebi-lipidmaps-casmi26/bio_fp.npy",
+    "bytes": 54399176,
+    "sha256_head_tail": "190d310ba180c5665258dcbdc392bf0908da9cbdd177b60c4539d97254235e97",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/chebi-lipidmaps-casmi26/bio_mass.npy",
+    "bytes": 502080,
+    "sha256": "7b67b125f7bed307c2ac08bf41ad92044bfc2177519c5d4bb36c2c51789a2921",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/chebi-lipidmaps-casmi26/bio_meta.pkl",
+    "bytes": 5545993,
+    "sha256": "b94aaa0c68d6a0d7bb36db267d271f679e4286b0cd2de31f982f14f0f1bcc051",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/coconut-casmi26-candidates/coco_fp.npy",
+    "bytes": 378349391,
+    "sha256_head_tail": "c04290155d84e249f625e4f7f03f1580b922e6ec4493e52da203575ef0892fc3",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/coconut-casmi26-candidates/coco_mass.npy",
+    "bytes": 3491240,
+    "sha256": "2b2af92c3185fa8cd52a4a3e3e7fd7eda4d94e8b9402662a3a4c55ffb13c6e5c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/coconut-casmi26-candidates/coco_meta.pkl",
+    "bytes": 41450156,
+    "sha256_head_tail": "474ea048de8e7bfdf8ad7a53d04d3236043edf7e37c0e4cde578e9b3aaf945c0",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/coconut-casmi26-candidates/fp_bits.npy",
+    "bytes": 55568,
+    "sha256": "a61e372fc41091bf5c7467e08134081266262665077cb9e2c56d73e4887f3013",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/Enveda180_DreaMS_embeddings.npy",
+    "bytes": 4725903488,
+    "sha256_head_tail": "b15b7cf54ba94ffc4f757ed93821548f8ca8290316c1aecb5167b7409cb06afb",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/Enveda180_DreaMS_index.parquet",
+    "bytes": 26015327,
+    "sha256": "b44a5fcded9de1d40c163b6ef541a2e9be4de07eff89b82741c6450e0c3b48cc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/Enveda180_DreaMS_meta.pkl",
+    "bytes": 256717058,
+    "sha256_head_tail": "4b49427809108ca1a71143fd4556777c87fe19b9c161a9b90ea36951c097f25f",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/MassSpecGym_DreaMS_embeddings.npy",
+    "bytes": 946602112,
+    "sha256_head_tail": "404c5e222f90fddf71b4571906069bb3a04c6b27d6d06ed8c9927ce28d3ca552",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/MassSpecGym_DreaMS_meta.pkl",
+    "bytes": 519242516,
+    "sha256_head_tail": "dc9d79a3be06116766a76aeed11a2b90b8dd4f57827e712eb4b090345350570e",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/dreams_html_results_v2.py",
+    "bytes": 13275,
+    "sha256": "bd02a1a8aa411689f1869a4145674d07d7281de3638624cc2d397374998016d7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/dreams_minimal_model.py",
+    "bytes": 21916,
+    "sha256": "e7021a21e7b229cac99b4ec37dbfd85cf4044195d8245ff9c57f923eb2d3ff66",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/embedding_model_state_dict.pt",
+    "bytes": 386418933,
+    "sha256_head_tail": "9e5ee6265af9e57b19f534f7a621a76b4c01136470fa1f029e3defcd5a5349ee",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/hengck23-dreams-enveda-casmi26/run_demo.py",
+    "bytes": 6159,
+    "sha256": "27361d04f0b89ea2f98884862054fa79ca886d6bddcb1a921da8c87ce85b8d44",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/pubchem_tier__pc_mass.npy",
+    "bytes": 847004040,
+    "sha256_head_tail": "48a7e299fa2882048fc15ccf1382b0c9497822a2b111cbd34ab5001998b4a91d",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/pubchem_tier__pc_off.npy",
+    "bytes": 847004048,
+    "sha256_head_tail": "dd32178fa19c3b8002badff4fa6a38f6de35b008409f83de1da38157d1f6b7fc",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/pubchem_tier__pc_smiles.npy",
+    "bytes": 5520120190,
+    "sha256_head_tail": "52de5fd30a8206e93102cefd3b0bbcf76a312a2ac68d35b4bff18a5f494338dd",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-2026-3-3-wheel/rdkit-2026.3.3-cp310-cp310-manylinux_2_28_x86_64.whl",
+    "bytes": 37258660,
+    "sha256_head_tail": "7f481dc143a2176358b4dff44d47b1fa8e94d5d7b99e747f33f7078d61bb405e",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-2026-3-3-wheel/rdkit-2026.3.3-cp311-cp311-manylinux_2_28_x86_64.whl",
+    "bytes": 37257559,
+    "sha256_head_tail": "913375ee03dca177d0c63130c9cffa2eab62d01f23c9d8231beb0ae31cff5216",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-2026-3-3-wheel/rdkit-2026.3.3-cp312-cp312-manylinux_2_28_x86_64.whl",
+    "bytes": 37188323,
+    "sha256_head_tail": "541080dfb208851bda9f9574a7b4c7260b63693e77b2cce6dddd9f96f9a406bd",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-2026-3-3-wheel/rdkit-2026.3.3-cp313-cp313-manylinux_2_28_x86_64.whl",
+    "bytes": 37187145,
+    "sha256_head_tail": "8ff8e91a8e50c8b3c6e3219473b93fa5bd4c6dbe66e592846b60098cc6b4753c",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-wheels/numpy-2.5.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "bytes": 16708577,
+    "sha256": "a5fa86b80fd24bcd1aff83ad23be44ea323de3f787be8f8b15d4a65621e25321",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-wheels/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+    "bytes": 6937129,
+    "sha256": "0847a763afefb695bc912d7c131e7e0632d4edc1d8698f58ddabec8e46b8b6d3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-attributed-v4g-reproduction-assets/rdkit-wheels/rdkit-2025.3.6-cp313-cp313-manylinux_2_28_x86_64.whl",
+    "bytes": 36117945,
+    "sha256_head_tail": "2b9eb3ff51d6bbe2f6afda2e104664010ff38cda0b3594b2dee03b7976e1df0a",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/FILE_DESCRIPTIONS.json",
+    "bytes": 3117,
+    "sha256": "b161e9754390f016f703015b3c136d6d55703ad59e666ded908c6a1e762999db",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/FILE_DESCRIPTIONS_FIVEFOLD.json",
+    "bytes": 17997,
+    "sha256": "2683b009883e15d0a97dd6bd84e3d635304df787111378604693b125ec652dff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/FIVEFOLD_VALIDATION.json",
+    "bytes": 11755,
+    "sha256": "37b5794a1edf1508e2251a51f50e83f55763f98a2938f52f6a7292d4e3284220",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/MANIFEST_20261019.json",
+    "bytes": 5578,
+    "sha256": "24a522855d346635e70ba8e033ea5780ba46527c82c7f4f16f934431dcf3fd82",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/MANIFEST_FIVEFOLD.json",
+    "bytes": 9013,
+    "sha256": "1ee36e9b73172efd5f1cc90655949695718ffab5b258efe22f9d06ec8a13ff84",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/MODEL_INPUTS.json",
+    "bytes": 910,
+    "sha256": "672a9a9c9a00c191c84faba8a1c8e2555969644e09d70844851de04f7889b6ef",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/PANEL_REPLAY_PUBLIC.json",
+    "bytes": 12718,
+    "sha256": "90e8e64f0f5f4ef106aaf17ecd3c174bbc2650d1c557829a43701cbd4f0e65fd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/README.md",
+    "bytes": 6597,
+    "sha256": "8767f5c201c499cbac9b20630c12ccfbb877fb9a1665c3338cfb0b3358eb320c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/SHA256SUMS_FIVEFOLD.txt",
+    "bytes": 4890,
+    "sha256": "73d1e104222c11d47e603ee18856bdf0ac5dd817b492cefdb73d35d74cd199bd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/SOURCE_CHECK_20261019.md",
+    "bytes": 1351,
+    "sha256": "aace993777bd139fb0faa5ba5f536b761ed59379c0e918e6602d462f2a44401e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/SPLIT_AUDIT.json",
+    "bytes": 1337,
+    "sha256": "d4b994b663a7ddd944603b5a2f025c0a76a4d1648fa6deccf402b5c026137661",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/VALIDATION_20261019.json",
+    "bytes": 2245,
+    "sha256": "ba95c885ec552b84c3122f5f427abe3d4856c1cee0a4a5d23d56c0d21b4868e6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/audit_public_split.py",
+    "bytes": 3346,
+    "sha256": "74b871df50a832d37b5ba5945d6a73197432a12a82ffb822c1aa1b0fd01a8ab8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/check_inputs_fold0.json",
+    "bytes": 116402,
+    "sha256": "fd86ff6d71318467d3b2e6b1acfba8c637832f9d439e00f119b3451be46d8fc9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/check_inputs_fold1.json",
+    "bytes": 113100,
+    "sha256": "b8fbabb0bcd9ff5a49c55b4f6d29b1bae9d1df0fde2742bb933e574e3817dfd1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/check_inputs_fold2.json",
+    "bytes": 114814,
+    "sha256": "0ef10737eb1a7b36c1b11ad8e0e5608e93ec3f081c4d579c3467bf4b4f6e69a3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/check_inputs_fold3.json",
+    "bytes": 114520,
+    "sha256": "1e07b116cba8b03ebed56742237fc61776649fd5db4d02600a9bd9207e61bd7f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/check_inputs_fold4.json",
+    "bytes": 113878,
+    "sha256": "cc71eb650504be29a6601d8c906fa5d4123b71732671c7f6bb66ac4d4f52bbff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/eval_ckpt.py",
+    "bytes": 3791,
+    "sha256": "3f4b99080516bd19688b6517ece4db4acc8052367eb4a628c81ef2569dc07005",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/eval_prior.py",
+    "bytes": 6806,
+    "sha256": "b904eb2c880a560e73c57f546da30250c39dfb8d39c4a5559d1393a005d04123",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fivefold_retrieval_fold0.json",
+    "bytes": 552,
+    "sha256": "f9248a03a92ebcecf8fe4ad215174020acad2b03b7ac9f110c160ae49b5272be",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fivefold_retrieval_fold1.json",
+    "bytes": 523,
+    "sha256": "047ff34c804ea074608bfe4b6527c31718498e25d26aec40eb5e44af27b3b824",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fivefold_retrieval_fold2.json",
+    "bytes": 548,
+    "sha256": "4b05a03cdf0d892a0f325baab2b17895ce74b05966fc3eb60d9e1baa3d195084",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fivefold_retrieval_fold3.json",
+    "bytes": 534,
+    "sha256": "0ddf7cc53e03e4e5218a9de3a4231eb8655eca30f0f324ff96abaf6f8a30fa62",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fivefold_retrieval_fold4.json",
+    "bytes": 535,
+    "sha256": "b7e1a907958d13cb9d9c76ca26c6606fbaccfa367b86295a35e2a8e40148ae84",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fold0_history.json",
+    "bytes": 10041,
+    "sha256": "45daac623930d53d66c80c294225fbd040b4cc4618e871e72384c1b180e79494",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fold1_history.json",
+    "bytes": 9991,
+    "sha256": "19aafead125fae7c28863d0eac0ac9689fd4768584c92f601197977fcc81d2fb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fold2_history.json",
+    "bytes": 10140,
+    "sha256": "9af69bac4bdf45892af3406e74ebf20a79e4b665bb706c496c8009f64113e2f4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fold3_history.json",
+    "bytes": 10013,
+    "sha256": "7548f540580f1332ab929fce5547f050bd19154530212084d2b510a1c2643115",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fold4_history.json",
+    "bytes": 9970,
+    "sha256": "07fc55f12c752cd6fe3e144bf2c7383286f5cb58a0b9fc3fc82847582c044322",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fp_bits.npy",
+    "bytes": 41032,
+    "sha256": "c3869e86449d6fed6e79e9655f8a7d35bd55c3138ecddfc1dae5072627e78677",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fpnet_fold0.pt",
+    "bytes": 198789484,
+    "sha256_head_tail": "7311ff942756bc97ad8a5dce8856dc24b45c573fec21c4091777c164a87a8a4f",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fpnet_fold1.pt",
+    "bytes": 198791276,
+    "sha256_head_tail": "0cd7b8ea0cf8b9fb0299d321e273532e9f5d0ef14ed71a5a5f7f1c74bc963bf1",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fpnet_fold2.pt",
+    "bytes": 198791276,
+    "sha256_head_tail": "fb43de7ad4453281cd4668c407740c7df1034774e169c9ceba9168942e542edf",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fpnet_fold3.pt",
+    "bytes": 198791276,
+    "sha256_head_tail": "394dcd24b1c46f5495f5213239e1ecc990d8e6e0669e0bb71e13672bb5bb8578",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/fpnet_fold4.pt",
+    "bytes": 198791276,
+    "sha256_head_tail": "35b0dbe3e12e070e5640b7aebfe5e4ee7ffb7ad1fa4c5b9ab69ad10bca8cbf75",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/gate_diagnostics.csv",
+    "bytes": 365797,
+    "sha256": "07bf47a47b5119e9a6dc0e7e61654c9e4db366a71e5249002f5533ca47311836",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/identity_audit.json",
+    "bytes": 41499,
+    "sha256": "99a0350ec9b0e967e4d60154f3598c46d07f6b4ff3aa2257eeda1a78210d5dda",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/input_subgroup_diagnostics_fold0.csv",
+    "bytes": 144245,
+    "sha256": "5578b3800027071bdf52fca4c704cae34ff8a99efd78efb67bf4d2b19e957362",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/input_subgroup_diagnostics_fold1.csv",
+    "bytes": 140202,
+    "sha256": "461fbe5ed8c3e76a68d9ad87cb3eff29ebb04c331e97ac2cc6048191df09ffa2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/input_subgroup_diagnostics_fold2.csv",
+    "bytes": 143247,
+    "sha256": "b93bafec27259a6324649928472e00e33c25c23a31b24f66929977d86977fdf5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/input_subgroup_diagnostics_fold3.csv",
+    "bytes": 142695,
+    "sha256": "1084ded0334f512b0a71dd29797443bb0e46fc7b18ae98e9f4780a0ac09dc10d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/input_subgroup_diagnostics_fold4.csv",
+    "bytes": 141887,
+    "sha256": "5a68a20d99ceaf548a9c0ad2f50ce038e1419fe18674ec6b99511ad62b175c25",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/make_split.py",
+    "bytes": 1438,
+    "sha256": "136bb35028db11b614e6ad544b044f35199d614d52d2349e2191cda6df77d4fd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/panel.parquet",
+    "bytes": 23269,
+    "sha256": "93469d9bd7e51f9e0c2e891f59844a1ffc56c0921035110495b598c9b4e52eb3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/panel_fpnet_per_molecule.csv",
+    "bytes": 270090,
+    "sha256": "3f0fb337dd8014e07639973a56eaf2e8d4a86e83ae1c7c15663480eabe621ee6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/panel_fpnet_scores.parquet",
+    "bytes": 51937874,
+    "sha256_head_tail": "18eb0d89c7309ebe93f4efc381b876b73b1c05c4759e88530701ee62ebdf715d",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/panel_logits.npz",
+    "bytes": 20466740,
+    "sha256": "383e4d9aaaecd8bda1277851064cce840887b733c48477ce5099b71b0152403d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/panel_metric_identities.parquet",
+    "bytes": 926118,
+    "sha256": "4b8f5d342dea2845bed6dbaa8c790fd84b59f446d1f5af6b0e94ef79e4c6aa68",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/results_eval_fold0.json",
+    "bytes": 581,
+    "sha256": "fb52500534bd316ea738b9be7f5f98a1028d677917159d9f283c10e4e834b3e7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/results_eval_public_A.json",
+    "bytes": 577,
+    "sha256": "fa9d77771af7a7c67cc3fb949478a581c0c459153774d9f56e94b0c7948374ca",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/results_prior_fold0.json",
+    "bytes": 9194,
+    "sha256": "d4abf95580a0eed8982cc5c0fcb3d222e212efc9c1cc5bb30d18347b8b73bdbf",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/split.parquet",
+    "bytes": 2204455,
+    "sha256": "dd62549f81b9540890e0da17a06d0dcd216a2781b2c31687bd333445fe57d45e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/summarize_panel_fpnet.py",
+    "bytes": 2015,
+    "sha256": "61e7a8ec23313ec0bc460ebbeb9d25adcf6261172609a5aeeff3ea42018007b1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/train_fivefold.py",
+    "bytes": 12969,
+    "sha256": "ad92253e5c4901237fb6c9952fbec8671d4da7f7d8ce8b83ca3ecd25f1f6178b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/train_fold0.log",
+    "bytes": 53968,
+    "sha256": "e124e29db6bd84061a1904b4f43b524a504575596cb62c89bee3509c0aec7819",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-fold-safe-fpnet/train_fpnet.py",
+    "bytes": 9744,
+    "sha256": "46b4dceebb2badeac78e0d5e55849169f5bef8da70a3adf1a7431fe34e603312",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/CHANGED_FILES.json",
+    "bytes": 3803,
+    "sha256": "f5ac6afddeb1b45c4a6783bb840de093a4b251b0182876d1bf7fbeb7690eaa34",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/DESCRIPTOR_METHOD.json",
+    "bytes": 3694,
+    "sha256": "46456e341e87785ae96d3d13aa835a864bcb67a72611a4454cfbda63706b59b1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/FILE_DESCRIPTIONS.json",
+    "bytes": 1499,
+    "sha256": "ed182aaf2f4c13a976e60adef555618285b4c7a8e035413e5e398454b7c8481e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/JOIN_NOTES.json",
+    "bytes": 1397,
+    "sha256": "ed2d4901e4ab1b0b3925181cd0aa0a298b7639bf1171194624c053d1bb8b85b8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/LOTUS_REFRESH.json",
+    "bytes": 14743,
+    "sha256": "61cfde26dc65fcc96cf54a493c06840b05f5d3765c76bc87bf9731c18e321bce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/MANIFEST_20261019.json",
+    "bytes": 3204,
+    "sha256": "0af26ae26df15b2963b5b682c3cede7b3aeb030c3e20290deb0bd9f8f9c69f02",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/MANIFEST_20261019_2.json",
+    "bytes": 1103,
+    "sha256": "dedd5ba32d5eb80f7d9b06367fd965ea6054d522b510a6186cf2252e104905af",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/MANIFEST_20261020.json",
+    "bytes": 1953,
+    "sha256": "97b89178b630d7ce6449a1836c342c3963034140a154655bf1d14716857fb00f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/README.md",
+    "bytes": 10938,
+    "sha256": "d229d3c54fa029c92f9980f2a5f97da6b40b9e55603845d31c4c5d8256a6313a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/SOURCE_CHECK_20261019.md",
+    "bytes": 1351,
+    "sha256": "aace993777bd139fb0faa5ba5f536b761ed59379c0e918e6602d462f2a44401e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/SUMMARY.json",
+    "bytes": 486,
+    "sha256": "3d7f23504a56bc802e9249bb4c317e92167adf1cef4aa583af30d3adad2eeb87",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/TECHNICAL_NOTES.md",
+    "bytes": 36249,
+    "sha256": "f34a3a37c8754118cd94f7c70f451786dfb58aaca5d53e2a2028bb14ce527e79",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/VALIDATION_20261019.json",
+    "bytes": 2174,
+    "sha256": "92f7ffe9f855ee601b13c82f93d568f9fa56f1fe188b1ac3f9edc87bc5e61b77",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/build_np.py",
+    "bytes": 8965,
+    "sha256": "56d9d7da8566d596c2a503bad4ab70878f9ef02f1b46e7f30a3cf2b733271ef7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/candidate_joins.parquet",
+    "bytes": 4468200,
+    "sha256": "ba079638bfa47f0af076a1ae61510129402fce696209c4a1fd05fd7cb5854985",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/descriptors.parquet",
+    "bytes": 5679231,
+    "sha256": "89ab934a63c0a5303ab1cfc1ec80459daac4b69a648835c92770aadb927375bd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/DOWNLOADS.csv",
+    "bytes": 12279,
+    "sha256": "972d0f677c7e33658951ae812348528a6672506e75d60f56a0dbbbdc6f483ac8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/INTEGRATION.json",
+    "bytes": 4032,
+    "sha256": "8035b250d2bd1a3af576fb9e5abcbcd45a5a79f016f7d1cc9af1dfb026d05494",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/LICENCES.md",
+    "bytes": 4467,
+    "sha256": "10fa8e1c4c11bbe823c05c9b2aefff9892fe99a1737e2bccf3d46cc3fb44fbfb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/SOURCE_MANIFESTS.json",
+    "bytes": 27651,
+    "sha256": "64005bddbe99a5219ffdb8b6c39079ef1352f719e02ddf754a10a928b78396b2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/external_candidate_additions.parquet",
+    "bytes": 13047,
+    "sha256": "8e8a88866e11f94ecc5fe2df5f8a9cbb1bc144e6c45387438124b2946947e376",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/external_delta.parquet",
+    "bytes": 4607296,
+    "sha256": "e75558832935f28e85a5419022c4cfba4d0d4b49f1063544c317c8ae61c2ac41",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/external_record_quality.parquet",
+    "bytes": 94211,
+    "sha256": "4f5b227d1c874624182c76e8f8406ba3ee86521744831cb461d6198c898b6c9e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/external_scorer_sid_links.parquet",
+    "bytes": 36920,
+    "sha256": "8cd61b8f110bfd6686684d330609a1d0f0d7cc96eab32b9cdd3352939ef443ef",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/external_reference_spectra/external_structure_coverage.parquet",
+    "bytes": 43715,
+    "sha256": "0a284c243ea4b42151040e6f9e1c9612a6a8f42422cf8835582c5891db08c2e2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/lotus_structure_genus.csv",
+    "bytes": 15679755,
+    "sha256": "22a5b0f0d4380781c1a6d67d605ce00b2a8c5d7dfa8214343191535de820da44",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/lotus_structure_genus.parquet",
+    "bytes": 2513093,
+    "sha256": "bbcb313b2001963e8be4485c8a3f2cb318f041b96124704bcb26d4a6004d1436",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/natural_products.csv",
+    "bytes": 41057714,
+    "sha256_head_tail": "86ee1e71465f2970af52c04a65d1ee1e5f9fd84f4570e023d7599454f6a123cf",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/natural_products.parquet",
+    "bytes": 9575768,
+    "sha256": "6ccb833e47d88715fca1d614b05cae92fa333fa388ae1d64226f2695a62081aa",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/ANNOTATION_METHOD.json",
+    "bytes": 522,
+    "sha256": "e54d9287855639c261bc66487aeefae118b67fdc58de45067e9305be93191836",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/FILE_DESCRIPTIONS.json",
+    "bytes": 31479,
+    "sha256": "cf86424461c536fcd2fbe8e0654f6c0fd84b90aaec91a26ce2af6a4e514f854d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/FRAGMENT_METHOD.json",
+    "bytes": 1574,
+    "sha256": "36496fa99211603505235a7e611f375bd2a216de2fca40c0e9debdadfb8b5411",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/GRAPH_METHOD.json",
+    "bytes": 947,
+    "sha256": "57bf9eb7e0e3ff72f8adbef3d17329ef89eafa5e0977a47b816a95b466606693",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/MEASUREMENT_SUMMARY.json",
+    "bytes": 1616,
+    "sha256": "0e2f7a66710abc690cd8067c3517c7906b76c092a2c36521688c6511b1f0283a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/METHOD_CREDITS.json",
+    "bytes": 1562,
+    "sha256": "ec4bbbe40038d02667de9a82d6d8aa687234152a7a1c0339810403b815146824",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/PARITY_SENSITIVITY_METHOD.json",
+    "bytes": 820,
+    "sha256": "95294775e979bb751a68135f3c3ce971bfad3a3801b54f9d9fea69b92b5ff58b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/PROVENANCE.json",
+    "bytes": 2137,
+    "sha256": "8cace7fe456b5a4d4dff55613ff0301744b1e74ebdcfe507e0df842f6b1eff92",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/STRUCTURE_ENUMERATION.json",
+    "bytes": 965,
+    "sha256": "0c30c129d911aa80755ba040b4899f3a6cadcf4919afb5cc38884549a20a917b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/additional_measurements_v25.json",
+    "bytes": 1523,
+    "sha256": "89446ba37cb63d86ea9f0207a19b91a53889831b3127ea23795ad897326a9154",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/adduct_census.csv",
+    "bytes": 5256,
+    "sha256": "b9ac29b3554ea7bb68fe7cd412fe832a1876ab32d85716ec10eb505cae5c8850",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/annotation_by_energy.csv",
+    "bytes": 2370,
+    "sha256": "ee25d3328ef2de328bd23370d95742b98e4221d89998c83d1e074d38749a88be",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/annotation_summary.csv",
+    "bytes": 1132,
+    "sha256": "b8d6a077e0bbe94dcb9bd5221d39afe3bfbe349e37958ed3618bdd2e2f2a7406",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/bonds.csv",
+    "bytes": 17201,
+    "sha256": "7f6184f83778e11f6c69d01d5301ac9b122f477050dbadedf8449fb7cb1a0e39",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/collections.csv",
+    "bytes": 299,
+    "sha256": "92c8acbdcc6ab47f17785cb32654a12b6575c95b8594798ff615029b3551a018",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/electron_parity_by_energy.csv",
+    "bytes": 2866,
+    "sha256": "63ab859a29cd4e59cc8e5416837c89fcc9b5672cb7133370c1834a27e90654ff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/electron_parity_sensitivity.csv",
+    "bytes": 13901,
+    "sha256": "471d523efdfdd73716e7a4e01b4485d48ece3ff55ea0dbf047d12401db0c468d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/element_comparison_v25.csv",
+    "bytes": 1593,
+    "sha256": "7d2c2d7e6196bff5c970d2b7b13b484c36699862bed6c922d6c2e7641c3d3089",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/element_count_distribution.csv",
+    "bytes": 28774,
+    "sha256": "ec33ee868c160ea18456d63c6383287dca49dcc739e69810982839fe43ad5561",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/element_groups.csv",
+    "bytes": 2433,
+    "sha256": "ad14011008ca3081e8f5dd7282458b5ded70509e4ef5fba706a1dcfff6f35516",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/element_table_v25.md",
+    "bytes": 1047,
+    "sha256": "70a831df8acbccaa0580c647b81e18f3d190a86287a73eb7a5a048f170fc1101",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/elements.csv",
+    "bytes": 8120,
+    "sha256": "65021292fea55c7cee77161e70812a5564947f3d3011be16fe2da2ac1fd2fcb4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/example_spectra_v25.json",
+    "bytes": 12608,
+    "sha256": "3148366acdc317420cb9d54d6a88572d2099d2a28081c81dcbf2e2892cae79c5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/elements.png",
+    "bytes": 64734,
+    "sha256": "c4499f1be55941583fbeb9b2222dacf326e5f20fb93ca1203d9f8174e0a8ee12",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/example_stick_spectra_v25.png",
+    "bytes": 283745,
+    "sha256": "c98b0c6883573b6dcaa305924a6fdfb3ed8a9a17c1346f4bc749ce5bf521db9d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/fragment_catalogue_coverage.png",
+    "bytes": 120851,
+    "sha256": "35b946c2a8fcdb6785f530214b42d082416e97df87167de060fb648fd5da2baa",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/fragmentation_graph.png",
+    "bytes": 168115,
+    "sha256": "ed414d719bc166758d754f73e622d61d9aba46aeaf946cea312429870098d4f4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/fragmentation_tree_v25.png",
+    "bytes": 333597,
+    "sha256": "9acaa87d6707f95637f68eb928429327672c07b6a5bb18ce1f22ca10e8560fc6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/figures/neutral_losses.png",
+    "bytes": 99357,
+    "sha256": "96f208e0ebe89c8219d04ebea1314f0b01850119b2911a3b7efa9d3590c421a1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/formula_coverage.csv",
+    "bytes": 2993,
+    "sha256": "0f8d09ded49cd49f59fbc8a15eb4ded78f8a216d5201e397acdddf38c2a13f66",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragment_elements.csv",
+    "bytes": 1546,
+    "sha256": "61298f67ae8245a22edcd26c86c226fbaebb07adef6c7c0137adfc63e774edee",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragment_formula_catalogue.csv",
+    "bytes": 726009,
+    "sha256": "24c31fd8385965b42c6e888bd612547a968dc81860003caf36152fe2796c8cf0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragment_ions_by_energy.csv",
+    "bytes": 1741333,
+    "sha256": "f800d13131c55a8db81226be9c7a8323e992130dc93d39659f3f80d20ac25bd4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragment_isotope_checks.csv",
+    "bytes": 94488,
+    "sha256": "959a909f5944a497c0bd6886e835bfe4d8da597685714d5b0c959147e1bebfd2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragment_isotope_summary.csv",
+    "bytes": 287,
+    "sha256": "e1886fa297820676613ee1ce17b66fd38c9131682faa4695ee179d73cfca5d66",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/fragmentation_graph.json",
+    "bytes": 163448,
+    "sha256": "52bb5641110ee9e35d539117491c823a1b806a76f9497c6e4ffcb9929f8bdfce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/frequent_fragment_ions.csv",
+    "bytes": 2067769,
+    "sha256": "721cfdee3beda9dc873d8def8ab6ecd0d1743aef67a96183689befa8be3f0668",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/frequent_precursor_losses.csv",
+    "bytes": 2609,
+    "sha256": "21dcea8fc99930a10aa1f65029b9a8f3bd182940433400e56a07a0e7a5154c27",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/graph_candidates.json",
+    "bytes": 1927,
+    "sha256": "367bbbf06c6f7413d35608564fc759a16f5aa7c3828b65648d1c8c52abc591fa",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/graph_energy_behavior.csv",
+    "bytes": 704,
+    "sha256": "f43799e6fcb9932f6e847cba4a7294b470e7f20e4833c2bf6473f94c2692c6af",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/graph_energy_sampling.json",
+    "bytes": 267,
+    "sha256": "1882e65c3ae0bb4da8d645ab3ce0edad50be5b88a866051d80a172f9c2e7ed7b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/loss_events.csv",
+    "bytes": 276332,
+    "sha256": "31d213eb4ceb5a3ba232f1f898392961131dd02a403f3a6cd706f207b49232ea",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/mass_defect.csv",
+    "bytes": 734,
+    "sha256": "269f2cd0690a36599a12c54a91d77855fe96cafb0dd94b52909ccfe2276dd162",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/neutral_loss_table_v25.csv",
+    "bytes": 1552,
+    "sha256": "4584169d14b734c746c8feffe4204ce2a42d28911509a19c810a6172ef4dc3fe",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/neutral_loss_table_v25.md",
+    "bytes": 1664,
+    "sha256": "a0625939ff0b0c9f7aa9dde799c18ed373f476a41585672a085b800cd5197bc7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/neutral_losses.csv",
+    "bytes": 7979,
+    "sha256": "c77ef06f3e54deb0e1d9797610c1a3b14fbfe4676ea729aebe03713d65078d21",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/neutral_losses_by_energy.csv",
+    "bytes": 37894,
+    "sha256": "b7b1f57595d0de6c13de97ec7e4caec96cb7d97fece11a0d33d7094b8197ae49",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/parent_tier_coverage.json",
+    "bytes": 222,
+    "sha256": "b15d6b4b8653615490dc937e867dd3e7f2b4a6e9e5eecea72bee915f35159ea4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/physical_rules.csv",
+    "bytes": 8482,
+    "sha256": "d37ad50bb60add9d0d7375b0605c12a23e991ea609a04364945d5e7434a57091",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/physical_rules.json",
+    "bytes": 11565,
+    "sha256": "6ccc62e3cb47ea7435f4dbccbd5c90f39aed4f587822480886f2a86baa692ea2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/rule_method.json",
+    "bytes": 1017,
+    "sha256": "20e9534a0ca7f13cc3510e1b2a324a00cf785312bd7f327c220691b5919ecf99",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/rule_retention.csv",
+    "bytes": 1106,
+    "sha256": "9295300e9b59f0f9fcebbbae893ff42edd8e8e0c6c75a579f4e67c52b1b2559e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/rule_true_decoy_retention.csv",
+    "bytes": 1635,
+    "sha256": "c1f62808af2620094aa40ae47d069ea5fdd8f0e42ceb58ea91d6cdc334b4a087",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/sampling.json",
+    "bytes": 3605,
+    "sha256": "0fc132d4435f0418396834da5aadaf7a50923af5db1b18a47684991acd3f3689",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/spectrum_summary.csv",
+    "bytes": 695856,
+    "sha256": "ae61b574a39ef6b5fec824400a4865f7ab272f7b321f68ee1130f62459187c1b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/structural_fragment_matches.csv",
+    "bytes": 724588,
+    "sha256": "de0c0947358897bd3135323722c0d1932babdde17167ac0595985f49093c13e1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/structural_parent_summary.csv",
+    "bytes": 36152,
+    "sha256": "fdac0453c9f7e477357506ab8bbe1e1adae4d5fa7bae5ccd659eebebe00715d7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/structure_coverage.csv",
+    "bytes": 1513,
+    "sha256": "4605097212a45fff933ea3ae6a12c59adc0d3eff585affd5c1c3745e059aeb01",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/structure_properties.csv",
+    "bytes": 3339,
+    "sha256": "9273676235b07884d783bf66439831a461fd27d602d683e7cd0d895d620da661",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/tier_census.json",
+    "bytes": 428,
+    "sha256": "78edb44b1931e4980add31024ff5278287b01aa5a8c98221f853af1519a088dc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/tier_element_count_distribution.csv",
+    "bytes": 15789,
+    "sha256": "de05378ec050279aa9e2147ec23c4a2675f386e961125fabdcb95509edfd89d9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/tier_element_groups.csv",
+    "bytes": 499,
+    "sha256": "d397e44a816abc4da25e0c4cc0e491a10eba08b007e85969c15a4d13724c7f82",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/tier_elements.csv",
+    "bytes": 1624,
+    "sha256": "ca42830e481fd04bf1a693eca6473489de21148e9603fadb64d308b800bee717",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/tier_structure_properties.csv",
+    "bytes": 213,
+    "sha256": "c44bee463ae6b8ac0d25f62c920f2c0d5dd11e935eaeb21ff3ab9cc49c0ba7e5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/true_decoy_rows.csv",
+    "bytes": 277969,
+    "sha256": "0ff37c8799b40aa30a22e26ae9673432fc4e5b55af83bc3fdca02c1c4e18b7b9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/true_decoy_summary.csv",
+    "bytes": 842,
+    "sha256": "df59815e81e3d811e2024116ec45049cb051a8af77d386281fc85457fff3743e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/spectra_chemistry/unusual_training_structures.csv",
+    "bytes": 14953,
+    "sha256": "8c3d0320604cf512dcc2a9edc00224ff1d02436bd917c338b210b44f221bc2f3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/MANIFEST.json",
+    "bytes": 1281,
+    "sha256": "e084f80c63e6cf220ff13ef426dccc4908b66548cedfe352c6e9d39c1ce38d3d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/README.md",
+    "bytes": 3906,
+    "sha256": "dc2884434699db41f91d04321e2208a080729208cf32ae3a4b3dca5deeac930d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/knowledge_units.parquet",
+    "bytes": 2309306,
+    "sha256": "60966bec41f36213f126cc8fbe85e3653fbf88d1abb24310c320603132f6ddec",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/pool_units.parquet",
+    "bytes": 9219758,
+    "sha256": "20726668d69ad5ca93d3159701210df4f097a1f84015e8044a67843f1c6c3567",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/selected_rules.json",
+    "bytes": 11846,
+    "sha256": "145046d119d53fd17ac9b0267ed3e024283f4ee18160a09fce0d62cb664091f0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/spectrum_validation.json",
+    "bytes": 1347,
+    "sha256": "6d6d1992948daf6e4fdccd694a50ec3d6ef131a85ed20da8fde35c0bda922b9f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/structure_validation.json",
+    "bytes": 18217,
+    "sha256": "e00c8bdb7658c62f96af8817264a3997739a26f45d880648736ecdbdd5061fc8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/sugarloss_units.py",
+    "bytes": 5270,
+    "sha256": "c0d3b30949e7d3b9641043dcc654a0d3a3b9780aec28252d1dc69f574b235102",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/training_observed_losses.parquet",
+    "bytes": 32381810,
+    "sha256": "0da9ed8478bfd4d44defbeea2c1708505f332b9a260ad7c65d4fcfcfe63d4205",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-knowledge-table/sugar_and_acyl_units/unit_definitions.json",
+    "bytes": 1871,
+    "sha256": "53b2940e73019e9d866ea15bc2282cc8453333ee826bded03034eae11166cc66",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/ATTRIBUTION.md",
+    "bytes": 1150,
+    "sha256": "3da83ddc2bd1ca652e9ad613ab9c900193e944e30d63aeab4db1af46ccbee91f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/CHANGED_FILES.json",
+    "bytes": 4528,
+    "sha256": "daa1d1952acee83d76195bcf9d89aea98952576a69ef9e87d53fb06988a8dcc5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/DIFFICULTY_METHOD.json",
+    "bytes": 1848,
+    "sha256": "25e531e821b9721366640146add4d020a5c5d6c8afab5081d21b5b491b3e4737",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/FILE_DESCRIPTIONS.json",
+    "bytes": 5532,
+    "sha256": "a3e854d9af217f8dbe1e27be940adfd4765bd42240df5268ac055c9ff29f2141",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/LOTUS_REFRESH.json",
+    "bytes": 16926,
+    "sha256": "e601a2a46d15a5a3be3059a34d740a31a7c9872cf21b7c2d8bc757da9faa4fbf",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/MANIFEST_20261019.json",
+    "bytes": 11268,
+    "sha256": "ea45f9708875330def650404be1da5b89cf85e41b19d4b82609e84635e365503",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/MANIFEST_20261019_2.json",
+    "bytes": 2355,
+    "sha256": "6405d2ba96651feafdfae76ea03447e8f5f46d15f404c368e8360bbb01c2cf2e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/PANEL_REPLAY_PUBLIC.json",
+    "bytes": 13121,
+    "sha256": "0f85f66547c22fa66d521e9b5d98ef330b818300c82248096b804ce6f0298525",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/README.md",
+    "bytes": 8808,
+    "sha256": "079418d44abee11eb9b71391cc9541934f84cbd0cadd624baf12d0eb711259ce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/SOURCE_CHECK_20261019.md",
+    "bytes": 1779,
+    "sha256": "3ed13ceef9616c1cd9b0e6b57667de0345431cfc9717dcbd5db26277eb4fcc7f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/SUMMARY.json",
+    "bytes": 188,
+    "sha256": "d6db82749b9e71a00066313e756d388ffbc1a61fafeeb766449cabc37715f63b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/TECHNICAL_NOTES.md",
+    "bytes": 51233,
+    "sha256": "3ac43aa88b6f11a7dbd8a2209c84fbce158d8ee8c63776b043c9f2de7dc50fcb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/VALIDATION_20261019.json",
+    "bytes": 2791,
+    "sha256": "305dc2fb04d445af65e7f0ea6ba8c4f52de7bf6b9a17de28c117c22af05350bb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/VALIDATION_20261020.json",
+    "bytes": 11387,
+    "sha256": "62310f65b7ce0cdd56dd90a3affd8a3aabc300fa626d35ce43b2e914538f9ff2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/aligned_public_priors.py",
+    "bytes": 1178,
+    "sha256": "89873c7312c16be2180d44bb9eb3c4e9ce19c821e74ab92bb41666ea0c0f9248",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/MANIFEST_20261019_2.json",
+    "bytes": 1262,
+    "sha256": "12de2fa1e693326088edec3f3fad91fee2a7072167dc05707339bd7de0e4dc8a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/README.md",
+    "bytes": 5396,
+    "sha256": "d551ed2066812b1c00188f06a44148dd5fdcbe46cd0420b3264a49044ad6dee3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/SPLIT_METHOD.json",
+    "bytes": 1415,
+    "sha256": "058952c7968cde06ae3906bbd46778a2bbce53e2533456eca6c41a6455591f08",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/SUMMARY.json",
+    "bytes": 1299,
+    "sha256": "d01e89f166e9daef483262f9f05d74d3b94138f6842437ac72c3e08933e2b057",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/TECHNICAL_NOTES.md",
+    "bytes": 16681,
+    "sha256": "2c7483a9cc2089113897d3ff25f41bd90783f5198be6cc890b6dea5065da93cc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/analogue_domain_summary.parquet",
+    "bytes": 7732,
+    "sha256": "c02d3b84b030217ad14854465eaac60f887a28cb21998af4f4f62fc204915952",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/build_folds.py",
+    "bytes": 8031,
+    "sha256": "b837474eccf3922c8517c00bce0166edd34e53115e43298696381b52e05e38e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/spectra_folds.parquet",
+    "bytes": 23678772,
+    "sha256": "68446abc365cd0a175c8fcf8081828989e92a65d3493312848792d3465d91403",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/spectra_splits.parquet",
+    "bytes": 9272714,
+    "sha256": "518be062cfa33077cc2b145fe03a61c62be3ccbd0a2675edbd07d1ac78775235",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/split_categories.csv",
+    "bytes": 4223,
+    "sha256": "16d801c4aa3ff7d3a217df37bfebfcb29334aee57310dfa14f471351f1bbbaf0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/split_summary.parquet",
+    "bytes": 10206,
+    "sha256": "f03e9aa6c8cd34e83273b568ebaa84b9b48dcbeab2a5c7a35ca20c927e164090",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/structure_splits.parquet",
+    "bytes": 6302907,
+    "sha256": "05498719c7564cedd673bfd954191452dbc211dd0b31a9825357fa191325e92f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/casmi26-identity-disjoint-validation-folds/structures.parquet",
+    "bytes": 23795229,
+    "sha256": "7c16c4968a15956e94eba58e3ff94d4a6c2f6899b10a2f2824047601a46bd6c8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/fpnet_window_eval.py",
+    "bytes": 3791,
+    "sha256": "3f4b99080516bd19688b6517ece4db4acc8052367eb4a628c81ef2569dc07005",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/gate_diagnostics.csv",
+    "bytes": 364864,
+    "sha256": "77fba33d3dcd91c657784d50d516ce959d6d2a848bf3ad45b6facdcf4f285f31",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/gate_eval.py",
+    "bytes": 4731,
+    "sha256": "6981fcc607f3a37f312c7444f318cde3d9c24fd0dc1d44ede4f2646d388bb44f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/identity_audit.json",
+    "bytes": 41499,
+    "sha256": "99a0350ec9b0e967e4d60154f3598c46d07f6b4ff3aa2257eeda1a78210d5dda",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/lotus_replay_identity_additions.parquet",
+    "bytes": 4204,
+    "sha256": "0e07c9cf9d96ff865571b7083a2507eb785321c90c3672f86a530934a755d82f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/main_candidates.parquet",
+    "bytes": 1639248,
+    "sha256": "63854375ebd0f3242e31e31069363b497f1fd80a2bfcb3222ee69a848e74ae67",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/main_eval.py",
+    "bytes": 8183,
+    "sha256": "c964f41bd119714c42457e55c1413e0d047bb74f6d1886a6ac128d05eae5f833",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/main_tables.py",
+    "bytes": 6758,
+    "sha256": "5fe5a58df457499b4a858e5a4b8e286af98b61e0ef7b3c4efe139bfeef6b0423",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/merge_eval.py",
+    "bytes": 6323,
+    "sha256": "84987a423f675b8e5bfa6fc81dfc01cb17a3b76145f5f8c7581bf4f4851979c6",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/np_eval.py",
+    "bytes": 8643,
+    "sha256": "0e6ef7e99425371ad2d0dbed7fac2678070332d6082efd9eba413a3ccb6232a2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/np_poolfz.py",
+    "bytes": 3554,
+    "sha256": "8507129d86e2836921d25bf899991340d2441b331c75d39fb519ce7b0daad3fd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/np_tables.py",
+    "bytes": 8155,
+    "sha256": "ef73cac738ebd5dce839b16144e663edd5e27967e810d9d84c63585e26a9e736",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel.parquet",
+    "bytes": 23269,
+    "sha256": "93469d9bd7e51f9e0c2e891f59844a1ffc56c0921035110495b598c9b4e52eb3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_difficulty.parquet",
+    "bytes": 75661,
+    "sha256": "2e29797046cddc22245fc6e46778c98fb1032137eb4009bf86df6a7371bec3ec",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_fpnet_per_molecule.csv",
+    "bytes": 269574,
+    "sha256": "9686d66b4f26612f1eefe186d2959309ee1f3a6e43d865fe32fd2cfc8c9242fe",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_fpnet_scores.parquet",
+    "bytes": 51937874,
+    "sha256_head_tail": "18eb0d89c7309ebe93f4efc381b876b73b1c05c4759e88530701ee62ebdf715d",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_logits.npz",
+    "bytes": 20466740,
+    "sha256": "383e4d9aaaecd8bda1277851064cce840887b733c48477ce5099b71b0152403d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_metric_identities.parquet",
+    "bytes": 926118,
+    "sha256": "4b8f5d342dea2845bed6dbaa8c790fd84b59f446d1f5af6b0e94ef79e4c6aa68",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_same_formula.parquet",
+    "bytes": 8342392,
+    "sha256": "b7442441146f227f2db7e4a5dee458cd173d8304641080b69c87dbc0a5c3d7c7",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_tier_formulas.parquet",
+    "bytes": 8209234,
+    "sha256": "29069629e529a9aa44d07ccfcfcd745eb27d26526d8191dff2136cee9a2be703",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/panel_truth_formula.parquet",
+    "bytes": 7962,
+    "sha256": "814f7acd3dd0b13ca52d0f9c88959c618091779ccd2296c075385903cd33ac7c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/prior_replay.json",
+    "bytes": 1685,
+    "sha256": "445324f6111fd50dffd3b4f17e632946a31b5936d4a55bb4cfbf27a22b0dda20",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/prior_rule_per_query.parquet",
+    "bytes": 9192,
+    "sha256": "fbbb18496a2e7874a03faa28ecec33b8ef8ab3bf5767f787dbcba6cd784ad7e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/prior_rule_summary.csv",
+    "bytes": 385,
+    "sha256": "0cda766ef21a825bc85eacece06f6d01a0fc1d9e9f3fa4abe053d2090e31ac1f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/pubchem_candidates.parquet",
+    "bytes": 51122745,
+    "sha256_head_tail": "772223a4ee8f97dc925ee93ce59e563793216cbfe1354035528c710c6c11ac15",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/pubchem_signals.parquet",
+    "bytes": 12726869,
+    "sha256": "0cdc19e8daa55d22d89f97760f7ea3d5b1814d5d63be9f66844050d4f6d1627e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/pubchemlite_annotations.parquet",
+    "bytes": 13570437,
+    "sha256": "7a054d9b5933f7bda90965f9671dac234c2bf2420435cd39c2e69177b6a0f15d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/replay_public_priors.py",
+    "bytes": 4283,
+    "sha256": "a6d1667f55b3778a5b89d2e1cc5b381b34637d783be01a79f00e6fdaa527f30c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/results_fingerprint_seen_unseen.json",
+    "bytes": 1989,
+    "sha256": "47a8c1f664417606df7ed791a45e78dc99c715535201ff6fc540c02bdd24cfd3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/results_main_channel.json",
+    "bytes": 10781,
+    "sha256": "22900fd5fa4b9307f3de66dd7ccf921da76d5882a2ea332778e131013678a53c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/results_merge_rules.json",
+    "bytes": 3494,
+    "sha256": "49f7e2db24de942d43e5f19141539667e1ae00396c7420dab715db70ffea0af9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/results_pubchem_channel.json",
+    "bytes": 6358,
+    "sha256": "f621c777c5f7547fddb923b7e8ea266283454241d46d165e06a4cd432dc89dc1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-natural-product-panel-benchmark/summarize_panel_fpnet.py",
+    "bytes": 2015,
+    "sha256": "61e7a8ec23313ec0bc460ebbeb9d25adcf6261172609a5aeeff3ea42018007b1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/ATTRIBUTION.md",
+    "bytes": 1077,
+    "sha256": "c9393e830e6fd5e586b3e93522d12c25f1f02d44f110be9004a47536f6883cdb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/BENCHMARK_EXTRAS.csv",
+    "bytes": 3291,
+    "sha256": "79298c9d85a8e5c7f08e46b604da88804543fae80cf09d2dc4d00e1a503de142",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/BENCHMARK_EXTRAS_METHOD.json",
+    "bytes": 3140,
+    "sha256": "a402896eb9ca16e6734c976bbc8141a649cd8a627eb55fa0ffe301c98664391d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/BENCHMARK_METHOD.json",
+    "bytes": 2667,
+    "sha256": "efa8b5a341327e07639b14a2ecc049769d0f910a37b746f0a32601a32b86aa10",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/BENCHMARK_SOURCES.csv",
+    "bytes": 14461,
+    "sha256": "1c500b0e6f92786db8516b6dccc4d6f521051cb1c4f7e247b48ab17e5c540bc3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/CHANGELOG.md",
+    "bytes": 1059,
+    "sha256": "75eb1c80ac319dcae5491468fb93f9539de762692a1f0ad1307494a75d0d097b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/COVERAGE_SOURCES.json",
+    "bytes": 1069,
+    "sha256": "60d0792a09465695aefa6ec2d2c7bbffc7dba8a15a49c6fc50bdcfdf488737a2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/FILE_DESCRIPTIONS.json",
+    "bytes": 25770,
+    "sha256": "6a5f1a99556752ce9107ef6c3e4209a56555683c4cb5bed2bd9b4b66226dde29",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/FORMULA_COUNTS.json",
+    "bytes": 1216,
+    "sha256": "b8ed23c3e71a066f0f570759b26b3d18c26ee06fe2f3341de1b930e892397e5d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/FORMULA_JOINS.json",
+    "bytes": 1401,
+    "sha256": "c8817c52179d876fd0a3a70c352370ad8516593a513aef0f5a511d1c0a97c15b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/GROWTH_INPUTS.json",
+    "bytes": 8258,
+    "sha256": "64c88e0c6923b2b6f4ef742aae8cfc7c4d4fd1b3f2d6504687877f71ef207fbe",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/GROWTH_MANIFEST.json",
+    "bytes": 6352,
+    "sha256": "cae173a5ab7e21c4d86a57579ce1bd106f96502a11fbbac8cdf1205a07e5e73c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/GROWTH_README.md",
+    "bytes": 1750,
+    "sha256": "e22267d0c8c0368ef75d6b0e806f4fbb0c9786ac369b4212f83f0fbdb3bed1d1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/INDEX.json",
+    "bytes": 276375,
+    "sha256": "6b1723229c5a5d6247a56bb29d68748814966a3adb8d113c1fc1f67a85cde78d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/JOIN_NOTES.json",
+    "bytes": 1397,
+    "sha256": "ed2d4901e4ab1b0b3925181cd0aa0a298b7639bf1171194624c053d1bb8b85b8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/LOTUS_REFRESH.json",
+    "bytes": 14743,
+    "sha256": "61cfde26dc65fcc96cf54a493c06840b05f5d3765c76bc87bf9731c18e321bce",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST.json",
+    "bytes": 894,
+    "sha256": "b4d3aa114e7ba04c618bb022d7943f0d43f0333ecd578dacbe15b8a666b3d67f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST_ANNOTATIONS.json",
+    "bytes": 1789,
+    "sha256": "f3d175e500794dad35c7dc0bf81130765528a2814cd5704d0364ff563e849743",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST_DELTA.json",
+    "bytes": 1581,
+    "sha256": "952f5499372d2c50f463e2dd04f5622c5611ec61006cd23079a62cb016740376",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST_FP_V1.json",
+    "bytes": 18713,
+    "sha256": "4fc9371aad09032f707508b6fe4d340b4c1c73dec6d85ff447ec31f2677160de",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST_LOTUS2026.json",
+    "bytes": 3596,
+    "sha256": "e650ee74778b7ed8b226fd635ca4f89997df43d1cccce8033b158253808fa492",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/MANIFEST_SOURCES.json",
+    "bytes": 9614,
+    "sha256": "b9fea0bd2dbfb9ace49416e41fc5f0afb4ed3aec86fe0666076a5a48cf7b2913",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/PUBCHEM_EXTRAS.json",
+    "bytes": 3370,
+    "sha256": "dc62556bfabdafb31ada943aec1b24d00be4e1a60c4c948880bd71d1539c8b25",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/README.md",
+    "bytes": 14312,
+    "sha256": "cca1041f3264296339dadf4b897094aa70f2e4ee2f77003e295c460b715dd6f9",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/REPORT.json",
+    "bytes": 1268,
+    "sha256": "7f8e576021c16a6ce8e9325b54c2afcdf244a31f8c165872f22df8ae6c5099ab",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/SOURCE_CATALOGUE.csv",
+    "bytes": 108529,
+    "sha256": "5b38eef46b4cb02318f01e8a4d4674d0133149a847e29698b13a7df10cc77c86",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/SOURCE_GROUPS.csv",
+    "bytes": 87779,
+    "sha256": "db2550bdda3d4307bc527402614ad8202bc3650bd9fa980b4eb50c8bc2fe5adf",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/SOURCE_GROUPS_SUMMARY.json",
+    "bytes": 1398,
+    "sha256": "9d7bba45d1f8f67dcecd9bc1c37ea1e972a451703d7100dedf7f9abbd626f4fd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/SOURCE_GROUP_STATUS.csv",
+    "bytes": 41842,
+    "sha256": "075a1493270f8bdaa56cebdddd411f1b6b084403149b580e8f68af9ecbd8c583",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/SOURCE_INVENTORY.csv",
+    "bytes": 48280,
+    "sha256": "5e647a8d20bc93c59f92928dedba266449db7f026650f10f78776dee52be4bb1",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/TECHNICAL_NOTES.md",
+    "bytes": 39742,
+    "sha256": "3fe1e96067cb55b95fba4e3bdcd1f8544fc23e6142253e40ca9711a84bf21585",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/VALIDATION.json",
+    "bytes": 45208,
+    "sha256": "1b84ab06666e87752cbc860ff3b616c93492fc7ee3c0f0579626f0f0220002d5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/VALIDATION_SOURCES.json",
+    "bytes": 830,
+    "sha256": "5d48334934ddb711ac83e5f892e7549fefb4a3d8eb4a439f7fcb622e42550471",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/VISIBLE_WINDOW_COVERAGE.json",
+    "bytes": 2189,
+    "sha256": "434116196a8fbb073902ccb73c82709874a73dc33da517d5143fa97a4b2c106c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/aligned_public_priors.py",
+    "bytes": 1178,
+    "sha256": "89873c7312c16be2180d44bb9eb3c4e9ce19c821e74ab92bb41666ea0c0f9248",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/casmi26-pubchem-tier/pc_mass.npy",
+    "bytes": 847004040,
+    "sha256_head_tail": "48a7e299fa2882048fc15ccf1382b0c9497822a2b111cbd34ab5001998b4a91d",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/casmi26-pubchem-tier/pc_off.npy",
+    "bytes": 847004048,
+    "sha256_head_tail": "dd32178fa19c3b8002badff4fa6a38f6de35b008409f83de1da38157d1f6b7fc",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/casmi26-pubchem-tier/pc_smiles.npy",
+    "bytes": 5520120190,
+    "sha256_head_tail": "52de5fd30a8206e93102cefd3b0bbcf76a312a2ac68d35b4bff18a5f494338dd",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_meta.json",
+    "bytes": 355,
+    "sha256": "f22e43772e65656f67e1575e4269f0ad309e22ecb359bc81147445cfe50c4758",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_cid.npy",
+    "bytes": 145340,
+    "sha256": "6c60a856461bdb6ad2a28c66baf5b67c34b804146cf8ca8bed0eb55ffddeb398",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_ik14.npy",
+    "bytes": 508370,
+    "sha256": "4f74a9d10d3690c0f5dd18d5f8937fb74de2b6f1fede780ca17f2db6bb9ba87a",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_lotus_refs.npy",
+    "bytes": 145340,
+    "sha256": "ab0ea32e7ece083440d0186af54175c539f7a20687ea593a6771084e2a0b7be5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_lpmid.npy",
+    "bytes": 72734,
+    "sha256": "7089da71194227bd405004728db2462b26961be156e4838c580508cef2370c6b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_lsid.npy",
+    "bytes": 72734,
+    "sha256": "673a198394971fc1b78fecf77b6f9a89000719ac0b76c1aa7ffdeb81486f2a29",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_lsynonyms.npy",
+    "bytes": 72734,
+    "sha256": "12d1ac3c4d320f57e6dd0e83aae8aeb598bc79c42186e8b07f55185b84824838",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_mass.npy",
+    "bytes": 290552,
+    "sha256": "ef82c84ce4ca3d9a00a2a5bbe265bda379b5e8525f8ec92bfd45cea408d7c011",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_np.npy",
+    "bytes": 36431,
+    "sha256": "30b3e56727e9e8f08ab5928066ae9974edefa724ccb6e4b6ceb2f63c4c23c31c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_off.npy",
+    "bytes": 290560,
+    "sha256": "edb3c5565dab80f7c7cddb7d6070f8f79f8fbfb758f9becb0c98c27cea85f5fb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_smiles.npy",
+    "bytes": 2320603,
+    "sha256": "604c68274fb313bd032fd16315b3c928cd619f29137bd4cb67bfc6c38fae4d75",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_src_mask.npy",
+    "bytes": 72734,
+    "sha256": "52ceaac2cfca47983d3b8328a30220e264ed5cfff3140fb04a7ecb55bdea551e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pc_src_observed.npy",
+    "bytes": 36431,
+    "sha256": "e734af8c8cf8e20fb2d0c5460220109c69a23f45b3a2a7ff2bb8922623569455",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/delta_pubchem_tier.csv",
+    "bytes": 4058259,
+    "sha256": "58a8be91430b423f609ccf1dfd53956ccbfbb621561b4ea0b76a9b242d384d35",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprint_index.py",
+    "bytes": 11360,
+    "sha256": "ab055cc7ea46891e5961684c987306e752d814d29e8737da00fadd3669bd35e5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-000.bin",
+    "bytes": 6042670344,
+    "sha256_head_tail": "02c47ee4dc3a659a143e18902ec4570947dce18549898294154281b71684e5ce",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-001.bin",
+    "bytes": 5795714624,
+    "sha256_head_tail": "0c1b3effefe0becc35be0736fa8032988bf94c9ef1d77865ea0ce2d4ff030bc9",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-002.bin",
+    "bytes": 5831598080,
+    "sha256_head_tail": "c2179dab3bbb184ce9484e9ebf77bf27267cc3e49ac0872bffdc78708a8c1a6e",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-003.bin",
+    "bytes": 5739473664,
+    "sha256_head_tail": "86231bee31fe37ea6e5e9b12dfd8cf81ea6dbbe1c429ddd5779f9235cad00780",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-004.bin",
+    "bytes": 5995196160,
+    "sha256_head_tail": "bcc7e2293c23967805c7f04122f4d57941e63dc6f487d91afd1924fbc5d68099",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-005.bin",
+    "bytes": 5885642688,
+    "sha256_head_tail": "bd891a8763d4d373bdef5616bf6099c617f8b1c6aaaeefb9ae6f8ab03565d4ca",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-006.bin",
+    "bytes": 5737201216,
+    "sha256_head_tail": "59da8ef2872211c23bfbe95cf96ccfaacd5f01da9f55793d1552c9194c4a1817",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-007.bin",
+    "bytes": 5928809600,
+    "sha256_head_tail": "71166235b548a5aeca0f291ae95a3152bd4336a4a8e768d401857f2bc39a1a39",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-008.bin",
+    "bytes": 5744282944,
+    "sha256_head_tail": "7b7f433b7eba970c3bd187b7ddf2b3630b8a449ca2cc20d7584c91a4aa7a77f8",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-009.bin",
+    "bytes": 5934977152,
+    "sha256_head_tail": "4a7ecce07372f44a03a45a75830afeb72996fc5aeb91202085388a5149c93643",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-010.bin",
+    "bytes": 5714521408,
+    "sha256_head_tail": "2707438eea8d2573b9e8ac908dd31243f1a35fa8f12b2f004fd0b74581615453",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/fingerprints-011.bin",
+    "bytes": 4491199265,
+    "sha256_head_tail": "a8800569c4f7f22fe29f48fa6c21b7f472db86abb9fd8145367674ea2a8733eb",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/formula_failures.parquet",
+    "bytes": 149570,
+    "sha256": "bf66fcfe964e97e090079cb36938f7f4886ae6871b111975eddcaecda2c1cedc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_cid.npy",
+    "bytes": 44836,
+    "sha256": "dd182e3b29c435b4a8b6f8db9af271a26bd895d04dbe2f63c60e9c7a403eb4cf",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_ik14.npy",
+    "bytes": 156606,
+    "sha256": "4b5cc955bd472bf4b6f79111382f08da2b2e13d0955fd9f7ae7861df636f6867",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_lotus_refs.npy",
+    "bytes": 44836,
+    "sha256": "c36054e30c5762a76287242dd6905fe673f8998be356c2c10b4dfd2525d65d07",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_lpmid.npy",
+    "bytes": 22482,
+    "sha256": "6087f448d23c830d71b507f0d37d2fa03e8a7edb439fc4f11cac2c6dc296272f",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_lsid.npy",
+    "bytes": 22482,
+    "sha256": "b61869798298ec8bc909263a58f5025830f599ec8488d16ef4f94b5625a40e6b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_lsynonyms.npy",
+    "bytes": 22482,
+    "sha256": "82104705a06d5296d8fb14a6daa786e47fe193359b0fc881d7f32d439f0105da",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_mass.npy",
+    "bytes": 89544,
+    "sha256": "ca46c1c72932c1cc6b58ab9bcb833a2125281f20c0b623af9fa30b182561ef1b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_np.npy",
+    "bytes": 11305,
+    "sha256": "0247d671abeee3d605859f4f95b6d9876fca22539136039ece9c7f73c0ba6464",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_off.npy",
+    "bytes": 89552,
+    "sha256": "07ba3dc94264691e8a74912aa85c9e64415a4511d41e58055de36fdda34cce5e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_smiles.npy",
+    "bytes": 559296,
+    "sha256": "578590187454a7b01d3af9f994ab7cd148041a8fcab913bffa44a99909167ab4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_src_mask.npy",
+    "bytes": 22482,
+    "sha256": "9723906a530f498a678018ae5ea4c616690aaf6f435f2bbd9f588594b3676ea8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pc_src_observed.npy",
+    "bytes": 11305,
+    "sha256": "befe16f61edd8b2d9bb0947026c01b52f01763b6641b0ba402d13dd44a0ca3f5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/growth_pubchem_tier.csv",
+    "bytes": 2040254,
+    "sha256": "c1f25947913aa809e63888ba66b635e02a42082a5beba8cf46ec99cd1de162f3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_cid.npy",
+    "bytes": 423502084,
+    "sha256_head_tail": "2acb98e2f2c9222c7cee18c24a2b7ae5e8601a2bc24d274f5bc34af7188178a0",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_different_parent_rows.npy",
+    "bytes": 1037228,
+    "sha256": "0189e73949696cd807135e52ebc9007577dcdac3afe338679ba7813b5ccd657d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_formula_isomers.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "028155f89990dfbe1a4c0f3a6aff7c48cab78d2dc267344c6208006aff20f606",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_ik14.npy",
+    "bytes": 1482256974,
+    "sha256_head_tail": "a3da60185163c878f6c1bb2ff1ebea1029cd6908cde61a458af02760d04f3989",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lmesh.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "e97a28078e4cbf35e3bf12f3e00662b999cf26cb909e9fa60d5ff1ac4b8598b8",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lotus_refs.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "318825086434f071fe619f217278bbc5317a17c30beecbd441bf0c7df0ca3720",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lpatent.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "6fcc1f40f443ab16d144c6ce44fc818ec98b2bfe1c9e2ac2f8caad6a0548ae68",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lpmid.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "b7c2a8addeba3d50b8c06aa005e1df401340ba60162ef602087bbdcdf93b4a80",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lsid.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "a1056175d85d8be62ddcaf960c445e0714201ef58cde43cca4cecfb149a87445",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_lsynonyms.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "d9cb7a325967936b4ec0be9e946565620da4645f68e75610a41bd04597bc6db0",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_n_depositors.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "d7523288c660560a3f48d7ce3c60eec191bdff1f10fd730102fa5e6f7bfebf05",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_n_vendors.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "2f15536aec60fde65a5ddb85c4a304287d956d63566bcbf873eacbd419ee3945",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_np.npy",
+    "bytes": 105875617,
+    "sha256_head_tail": "5b50df0bba26e9428906efe11806930b4ec1deab066a4ca5a65b79930c0bc894",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pc_src_mask.npy",
+    "bytes": 211751106,
+    "sha256_head_tail": "aa0df3a648b07e34fd0c06ee4daaeebb7b84e2a105c308898f44590fdffcb324",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_cid.npy",
+    "bytes": 2842932,
+    "sha256": "5bd33739596de0d396c04fc50ec1268e95a427917016f06c00cc04e853155b25",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_formula_isomers.npy",
+    "bytes": 1421530,
+    "sha256": "cce7974779e71c4cd8ff41a3291bf1d57caa48f9a0a1fe7b1ff58a2699eff01e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_has_different_parent.npy",
+    "bytes": 710829,
+    "sha256": "7b23111c70942bf6c7ee770d103b50a9d9b1c4b530051fa851e3b39d05ea68a8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lmesh.npy",
+    "bytes": 1421530,
+    "sha256": "c6309dfcfffaf601dad54de724d0b55956873314b626eac241decf68b6a862bc",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lotus_refs.npy",
+    "bytes": 1421530,
+    "sha256": "b3a8e9a44f25c83cc8794a05e0800a1800caa36ebe7f857a10c6b823b51d4dc8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lpatent.npy",
+    "bytes": 1421530,
+    "sha256": "ba80c57bc2e83538658a3c7e2ed27e11936d67adcaede98320ce8bd43bc48ce2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lpmid.npy",
+    "bytes": 1421530,
+    "sha256": "4cbece84f0a8ae04895df2c7184ac1e121803b9cad1a6de16333848d4834bb5b",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lsid.npy",
+    "bytes": 1421530,
+    "sha256": "461ebd8bb1035faf019075bd122f28445a65c52b4b09a209e5d49fad1f7d71e5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_lsynonyms.npy",
+    "bytes": 1421530,
+    "sha256": "29bb614126f060af9d9d9257d9a28aeff9288c60227505fae378f0049e36c1b3",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_match.json",
+    "bytes": 40,
+    "sha256": "2d5c4329ae25830dd658e65a590200c6f570d50f26cc2d705c673e87ae6da240",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_n_depositors.npy",
+    "bytes": 1421530,
+    "sha256": "97a16d2ac5dc88198db85ea9c1e9ff1bb56763217d8ba3da8aa8f90d22f22ea2",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_n_vendors.npy",
+    "bytes": 1421530,
+    "sha256": "86a7c47053f0e7a3e1ffad8b934ffa070cf5b752b8c37a06c571fe7b097c40e4",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_np.npy",
+    "bytes": 710829,
+    "sha256": "87ad6f0afb6cf930b47ed035dd4acc20e1305d1b96ceeff1f8fdbddd6892e390",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_parent_cid.npy",
+    "bytes": 2842932,
+    "sha256": "1e5e783689c4859e103a719ca8cc51f366ca8c904a09e2d4e21ef5b20acf74e8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_popularity.csv",
+    "bytes": 180875134,
+    "sha256_head_tail": "fd1ce3432872f2de7111803a739c46c45a3af29a3e81619c8a3946bedd123ec3",
+    "full": false
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pool_src_mask.npy",
+    "bytes": 1421530,
+    "sha256": "6e4b8831abebadf7aa418fc192d58486a86084954e6cdc3ee53543533507d695",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pubchem_tier_sample.csv",
+    "bytes": 2456397,
+    "sha256": "9a7e83cefbfc4a1e56fa07901dbfb46f49c51e60de587c85eb47357aa8dbaed0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/pubchemlite_annotations.parquet",
+    "bytes": 13570437,
+    "sha256": "7a054d9b5933f7bda90965f9671dac234c2bf2420435cd39c2e69177b6a0f15d",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/MANIFEST_20261019.json",
+    "bytes": 13125,
+    "sha256": "c75d11f02b4c2fdeba1ab4ef9e202fa6e598a2a8f2121606fddd9756bf6b6a3e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/MANIFEST_20261019_2.json",
+    "bytes": 2274,
+    "sha256": "059b36136ab2a3d01d672436f12dc4a1dd4045993469a327760ccc884b512074",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/MANIFEST_20261020.json",
+    "bytes": 3384,
+    "sha256": "5e3b7718ad48b19309af67a6cbae4f6892f2abcb66d5fcaa7793570d66f8cdb0",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/SOURCE_CHECK_20261019.md",
+    "bytes": 1351,
+    "sha256": "aace993777bd139fb0faa5ba5f536b761ed59379c0e918e6602d462f2a44401e",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/VALIDATION_20261019.json",
+    "bytes": 2248,
+    "sha256": "cfe5b19a2a93d7ec2abd41caad6f1ba7e1ca8f143e137129290883bad810bd1c",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/build_annot.py",
+    "bytes": 10588,
+    "sha256": "8fe742c60a4bd162cb289116307106bd8bc21ff194fe4fe6ec89928fc73855eb",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/build_delta.py",
+    "bytes": 4318,
+    "sha256": "df5f993f011ca3a5a9d1814e3c4fc9279895dfa6501febb9bc3b670d1556e7e5",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/build_pop.py",
+    "bytes": 12053,
+    "sha256": "d9f89fa705b027cba4eec6c75f66896e7b573ae3647b8e863cfc9001f3e064ff",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/build_sources.py",
+    "bytes": 14959,
+    "sha256": "178d9ff452ca34e43844fa700592ceee6554cc7fd1eedc997c49a0893886ab18",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/download_sources.py",
+    "bytes": 3195,
+    "sha256": "ac8481f5e763cf566cc841b2915b51df1a99ebcdfbcddaef1d99288a50db9bf8",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/evaluate_sources.py",
+    "bytes": 9490,
+    "sha256": "23fb840ba2a90034062c48a77f5d74dd297129780b48aa1f3769e8847e8e0529",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/make_preview.py",
+    "bytes": 3564,
+    "sha256": "f4564e5899de7a8d235164620c28e0b61ca882849438755781303400b6bb0add",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/make_source_groups.py",
+    "bytes": 5262,
+    "sha256": "31e71a2ca2da6eb1479f4862a63163d47c50365320cb5476029af7037b6a03dd",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/prepare_source_benchmark.py",
+    "bytes": 3571,
+    "sha256": "1afbc7aacd0d3c65ae547b016d794f46bfaabf95d7ddd0fa108e32b317dce011",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/pubchem_gap.py",
+    "bytes": 5840,
+    "sha256": "cbdc93b27fe4515d83542cec29b8bb6ae75f238bfae92b58f97e3feffa9e0d72",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/subtitle.txt",
+    "bytes": 74,
+    "sha256": "4dee933b288e63fbefb1796eac12851b792c9d2de003169a1c2273f8a19130aa",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/scripts/visible_window_coverage.py",
+    "bytes": 4013,
+    "sha256": "1649f2b5a8d264f9052c155dde6a024155b50587c2812a1acab0b6a5577ccfac",
+    "full": true
+  },
+  {
+    "path": "/kaggle/input/datasets/dmitriigluzdov/casmi26-pubchem-popularity-prior/tier_match.json",
+    "bytes": 101,
+    "sha256": "4ecf39284ce3391fc0cbcd92d5706331f06843c903043639d9fd5e55559be13b",
+    "full": true
+  }
+]
