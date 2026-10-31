@@ -822,6 +822,29 @@ Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2
 - Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
   and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
 
+## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
+45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
+weights anywhere. 9 ineligible: the CC BY-NC-SA v4g container mount (A5) and all of Engine 2 (prvsiyan FP models,
+ranker rows, COCONUT bank, megayak rows, ChEBI/LMSD set with the NC key filter; A29-A35). 12 unclear: PubChem depositor
+bit "NIST Mass Spectrometry Data Center" in SRC_BITS / pool_popularity src_spectral_library (A16, A17, midx SPEC_W),
+external reference spectra (A19), unlicensed ICEBERG / GLACIER runner glue (A21, A22), Engine 1's reconstructed-command
+training chain (ranker_v4b, fe_v4 tables; A10, A11), PubChemLite fp set (A36).
+Fixes: F1 mount the original upstream datasets (byte-identical, LB 0); F2a null Engine 2 (eng_lists = Engine 1 top 40;
+-12 min; LB -0.005 to -0.020) or F2b OUR stage 1 as Engine 2 (+13 min; LB -0.005 to +0.005); F3 SRC_BITS 0 + SPEC_W 0
+(LB 0 to -0.002); F4 drop external spectra (~0); F5a ask ahmedberatozer for an MIT grant on the glue, else F5b our own
+GLACIER glue (fwdrun.py) + ICEBERG runner or drop ICEBERG; F6 ask the host about reconstructed / not-bit-exact retrains
+(same class as our G4 / G5); F7 saner retrain demonstration; F8 LICENSE / NOTICE / attribution / Kaggle licences.
+Projected: elig0 (F1+F2a+F3+F4) ~0.457-0.476; elig1 (F2b) ~0.465-0.480; PF-syn PF_MID / ISO carry over (our chain).
+That is 0.11-0.13 above our best eligible 0.348 -> the eligible fork becomes the intended pick #1 for the prize; our
+v18c-lineage build stays as pick #2 insurance (if the host rejects Engine 1's chain). Never select pubm or any variant
+that mounts the v4g container or runs Engine 2 as published.
+OWNER ACTIONS (public posts under the owner's account; not done by me): (a) ask the host in thread 748882 whether
+reconstructed / not-bit-exact retrains with public code satisfy the reproducibility rule (Ahmed's chain, saner, our
+G4 / G5) and whether a PubChem depositor-metadata flag naming the NIST MS Data Center counts as "using NIST";
+(b) ask ahmedberatozer to put MIT on the casmi26-iceberg / casmi26-glacier glue.
+Work order: elig0 build + LB read vs pubm (Nov 2-3) -> elig1 (F2b) paired read -> PF-syn settings on the better base ->
+F5b only if no glue licence by Nov 7 -> F7 / F8 -> final eligible version scored by Nov 19-20.
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,
