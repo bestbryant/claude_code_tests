@@ -1,6 +1,7 @@
 # Reproducing the eligible submission (casmi26-own-s2v17b, LB 0.339)
 
-Status as of 2026-10-25 (the clean-room successor v18c, built by one script, is in section 6). Host rule: every learned weight must be reproducible from public training code + permitted
+Status as of 2026-10-25 (the clean-room successor v18c, built by one script, is in section 6; the PF-syn chain behind
+pf_tpu_f.pt and the v18cu / v18cur1 rankers, written 2026-10-31, is in section 7). Host rule: every learned weight must be reproducible from public training code + permitted
 data, including the code that generates the intermediates. Gap ids `G#` refer to section 3.
 
 Paths: `R=/home/user/claude_code_tests` (repo), `W=/home/user/work`, `EXT=/home/user/ext`, `DS=/home/user/ds`
@@ -763,3 +764,227 @@ closed (deterministic LightGBM, requirements-pipeline.txt); G4 closed (fp_model_
 CPU training nondeterminism); G6-G18 scripted (section 5). Open: G5 -- pf_model_b.pt still comes from the 5 h
 wall-clock run (training code and data public; train_pf.py PF_STEPS now allows a step-exact rerun, ~57.3k steps on a
 T4); G19 LICENSE (owner's decision).
+
+## 7. The PF-syn chain: GLACIER-simulated pool spectra -> pf_tpu_f.pt -> ret_ranker_v18cu / v18cur1 (written 2026-10-31)
+
+PeakFormer `pf_tpu_f.pt` (md5 3f594bf0) is PF-b fine-tuned on a TPU with real spectra plus GLACIER-simulated [M+H]+
+spectra of every simulable pool v18c structure. The seed pair `ret_ranker_v18cu` / `ret_ranker_v18cur1` is the v18c stage 1
+(section 6) retrained on pf_* columns from that PeakFormer, with LightGBM seeds 0 and 1. Users: casmi26-own-s2v18cue (with
+stage2_v18cu / v18cur1), the PF cells of the casmi26-pubm variants, and Engine 2 of the eligible fork casmi26-pube1,
+through bryantyu/casmi26-elig-assets (pf_tpu_f.pt, both rankers, fp_model_v1r.pt). Steps A and E-G run locally in the
+reference environment of the header (E also pushes two GLACIER worker kernels); B-D run as Kaggle kernels.
+
+Sources: docs/plan.md (Oct 28-31 logs, "PF-syn production results", roadmap section 7),
+$DS/casmi26-sim-jobs2/sim2_MANIFEST.json, the kernel logs in $W/pfs/casmi26-pfs-tpu-f/ and $W/build_v18cu.log, and the
+Kaggle-side kernel metadata and logs pulled on 2026-10-31 (section 7.6). UNRECORDED means that nobody logged the value
+at the time.
+
+### 7.1 Rebuild, in order
+
+```bash
+# A. Simulation job files -> dataset bryantyu/casmi26-sim-jobs2 (local, 2026-10-26 06:14, commit eb6e3c2; private, "other").
+#    The command line was not logged. This one is reconstructed from sim2_MANIFEST.json (pool, seed 0, 48 files) and
+#    rebuilt every output byte for byte on 2026-10-31 (4.4 min, 4 procs). n_train / n_coco are ignored with ALL=1.
+#    Exclusions: casmi.fwdrun canon() (RDKit parse, ms-pred VALID_ELEMENTS, <= 100 heavy atoms), net charge 0
+#    (SKIP_CHARGED=1, default) and mass <= 1300 (MASS_MAX, default); RDKit 2026.03.3.
+ALL=1 POOL=$W/pool_v18c/pool.parquet PROCS=4 python3 scripts/build_sim_jobs.py $DS/casmi26-sim-jobs2 sim2 0 0 48 0
+#   pool v18c (section 6; pool.parquet 8afda40a, 1,160,133 rows) -> excluded 43,471 (charged 16,638, mass 16,025, heavy
+#   atoms 7,910, element 2,898) -> 1,116,662 structures (train 274,746 / coco 438,825 / other 403,091), shuffled with
+#   seed 0 and dealt greedily by cost (3 x heavy atoms) into 48 files of 23,134-23,430 structures, each item = up to 500
+#   candidates x 3 placeholder [M+H]+ queries at CE 20 / 40 / 60 eV -> 3,349,986 expected predictions.
+#   sim2_structs.parquet 9282d04e, sim2_excluded.parquet be1e4710, sim2_MANIFEST.json 1db3ade9 (pool md5 + the md5 of every
+#   job file, e.g. sim2.jobs_0.json eceddb3a; all 48 match the published files)
+kaggle datasets create -p $DS/casmi26-sim-jobs2
+
+# B. 24 GLACIER simulation workers (Kaggle CPU, 4 threads): worker i runs sim2.jobs_i, then sim2.jobs_{i+24}.
+#    The generator call reproduces the committed kernels/casmi26-simw2-* byte for byte (checked 2026-10-31).
+SIMW_DS=bryantyu/casmi26-sim-jobs2 SIMW_PREFIX=casmi26-simw2 python3 scripts/make_sim_workers.py \
+  $(for i in $(seq 0 23); do echo -n "$i:sim2.jobs_$i.json,sim2.jobs_$((i+24)).json "; done)
+for i in $(seq 0 23); do kaggle kernels push -p kernels/casmi26-simw2-$i; done   # Oct 28 01:20 - Oct 29 14:40, <= 3 at a time
+#   per file: python -m casmi.fwdrun <jobs.json> <jobs.gl.json> --src mspred --ckpt ckpt/best.ckpt --site /tmp/fwd_site
+#   --wheels wheels --shim fwdshim --threads 4 --budget <38,500 s - elapsed - 1,200 s> --dump-preds <jobs.pkl>
+#   -> <jobs>.sim.npz: smiles, ce (int16), ptr, mz (float32), it (float16), GLACIER's top-100 peaks per structure and CE;
+#   the log prints "predictions N of expected E" and the md5 (table 7.2); placeholder scores are discarded.
+#   Mounts: casmi26-code (version UNRECORDED; casmi/fwdrun.py is unchanged since c259238, Oct 25, so all 24 workers ran the
+#   same runner although the dataset was re-versioned during the rollout), casmi26-glacier (version UNRECORDED;
+#   ckpt/best.ckpt d7d3e3ec, ms-pred @708148c2a8eb, wheels, fwdshim), casmi26-sim-jobs2.
+
+# C. syn2.npz: kernel casmi26-syn-prep2 (Kaggle CPU, pushed 2026-10-29 19:37, COMPLETE 20:32). The generator call
+#    reproduces the committed kernel byte for byte.
+python3 scripts/make_syn_prep.py casmi26-syn-prep2 casmi26-sim-jobs2 sim2_structs.parquet casmi26-pool-v18c syn2 \
+  $(for i in $(seq 0 23); do echo -n "casmi26-simw2-$i "; done)
+kaggle kernels push -p kernels/casmi26-syn-prep2
+#   runs prep_syn_data_script.py (= scripts/prep_syn_data.py; it and casmi/richfp.py are unchanged since dbb0982) with
+#   <sim2_structs.parquet> <fpx.npz> syn2.npz <the 48 *.sim.npz sorted by basename>, POOL = casmi26-pool-v18c
+#   pool.parquet, RICHFP_CACHE=/none, PREP_PROCS=4, RDKit 2026.3.3 wheel. Mounts: casmi26-code (version UNRECORDED),
+#   casmi26-sim-jobs2, casmi26-pf-data (fpx.npz bdd0e338: the kept bit columns), casmi26-pool-v18c, the RDKit wheel, and
+#   the 24 workers as kernel_sources.
+#   Log: 48 files; 3,349,953 predictions, all matched to pool ids by InChIKey14; 1,116,651 structures (fingerprints
+#   computed in the kernel, on-bits mean 942); window negatives per structure mean 46.6 (none 10,230; coco 45.4 / other
+#   42.3 / train 54.6); syn2.npz md5 946badfb5bf016cb5b9a340ed4c6b83c. syn2.npz exists only as this kernel's output;
+#   pfs-tpu-f and pfx-tpu read it through kernel_sources.
+
+# D. pf_tpu_f.pt: kernel casmi26-pfs-tpu-f (TPU v5e-8, 2026-10-30, COMPLETE 13:15 after 13,832 s). The generator call
+#    reproduces the committed kernel byte for byte.
+python3 scripts/make_pf_tpu_kernel.py casmi26-pfs-tpu-f casmi26-syn-prep2 syn2.npz 43 8.3 600 500 40000
+kaggle kernels push -p kernels/casmi26-pfs-tpu-f
+#   train_pf_xla_script.py (= scripts/train_pf_xla.py; casmi26-code at 1e31261, Kaggle version UNRECORDED)
+#   <fp-data dir> fpx.npz pf_casmi26-pfs-tpu-f.pt 40 10000 256 63 with
+#   PF_INIT = casmi26-models pf_model_b.pt (560e194f, G5), PF_SYN = syn2.npz, PF_SYN_P 0.25 (64 of 256 rows per core),
+#   PF_SEED 43, PF_STEPS 40000, PF_D 192, PF_LAYERS 4, PF_HEADS 6, PF_DMOL 256, PF_DROP 0.0, PF_LR 2e-4, PF_SBAL 0.5,
+#   PF_MERGE 0.35, PF_INST_DROP 1.0, PF_TIMS_W 1.0, PF_NEG_TRAIN = casmi26-pf-negtrain negtrain.npy (6d4923ae),
+#   PF_NEG_NOREP 1, PF_VAL_N 600, PF_TPU_RESET=1; real spectra and split from casmi26-fp-data (spectra.npz, structs.npz).
+#   First a 120-step probe of the 8-chip strategy (exit 0, 934 s; probe checkpoint deleted). If the probe had failed,
+#   the kernel would have trained on one chip at batch 1024 instead (G21). Then the main run on 8 chips x 256 = 2,048
+#   samples per step: 40,000 steps (82M samples) in 12,832 s; the PF_HOURS guard (7.69 h) was not reached. The log
+#   shows "step 40000/40000" and a final real-val sum of .8237 (585 structures; cos .8208, f.z .8106). Environment:
+#   torch 2.8.0+cpu, torch_xla 2.8.0, Python 3.12, image python-tpuvm@sha256:ac9c852b... (not pinned, G22). The kernel
+#   prints md5 3f594bf07d8632029cf99b6111a82f65.
+kaggle kernels output bryantyu/casmi26-pfs-tpu-f -p $W/pfs/casmi26-pfs-tpu-f      # pf_casmi26-pfs-tpu-f.pt + log
+cp $W/pfs/casmi26-pfs-tpu-f/pf_casmi26-pfs-tpu-f.pt $DS/casmi26-models/pf_tpu_f.pt  # both copies 3f594bf0 (2026-10-31)
+kaggle datasets version -p $DS/casmi26-models -m "pf_tpu_f.pt"                   # message and version UNRECORDED (G16)
+#   Validation only: scripts/eval_syn_probe.py offline COCONUT probe (620 neutral queries, pf_bern RR among
+#   COCONUT-not-train candidates, paired bootstrap): .646 against PF-b .586 (+.060 [+.043, +.078]) and pf_tpu_p .633
+#   (+.013 [-.000, +.027]); train + COCONUT +.059 against PF-b. The command line is UNRECORDED.
+
+# E. Seed pair v18cu / v18cur1 (local, 2026-10-30 13:20-14:56, log $W/build_v18cu.log). Run the script again after each
+#    "waiting for the GLACIER kernels" stop. The PF path given was not logged; its md5 was 3f594bf0.
+scripts/build_pfswap_pair.sh <pf_tpu_f.pt> v18cu
+```
+
+What it runs (`BASE=v18c REUSE_C1=0 GL_HAVE="$W/fwd_v18c*" GLW_N=1`, FP = `$W/own_models/fp_model_v1r.pt` a9748a4a):
+1. `build_v18c.sh <PF> <FP> v18cu`. Stages A and B are reused from v18c: `pool_v18c/.built` and the stage-B rows
+   `ret18c_{train,val}.parquet` (2ff482e5 / 79e4ac1e, md5 computed 2026-10-31).
+   - C1 (13:20-13:52): `add_fp_feats.py ret18c_$s.parquet <PF> <out>.p$i pool_v18c $i 3` (3 shards, `RICHFP_CACHE=`), concat,
+     `formula_rel` -> `ret18cu_{train,val}_pf.parquet` (dcfe894d / 441c0841).
+   - C2 (from 13:52): `add_fp_feats.py` with fp_model_v1r.pt -> `ret18cu_{train,val}_fp.parquet` (217cba99 / 2af099f8).
+   - D: `train_ret_ranker.py` (DOC_W pool_v18c/doc_w.parquet, DOC_ALPHA 1, `RANKER_PARAMS='{"num_threads": 4}'`,
+     deterministic row-wise) -> `ret_ranker_v18cu.txt` 1bfde65f + `_feats.txt` 93d47b72; `oof_stage1.py` ->
+     `ret_v18cu_train_oof.parquet` (46840c7f; OOF MRR .8305); reach filter -> `ret18cu_val_reach_c.parquet` (d08c177c).
+   - E: `build_fwd_jobs.py` top 30 with `--have=$W/fwd_v18c*/{train,val}.jobs_*.gl.json` (train candidates 128,982 ->
+     32,433, val 26,261 -> 7,166) -> dataset casmi26-gl-v18cu, one CPU worker kernel casmi26-glwv18cu-0
+     (`make_gl_workers.py`, 8 job files) -> `fwd_v18cu/*.gl.json`.
+   - F: `train_stage2.py fit` with `GL_GLOB = fwd_v18cu + $W/fwd_v18c*` (G24) -> `stage2_v18cu.txt` 520be0d4 + `_feats.txt`
+     dc8e3c01.
+2. Hard links `ret18cur1_{train,val}_{pf,fp}.parquet` -> the ret18cu files. Then `RANKER_PARAMS='{"num_threads": 4,
+   "seed": 1}' S2_PARAMS='{"seed": 1}' build_v18c.sh <PF> <FP> v18cur1` -> `ret_ranker_v18cur1.txt` d3b10b6b (same feature
+   list 93d47b72; OOF .8309, `ret_v18cur1_train_oof.parquet` 36c3f63e). GLACIER: train 128,982 -> 30,927, val 26,261 ->
+   6,877 (casmi26-gl-v18cur1, casmi26-glwv18cur1-0). Stage 2: `stage2_v18cur1.txt` 05cf0511.
+
+```bash
+# F. Publish and deploy (local). Version numbers and messages UNRECORDED (G16).
+cp $W/own_models/{ret_ranker,stage2}_v18cu{,r1}{,_feats}.txt $DS/casmi26-models/ && kaggle datasets version -p $DS/casmi26-models -m "v18cu pair"
+#   kernels/casmi26-own-s2v18cue differs from casmi26-own-s2v18ce only in the docstring and OWN_RANKER
+#   'ret_ranker_v18cu,ret_ranker_v18cur1', OWN_STAGE2 'stage2_v18cu,stage2_v18cur1', OWN_PF pf_tpu_f.pt (sed per the
+#   build_pfswap_pair.sh header; the exact command is UNRECORDED). OWN_FP fp_model_v1r.pt, LIB_CAP 10, image 81b1e7c4 pinned.
+#   Pushed 2026-10-30 ~14:56, verified 16:51 (400 / 400 lists, GLACIER 371 / 400). Its LB read is still pending: the
+#   Nov 1 slots went to the fork variants.
+kaggle kernels push -p kernels/casmi26-own-s2v18cue
+# G. Engine 2 assets of the eligible fork casmi26-pube1 (hard links of the same files; nothing uploaded; the owner creates the dataset)
+python3 scripts/pub_variant/make_elig_assets.py <out_dir>   # pf_tpu_f.pt, both rankers + feats, fp_model_v1r.pt, 16 casmi modules, MANIFEST.sha256
+```
+
+### 7.2 Simulation outputs (`sim2.jobs_N.sim.npz`, kernel outputs of casmi26-simw2-*)
+
+Predictions found / expected and md5 as printed in each worker's log (docs/plan.md Oct 28-29). The worker-0 md5s are not
+in plan.md; they come from the casmi26-simw2-0 log fetched on 2026-10-31.
+
+| worker | file i (predictions / expected, md5) | file i+24 (predictions / expected, md5) |
+|---|---|---|
+| 0 | jobs_0 69,507 / 69,507, 008458c2 | jobs_24 69,903 / 69,903, 1e3a4cac |
+| 1 | jobs_1 69,471 / 69,471, 4fe7a334 | jobs_25 69,993 / 69,993, caa15adb |
+| 2 | jobs_2 69,981 / 69,981, 1567bd7a | jobs_26 69,651 / 69,651, 89ce385d |
+| 3 | jobs_3 69,750 / 69,750, d9ffc7d0 | jobs_27 69,774 / 69,774, ea34c3e8 |
+| 4 | jobs_4 69,558 / 69,558, cb4a651c | jobs_28 69,879 / 69,882, 00dc6c96 |
+| 5 | jobs_5 70,119 / 70,119, 271c1cda | jobs_29 69,681 / 69,681, c1a5c7e5 |
+| 6 | jobs_6 69,888 / 69,888, 8d67ccc1 | jobs_30 70,023 / 70,023, dff7dff5 |
+| 7 | jobs_7 69,939 / 69,939, 36a33eee | jobs_31 69,453 / 69,456, 45c711fc |
+| 8 | jobs_8 69,669 / 69,669, 9e4508c9 | jobs_32 69,750 / 69,750, fcb23d17 |
+| 9 | jobs_9 69,780 / 69,780, 93092465 | jobs_33 70,026 / 70,026, 2d094fbb |
+| 10 | jobs_10 69,720 / 69,723, 8395d8fb | jobs_34 69,720 / 69,720, 43206655 |
+| 11 | jobs_11 69,741 / 69,741, 5db12c43 | jobs_35 69,651 / 69,654, f138d7bc |
+| 12 | jobs_12 69,765 / 69,765, 726eee17 | jobs_36 69,663 / 69,663, 4de88f40 |
+| 13 | jobs_13 70,290 / 70,290, f7da9223 | jobs_37 69,948 / 69,948, 088b007f |
+| 14 | jobs_14 69,630 / 69,630, 9216c1c6 | jobs_38 69,948 / 69,948, 034fd2a6 |
+| 15 | jobs_15 69,666 / 69,666, 878e72f6 | jobs_39 69,981 / 69,984, 54412a95 |
+| 16 | jobs_16 69,891 / 69,891, 872e59b6 | jobs_40 69,813 / 69,813, 677c27ba |
+| 17 | jobs_17 70,050 / 70,050, 9b7706dc | jobs_41 69,402 / 69,402, b8d91cec |
+| 18 | jobs_18 69,762 / 69,765, e26cd658 | jobs_42 69,888 / 69,891, 001ebc2f |
+| 19 | jobs_19 69,765 / 69,765, bd22c32e | jobs_43 69,879 / 69,879, 4a4118cb |
+| 20 | jobs_20 69,543 / 69,543, 1cee0682 | jobs_44 69,537 / 69,540, 79bca49a |
+| 21 | jobs_21 69,987 / 69,987, 778f7069 | jobs_45 69,693 / 69,693, 39f5c8bb |
+| 22 | jobs_22 69,609 / 69,609, 8fc88046 | jobs_46 69,771 / 69,771, 32356082 |
+| 23 | jobs_23 69,810 / 69,816, 0194cf9d | jobs_47 70,035 / 70,038, 8ad2e5e2 |
+
+The expected counts equal sim2_MANIFEST.json. Ten files are short: jobs_10, 18, 28, 31, 35, 39, 42, 44 and 47 by one
+structure (its 3 CEs) each, and jobs_23 by two. Every short file lost predictions to fwdrun failures, not to the deadline,
+and none was topped up. In total 11 structures and 33 predictions are missing: 3,349,986 − 33 = 3,349,953, the count that
+syn-prep2 matched. Roadmap section 7, item 5 of docs/plan.md says "13 files short"; the per-file log lines give 10.
+
+### 7.3 Artifacts
+
+| artifact | used by | built by | inputs | status |
+|---|---|---|---|---|
+| pool v18c pool.parquet (1,160,133 rows; 8afda40a) | build_sim_jobs (structures), syn-prep2 (key, mass, formula), stage-1 rows | section 6 stage A | section 6 | complete (section 6) |
+| casmi26-sim-jobs2: sim2.jobs_{0..47}.json, sim2_structs.parquet (9282d04e), sim2_excluded.parquet (be1e4710), sim2_MANIFEST.json (1db3ade9) | simw2 workers, syn-prep2 | build_sim_jobs.py ALL=1, seed 0, 48 files | pool v18c, RDKit 2026.03.3 | complete: command reconstructed from the manifest, rebuild byte-identical (2026-10-31) |
+| kernels/casmi26-simw2-0..23 | simulation | make_sim_workers.py (regenerates byte for byte) | casmi26-code, casmi26-glacier, casmi26-sim-jobs2 | complete; image unpinned, dataset versions UNRECORDED (G22, G25) |
+| sim2.jobs_N.sim.npz x 48 (table 7.2) | syn-prep2 | casmi.fwdrun --dump-preds in the workers | job files, GLACIER ckpt d7d3e3ec, ms-pred @708148c2a8eb | partial (G23): a re-run is equivalent, not shown byte-identical |
+| syn2.npz (3,349,953 spectra, 1,116,651 structures; 946badfb) | pfs-tpu-f (PF_SYN), pfx-tpu | casmi26-syn-prep2: prep_syn_data.py (make_syn_prep.py, regenerates byte for byte) | 48 sim.npz, sim2_structs, fpx.npz bdd0e338, pool v18c, RDKit 2026.3.3 wheel | complete given its inputs (deterministic code; re-run = spot check a, not done) |
+| syn2p.npz (604,685 structures; 2c80e057) | pfs-tpu-p only (7.4) | casmi26-syn-prep2p on simw2-0..12 (sim2.jobs_0-12 + 24-36) | as syn2.npz | side branch |
+| pf_model_b.pt (560e194f) | PF_INIT of pfs-tpu-f | kernels/casmi26-pf-train-b (section 1.3) | fp-data, pf-data, pf-negtrain v2 | partial (G5) |
+| casmi26-fp-data (spectra.npz, structs.npz), casmi26-pf-data fpx.npz (bdd0e338), casmi26-pf-negtrain negtrain.npy (6d4923ae) | pfs-tpu-f: real spectra, split, bit columns, negatives | sections 1.2, 5 | train.parquet, pool v1 | as sections 1-5 (G17 log open) |
+| kernels/casmi26-pfs-tpu-f | pf_tpu_f.pt | make_pf_tpu_kernel.py (regenerates byte for byte) | casmi26-code @1e31261, fp-data, pf-data, pf-negtrain, casmi26-models (pf_model_b.pt), syn-prep2 output | partial (G21, G22) |
+| pf_tpu_f.pt (= pf_casmi26-pfs-tpu-f.pt; 3f594bf0) | C1 of v18cu, s2v18cue / run_eng2 OWN_PF, pubm PF cells, casmi26-elig-assets | pfs-tpu-f (train_pf_xla.py, 40,000 steps, seed 43, 8 chips) | pf_model_b.pt, syn2.npz, fp-data, pf-data, pf-negtrain | partial (G5, G21, G22) |
+| ret18cu_{train,val}_pf.parquet (dcfe894d / 441c0841) | C2 | build_v18c.sh C1 (add_fp_feats.py, PF = pf_tpu_f.pt, no richfp cache) | ret18c rows (2ff482e5 / 79e4ac1e), pool v18c, pf_tpu_f | complete; CPU inference, not re-run |
+| ret18cu_{train,val}_fp.parquet (217cba99 / 2af099f8); ret18cur1_* = hard links | train_ret_ranker, oof_stage1, reach filter | build_v18c.sh C2 (FP = fp_model_v1r.pt a9748a4a) | ret18cu_*_pf | complete |
+| ret_ranker_v18cu.txt (1bfde65f) + _feats.txt (93d47b72) | s2v18cue stage 1 (seed mean), pube1 Engine 2 | train_ret_ranker.py, seed 0, deterministic row-wise | ret18cu_*_fp, doc_w | complete (deterministic; re-run check G24, pending) |
+| ret_ranker_v18cur1.txt (d3b10b6b) + _feats.txt (93d47b72) | same | same with RANKER_PARAMS seed 1 | same rows (hard links) | complete (same) |
+| ret_v18cu{,r1}_train_oof.parquet (46840c7f / 36c3f63e), ret18cu_val_reach_c.parquet (d08c177c, = r1) | build_fwd_jobs (E) | oof_stage1.py; inline reach filter | ret18cu_*_fp, rankers | complete |
+| fwd_v18cu/, fwd_v18cur1/ (*.jobs_*.json, *.gl.json; datasets casmi26-gl-v18cu / -v18cur1, kernels casmi26-glwv18cu-0 / glwv18cur1-0) | train_stage2 | build_fwd_jobs.py --have=$W/fwd_v18c* + fwdrun on one Kaggle CPU worker | OOF / reach rows, pool v18c, earlier passes | partial (G24) |
+| stage2_v18cu.txt (520be0d4), stage2_v18cur1.txt (05cf0511), _feats.txt (dc8e3c01) | s2v18cue stage 2 only (not used by pube1) | train_stage2.py fit; S2_PARAMS seed 1 for r1 | fwd_v18cu{,r1} + every fwd_v18c* pass | partial (G24) |
+| casmi26-models (pf_tpu_f.pt, the four v18cu models + feats) | s2v18cue, pubm variants | cp + kaggle datasets version | the files above | versions UNRECORDED (G16, G25) |
+| bryantyu/casmi26-elig-assets (staged, not created) | pube1 Engine 2 | scripts/pub_variant/make_elig_assets.py | pf_tpu_f, both rankers, fp_model_v1r, casmi modules | prepared; owner creates it (G19) |
+| kernels/casmi26-own-s2v18cue | LB (read pending) | sed from casmi26-own-s2v18ce | casmi26-code, pool-v18c, models, RDKit wheel, glacier; image 81b1e7c4 | complete; dataset versions unpinned (G16) |
+
+### 7.4 Side branches (not inputs of pf_tpu_f.pt)
+
+| run | what | output (md5) | status |
+|---|---|---|---|
+| casmi26-syn-prep2p -> casmi26-pfs-tpu-p | partial syn set (26 of 48 files, the deterministic subset simw2-0..12), TPU fine-tune of PF-b, seed 41, step budget calibrated in-run on steps 20-220 = 13,538 steps x 2,048 | syn2p.npz 2c80e057; pf_tpu_p.pt 19f17728 (real-val sum .8291) | used by v18ct / v18ctr1 (s2v18cte, LB 0.348); a re-run must set PF_STEPS=13538 explicitly (calibrated budget, G5 class) |
+| casmi26-pfs1-s31 / -s32 | CPU fine-tunes of PF-b on full syn2, 7,500 steps x 256, seeds 31 / 32 (make_pf_cpu_pilot.py ... synP) | pf_synp_s31.pt 7e222134, pf_synp_s32.pt 646ce53b | spectral probe only (specpfsynp-coco 0.186); never in a pick |
+| casmi26-pfs-tpu-f2 | same recipe as pfs-tpu-f, seed 44 | none | deleted while queued (Oct 31) |
+| casmi26-pfx-tpu | from-scratch d=384 x 6 PeakFormer on the same syn2.npz, seed 51, PF_STEPS 60,000 fixed, 8-chip only, image pinned (ac9c852b...), versions to pfx_env.json | pending | add here when it lands (roadmap D3) |
+| v18cuP / v18cuPr1, v18cr1P, 4-seed build | pinned-GLACIER rebuilds of this pair (roadmap E2 / E3) | not built | add here when built (G24) |
+
+### 7.5 Validation recorded at build time
+- pf_tpu_f.pt: real-val sum .8269 after 10k steps, .8237 at the end. Offline COCONUT probe .646 (PF-b .586, pf_tpu_p .633).
+  The spectral LB probe kernel casmi26-specpftpuf-coco is verified (394 / 400 rows); its LB read moved to Nov 2 or later.
+- v18cu / v18cur1: stage 1 val .8264 / .8341 (cls1 .8300 / .8284, cls2 .8245 / .8372), stage 2 .8318 / .8386. The pair
+  mean is .835, against .8337 for v18c / v18cr1. Validation does not rank PeakFormer swaps.
+
+### 7.6 Checks done for this section (2026-10-31, read-only; nothing pushed)
+- `build_sim_jobs.py` rerun into the scratchpad with the command of 7.1 A: sim2_MANIFEST.json equal, sim2_structs /
+  sim2_excluded md5 equal and all 48 job files identical (`cmp`) to $DS/casmi26-sim-jobs2. The 48 job md5s also match the
+  manifest. Reference environment: Python 3.13.16, numpy 2.5.3, pandas 3.0.5, pyarrow 26.0.0, RDKit 2026.03.3.
+- Generators rerun in a scratch copy: `make_sim_workers.py` (24 kernels), `make_syn_prep.py` and `make_pf_tpu_kernel.py`
+  with the arguments of 7.1 give the committed kernels/casmi26-simw2-*, casmi26-syn-prep2 and casmi26-pfs-tpu-f byte for byte.
+- Local md5s: pf_tpu_f.pt 3f594bf0 in $W/pfs and $DS/casmi26-models; pf_model_b.pt 560e194f; fpx.npz bdd0e338;
+  negtrain.npy 6d4923ae; rankers 1bfde65f / d3b10b6b; stage 2 520be0d4 / 05cf0511. The row and OOF md5s of 7.1 E are
+  computed from the files in $W (none were recorded at build time).
+- Kaggle-side metadata (`kaggle kernels pull -m`) gives the images the runs used:
+  - casmi26-pfs-tpu-f: `gcr.io/kaggle-private-byod/python-tpuvm@sha256:ac9c852b3cdaddf50c4ab3d9eb9d11eb84d32d935f2dbf0f49f9fda276118d30`;
+  - casmi26-simw2-0, casmi26-syn-prep2 and casmi26-glwv18cu-0: `gcr.io/kaggle-images/python@sha256:17b2fc7f27c25c6c2fd4230ec8e66097ab2b89fc88e1e4d6f338b72e1ee0bc3e`.
+  The other 23 workers were not pulled. All four kernels have `docker_image_pinning_type` None.
+- Kernel logs fetched: casmi26-simw2-0 (the worker-0 md5s of table 7.2) and casmi26-syn-prep2 (full syn2.npz md5,
+  Python 3.13 image).
+
+### 7.7 Open gaps of the PF-syn chain
+
+| id | gap | fix |
+|---|---|---|
+| G5 | (as section 3; open) pf_tpu_f.pt starts from pf_model_b.pt (560e194f). PF-b's training stopped on a 5 h wall clock at ~57.3k steps (the exact count was not logged), and its cosine LR used max(step, time) fractions. Everything downstream (pf_tpu_f, the v18cu rows and rankers, pube1's Engine 2) inherits this. | Roadmap E4e / D7: re-run PF-b' on a T4 with `train_pf.py PF_STEPS=57300` (not on the TPU: train_pf_xla.py is a different code path); equivalent if its real-val sum is .820 ± 0.005. If no GPU is idle by Nov 27, the write-up states "recipe and data public, ~57.3k steps from the log, not re-demonstrated". |
+| G21 | TPU training is not bit-exact: 8 XLA processes with all-reduced gradients, compiler-chosen reduction order and matmul precision. A re-run of casmi26-pfs-tpu-f gives an equivalent checkpoint, not 3f594bf0. The kernel also falls back to one chip at batch 1024 when the 8-chip probe fails, which is a different recipe under the same PF_STEPS. pf_tpu_f has never been re-run (f2, seed 44, was deleted unrun). | For any re-run: 8-chip only, as in pfx-tpu. Optional reproduction pf_tpu_g (roadmap E4e: same kernel, new slug, reproduction only, never in a pick); equivalent if the offline COCONUT probe is within ± 0.010 of .646 and the real-val sum within ± 0.005 of .8237 (D7). State the equivalence criterion in the write-up (fork_eligibility.md F6 asks the host whether this class of retrain meets the rule). |
+| G22 | Image and environment not pinned. kernels/casmi26-pfs-tpu-f/kernel-metadata.json has no docker_image; Kaggle records python-tpuvm@sha256:ac9c852b... for the run (7.6). torch 2.8.0+cpu / torch_xla 2.8.0 come from the log only; libtpu is UNRECORDED. The checkpoint holds only `_cfg` and `_keep` (no step count, no versions). The workers, syn-prep2 and glwv18cu/cur1 ran unpinned on kaggle-images/python@sha256:17b2fc7f... (4 kernels checked). Roadmap section 7 item 3 is not done: make_pf_tpu_kernel.py has no pin option, and train_pf_xla.py's `save_and_validate` writes no `_step` / `_env`. | Add a `docker_image` argument to make_pf_tpu_kernel.py (default: the ac9c852b digest), make_sim_workers.py and make_syn_prep.py (17b2fc7f digest). Store `_step` and the torch / torch_xla / libtpu versions in train_pf_xla.py checkpoints (new runs only: deployed weights stay as they are). The digests are now recorded in 7.6. |
+| G23 | Simulation outputs are not shown to re-run byte for byte. fwdrun on CPU depends on batch composition (G2: ~0.99 similarity between passes), and native failures drop structures (11 here, no top-ups). The per-file budget (38,500 s session minus 1,200 s) would cut a file on a slower machine (not reached in this run). casmi26-code and casmi26-glacier versions are UNRECORDED (the runner code is the same for all 24 workers, 7.1 B). | Roadmap 7.7 (b): re-run one worker (2 files), compare md5s with table 7.2 and, if they differ, the per-structure spectral cosine and the set of missing structures. Roadmap 7.7 (a): re-run casmi26-syn-prep2 and check 946badfb. Record dataset versions (G16). |
+| G24 | GLACIER cache of the pair's stage 2 (stage2_v18cu / v18cur1 only; the stage-1 rankers read no GLACIER feature). `GL_HAVE="$W/fwd_v18c*"` is a glob that expands at stage E and F time, and the matched passes were not recorded. The glob included the build's own fwd_v18cu, v18cur1 also read fwd_v18cu, and on Oct 31 03:27 it matched 8 passes (c, c3, cr1, ct, ctr1, cu, cur1, cw). This is the G2 class. | Roadmap E2: pinned rebuilds v18cuP / v18cuPr1 with `GL_HAVE_PIN=$W/fwd_v18c` (the one fresh scripted pass) plus one recorded incremental pass each. build_pfswap_pair.sh still lacks the `GL_HAVE_PIN` override (roadmap section 7 item 4). The stage-D re-run on hard-linked rows doubles as the ranker determinism check: v18cuP must give 1bfde65f and v18cuPr1 d3b10b6b (roadmap 7.7 c). |
+| G25 | Datasets of the chain: mounted versions are UNRECORDED for every kernel above (G16 class). Licences: casmi26-sim-jobs2 "other"; casmi26-gl-v18cu / -v18cur1 "Apache 2.0", although their job files carry competition query spectra; casmi26-models "Apache 2.0", although roadmap section 7 sets CC BY-NC 4.0 for models trained on train.parquet. | Owner (G19): set the licences as roadmap section 7 item 2 says, keep these datasets private. Record dataset versions with the pick kernels (roadmap 7.8). |
