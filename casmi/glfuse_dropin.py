@@ -2,12 +2,15 @@
 uses) (fix F5b, clean-room).
 
 Written from the behavioural specification scratchpad f5b/glue_spec.md (sections 3, 9.2, 11) and our own casmi code.
-No code of the unlicensed runner glue was used. Pure Python (+ the standard library); safe to import in the notebook.
+No code of the unlicensed runner glue was used. `run_runner` follows the subprocess wrapper `n1_run` of the fork's
+frozen notebook (FZ c41:1007-1040, Apache-2.0 notebook code). Pure Python (+ the standard library); safe to import in
+the notebook.
 
 - build_ice_input(test_df, cands_by_mid, covered_only=True): runner input items from test rows (spec 3.1).
 - ice_candidates(smis, formulas, top_n=40): the members of same-formula groups among a ranked list's top n (3.2).
 - run_gl(...) / run_ice(...): run a runner program in its own process; never raise; return {mid: {smiles: score}}.
 - rerank(...): within-formula z-fusion with one re-scorer (11.2); rerank_multi(...): with several (11.3).
+- placeholder_scores(items): all-null per-molecule dicts for the "ICEBERG dropped" option (12).
 """
 import json
 import math
@@ -23,12 +26,10 @@ GRACE_S = 300
 
 # ------------------------------------------------------------------------------------------------ input ----------
 def _missing(v):
-    if v is None:
+    """None, NaN, pandas NA / NaT."""
+    if v is None or type(v).__name__ in ('NAType', 'NaTType'):
         return True
-    try:
-        return isinstance(v, float) and math.isnan(v)
-    except Exception:
-        return False
+    return isinstance(v, numbers.Real) and not isinstance(v, bool) and math.isnan(float(v))
 
 
 def _text(v):
@@ -46,10 +47,10 @@ def _floats(v):
 
 
 def _ce_list(v):
-    if v is None or isinstance(v, (str, bytes)):
+    """A float list from an array-like; None when missing or not iterable (a bare number, as in spec 3.1, is None:
+    the runner then treats the CE as unknown)."""
+    if v is None or isinstance(v, (str, bytes, numbers.Number)):
         return None
-    if isinstance(v, numbers.Real):
-        return None if math.isnan(float(v)) else [float(v)]
     try:
         return [float(x) for x in v]
     except TypeError:
@@ -157,6 +158,16 @@ def run_ice(pkg, items, workdir='/kaggle/working/ice_work', device='cuda', budge
     return run_runner(script, pkg, items, workdir, 'ice', device, budget_s, site, wheels, extra_args, grace_s, 'ice')
 
 
+def placeholder_scores(items):
+    """{mid: {smiles: None}} for every runner input molecule: what the ICEBERG runner writes before scoring. Used
+    when ICEBERG is not run, so the pipeline's truthy per-molecule ICE-dict gates (which also gate every GLACIER use,
+    spec 9.3) stay open while no ICEBERG value is ever finite."""
+    out = {}
+    for it in items:
+        out.setdefault(str(it['mid']), {}).update({str(c): None for c in it.get('cands') or []})
+    return out
+
+
 # ------------------------------------------------------------------------------------------------ fusion ---------
 def _usable(x):
     """A z-score input: a Python int / float (numpy float64 is one, float32 is not) that is finite."""
@@ -165,23 +176,24 @@ def _usable(x):
 
 def _z(vals):
     """Within-group z-scores: (x - mean) / sample SD (ddof 1) over usable values; 0 for unusable values, and for
-    all values when fewer than 2 are usable or the SD is not > 0."""
+    all values when fewer than 2 are usable or the SD is not > 0.
+    The arithmetic is the textbook two-pass definition (mean = sum / n; SD = sqrt(sum of squared deviations /
+    (n - 1)), Python's sum()) on purpose: exact ties between a ranker z and a re-scorer z (e.g. +-1/sqrt(2) in a
+    2-member group at lam 1) must cancel the same way as the reference's pandas-semantics z."""
     xs = [float(v) for v in vals if _usable(v)]
-    n = len(xs)
-    if n < 2:
-        return [0.0] * len(vals)
-    mu = sum(xs) / n
-    sd = math.sqrt(sum((x - mu) ** 2 for x in xs) / (n - 1))
-    if not sd > 0:
-        return [0.0] * len(vals)
-    return [(float(v) - mu) / sd if _usable(v) else 0.0 for v in vals]
+    if len(xs) >= 2:
+        centre = sum(xs) / len(xs)
+        spread = math.sqrt(sum((x - centre) ** 2 for x in xs) / (len(xs) - 1))
+        if spread > 0:
+            return [(float(v) - centre) / spread if _usable(v) else 0.0 for v in vals]
+    return [0.0] * len(vals)
 
 
 def _lookup(scores, smis, keys):
     """Re-scorer values aligned with smis: a list is taken as aligned; a dict is looked up by exact SMILES string,
     then (when that gives nothing) by the candidate's key."""
     n = len(smis)
-    if isinstance(scores, (list, tuple)):
+    if not isinstance(scores, dict):                  # list / tuple / array: aligned with smis
         v = list(scores)[:n]
         return v + [None] * (n - len(v))
     out = []
@@ -229,10 +241,10 @@ def rerank(smis, keys, scores, formulas, ice_scores, lam=0.5, top_n=60, min_cove
     order = list(range(n))
     if n == 0 or not ice_scores:
         return order
-    vals = _lookup(ice_scores, smis, keys)
+    vals = [_clean(v) for v in _lookup(ice_scores, smis, keys)]     # re-scorer values -> finite float | None
     need = max(2, int(min_covered))
     for pos in _groups(formulas, min(int(top_n), n)):
-        if sum(1 for p in pos if _usable(vals[p])) < need:
+        if sum(1 for p in pos if vals[p] is not None) < need:
             continue
         zs = _z([scores[p] for p in pos])
         zr = _z([vals[p] for p in pos])
@@ -265,7 +277,7 @@ def rerank_multi(smis, keys, scores, formulas, score_dicts, lams, top_n=60, min_
                 zk = _z([c[p] for p in pos])
                 fused = [a + l * b for a, b in zip(fused, zk)]
                 used += 1
-        if used >= 2:
+        if used >= 2 and tie_eps > 0:             # tie_eps = 0 disables the grid
             fused = [round(x / tie_eps) for x in fused]
         _write_back(order, pos, fused)
     return order

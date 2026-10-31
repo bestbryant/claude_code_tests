@@ -918,6 +918,17 @@ A7-A9 = files verified against their own logs, recipes recovered (B: K 95, seed 
 retrain can only be statistically equivalent (GPU nondeterminism, bf16, his RTX 5090 vs T4). A11 (ranker_v4b) remains
 "command verified, rows unpublished" - K4 (sim1x regeneration, 6-10 T4-h) only if the host asks.
 
+F5b insurance (Oct 31 20:00, workflow wf_4b45a28d-ce1; docs/f5b_glue_spec.md, docs/f5b_iceberg_plan.md): clean-room GLACIER
+drop-in (casmi/glrun_dropin.py = gl_runner CLI + the 25-name module API the N1 driver needs + meta JSON; casmi/glfuse_dropin.py
+= gl_fuse re-rank) written from a behavioural spec of the unlicensed glue (cited, not copied; reviewer: no substantial copying,
+Apache-2.0 notebook sources credited). On the pubm golden inputs (local CPU): 793 / 793 scores, identical nulls, mean |d|
+1.2e-3, Spearman 0.9996, top-1 after re-rank changed 0 / 11 (our older fwdrun.py: 9.5e-3, 2 / 11); the residual is GLACIER
+batch-composition / device dependence (also present in the glue). Findings: GLACIER use in the fork REQUIRES a non-empty
+ICEBERG dict per molecule (dropping ICEBERG silently removes GLACIER too); the commit run asserts on ice / gl meta files;
+bryantyu/casmi26-fwd ships Ahmed's glue byte-identical (not clean), bryantyu/casmi26-glacier is clean. Open: Kaggle GPU
+equivalence commit vs the pubm golden; ICEBERG clean-room runner (plan) + clean ICEBERG weights from ms-pred; frozen-cell
+patches c26 / c41 / c50. Only needed if ahmedberatozer grants no licence by ~Nov 7 (owner action F5a).
+
 ### Roadmap execution log
 - Oct 31 04:10: PF-x kernel kernels/casmi26-pfx-tpu written (d=384 x 6, 8 heads, d_mol 512, dropout 0.1, from scratch, LR 5e-4,
   seed 51, syn2 PF_SYN_P 0.25, 8-chip only, image pinned to the pfs-tpu-f digest python-tpuvm@sha256:ac9c852b...,

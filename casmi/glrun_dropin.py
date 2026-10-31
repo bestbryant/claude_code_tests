@@ -3,6 +3,12 @@
 Written from the behavioural specification scratchpad f5b/glue_spec.md (sections 2, 4-10), from ms-pred @708148c2a8eb
 (MIT; GLACIER `JointModel`, `TreeProcessor`, `IntenDataset.collate_fn`, `predict_smis_joint.prepare_entry`) and from
 our own casmi/fwdrun.py / casmi/entropy.py. No code of the unlicensed runner glue was used.
+Licensed sources whose structure is followed (Apache-2.0 notebook code, attribution kept here):
+- `main()` (meta dict, write(), chunk / flush loop, run statistics, error tail) follows the N1 bench driver
+  `glb_driver.py` (kdev_glbench_n1, embedded in the fork's frozen notebook, FZ c41:627-965), whose 25-name module API
+  this file implements;
+- the two-cursor peak walk of `_sim_kernel` follows the public `pv.py` `entropy_sim` kernel (prvsiyan analog-
+  propagation notebook), extended with the spec's ppm tolerance, halving and clipping (spec S3).
 
 Two ways to use it (the file is meant to be shipped as `<pkg>/gl_runner.py`, but works under any name):
 
@@ -162,17 +168,18 @@ def is_covered(sp):
     return bool(pos) and sp.get('adduct') in COVERED
 
 
-_NUM = re.compile(r'\d+(?:\.\d*)?|\.\d+')
+_NUM = re.compile(r'[0-9]+(?:\.[0-9]*)?')     # unsigned decimals (ASCII digits; '.5' reads as 5)
 
 
 def spectrum_ce(sp):
     """Q3: the spectrum's collision energy in eV (NaN when unknown).
-    Raw metadata present (ce_units or ce_ev not None): NCE units -> mean of the numbers in ce_orig; otherwise the
-    mean of ce_ev. Neither present: a pre-resolved 'ce'."""
-    units, ev = sp.get('ce_units'), sp.get('ce_ev')
-    if units is not None or ev is not None:
+    Raw metadata present (a 'ce_units' or 'ce_ev' KEY, whatever its value; spec 4.2 "absent"): NCE units -> mean of
+    the numbers in str(ce_orig); otherwise the mean of ce_ev (NaN if None / empty). Both keys absent: a pre-resolved
+    'ce'."""
+    if 'ce_units' in sp or 'ce_ev' in sp:
+        units, ev = sp.get('ce_units'), sp.get('ce_ev')
         if units == 'NCE':
-            nums = [float(x) for x in _NUM.findall(str(sp.get('ce_orig') or ''))]
+            nums = [float(x) for x in _NUM.findall(str(sp.get('ce_orig')))]
             return float(np.mean(nums)) if nums else float('nan')
         if ev is None:
             return float('nan')
@@ -477,8 +484,8 @@ def smiles_ok(smi):
                     m2 = Chem.MolFromSmiles(c)
                     if m2 is None or m2.GetNumAtoms() < 1:
                         why = 'canonical form does not re-parse'
-                    else:
-                        canon, heavy = c, m2.GetNumAtoms()
+                    else:               # heavy atoms (explicit isotopic H kept by RemoveHs does not count)
+                        canon, heavy = c, m2.GetNumHeavyAtoms()
     except Exception as e:
         canon, why = None, f'error {e!r}'[:120]
     _CANON[smi] = (canon, heavy, why)
@@ -625,10 +632,7 @@ def setup_env(ns, log=_nolog):
         else:
             raise RuntimeError(f'no wheel dir found and site {site} is not prepared')
         paths.append(site)
-    for p in reversed(paths):
-        while p in sys.path:
-            sys.path.remove(p)
-        sys.path.insert(0, p)
+    sys.path[:] = paths + [p for p in sys.path if p not in paths]      # E2: these first, in this order, once
     for name in list(sys.modules):
         if name.split('.')[0] in EVICT:
             del sys.modules[name]
@@ -700,7 +704,9 @@ def load_model(pkg, device='cpu', log=_nolog, ckpt=None):
     except Exception:
         # Lightning checkpoints can carry non-tensor objects; this is the dataset's own (upstream) file
         obj = torch.load(path, map_location='cpu', weights_only=False)
-    hp = {k: v for k, v in dict(obj['hyper_parameters']).items() if not str(k).startswith('_')}
+    hp = dict(obj['hyper_parameters'])
+    for k in [k for k in hp if str(k).startswith('_')]:    # private Lightning entries are not constructor args
+        del hp[k]
     sd = obj['state_dict']
     _align_tables(sd, common, log)
     model = joint_model.JointModel(**hp)
@@ -800,7 +806,7 @@ class Predictor:
             if len(items) == 1:
                 self._note('prediction failed', str(items[0].get('name'))[:80], repr(e)[:200])
                 return [self._FAILED]
-            q = -(-len(items) // 4)
+            q = max(1, len(items) // 4)       # parts of floor(n / 4) (n < 8: single items); batch composition matters
             res = []
             for s in range(0, len(items), q):
                 res += self._predict_items(items[s:s + q])
@@ -809,15 +815,14 @@ class Predictor:
     def _run(self, keys):
         """-> [(prediction | None, status)] with status ok / empty / fail / feat (featurisation failed)."""
         res = [(None, 'feat')] * len(keys)
-        items, idx = [], []
+        built = {}                            # position in keys -> featurised item
         for t, k in enumerate(keys):
             try:
-                items.append(self._item(k))
-                idx.append(t)
+                built[t] = self._item(k)
             except Exception as e:
                 self._note('featurisation failed', k[0][:80], repr(e)[:200])
-        if items:
-            for t, p in zip(idx, self._predict_items(items)):
+        if built:
+            for t, p in zip(built, self._predict_items(list(built.values()))):
                 if p is self._FAILED:
                     res[t] = (None, 'fail')
                 elif p is None:
@@ -937,6 +942,8 @@ def main(argv=None):
             out.setdefault(str(it['mid']), {}).update({str(c): None for c in it.get('cands') or []})
         meta['n_mols'] = len(items)
         meta['n_cands'] = sum(len(it.get('cands') or []) for it in items)
+        meta['n_mols_covered'] = sum(1 for it in items if any(isinstance(sp, dict) and is_covered(sp)
+                                                              for sp in it.get('spectra') or []))
         write()
         meta['rdkit'] = setup_env(argparse.Namespace(pkg=a.pkg, site=a.site, wheels=a.wheels, any_rdkit=a.any_rdkit,
                                                      src=a.src, shim=a.shim), log)
@@ -972,9 +979,9 @@ def main(argv=None):
             for mid, cands, plan in chunk:
                 try:
                     out[mid].update(score_molecule(plan, cands, pred.cache))
+                    meta['n_mols_scored'] += 1                  # only molecules whose scores were written
                 except Exception as e:
                     meta['errors'].append(f'{mid}: score {e!r}'[:300])
-            meta['n_mols_scored'] += len(chunk)
             write()
             log(f'chunk: {len(chunk)} molecules, {len(chunk_jobs)} jobs, {time.time() - t0:.1f}s '
                 f'({meta["n_mols_scored"]} scored, {pred.n_pred} predictions)')
@@ -984,6 +991,16 @@ def main(argv=None):
         stopped = False
         for it in items:
             mid = str(it['mid'])
+            plan = []
+            for sp in it.get('spectra') or []:
+                try:
+                    if is_covered(sp):
+                        qm, qp = prep_spectrum(sp)
+                        plan.append((qm, qp, sp['adduct'], instr_token(sp), ce_bucket(spectrum_ce(sp))))
+                except Exception as e:
+                    meta['errors'].append(f'{mid}: plan {e!r}'[:300])
+            if not plan:                    # C2: no covered spectrum -> stays all-null; its SMILES are not checked
+                continue
             allc = list(dict.fromkeys(str(c) for c in it.get('cands') or []))
             for c in allc:
                 if c not in okc:
@@ -993,16 +1010,7 @@ def main(argv=None):
             if len(okc) >= GUARD_N and not any(okc.values()):
                 raise RuntimeError(f'all {len(okc)} candidate SMILES rejected: broken RDKit / ms-pred environment')
             cands = [c for c in allc if okc[c]]
-            plan = []
-            for sp in it.get('spectra') or []:
-                try:
-                    if is_covered(sp):
-                        qm, qp = prep_spectrum(sp)
-                        plan.append((qm, qp, sp['adduct'], instr_token(sp), ce_bucket(spectrum_ce(sp))))
-                except Exception as e:
-                    meta['errors'].append(f'{mid}: plan {e!r}'[:300])
-            meta['n_mols_covered'] += int(bool(plan))
-            if not plan or not cands:
+            if not cands:
                 continue
             chunk.append((mid, cands, plan))
             chunk_jobs |= set(molecule_jobs(plan, cands))
