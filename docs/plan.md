@@ -293,6 +293,421 @@ for PF-syn: GLACIER-simulated spectra are near-real for pub structures and out-o
   question: are the +-0.01 probe moves between retrains dose effects or retrain (seed) noise? -> Oct 30 seed replicate.
 - The mask predictions held (both inside their intervals); the v18c3 COCONUT probe missed by -0.017.
 
+## Roadmap Nov 1 - Dec 14 (workflow pfsyn-roadmap)
+
+This roadmap covers four proposer lenses: scaling, syn-elsewhere, integration and endgame. Their proposals are referred to as S1-S3, SE1-SE2, I1-I3 and E1-E4. It was pre-registered on Oct 31 at about 04:00 UTC, before any Nov 1 reading. Every rule below is binding from the moment it is appended.
+
+### 0. Facts checked by the critic (Oct 31, 03:27 UTC)
+
+**Current state**
+- casmi26-pfs-tpu-f2 is still QUEUED. It was pushed Oct 30 at 14:00.
+- Local disk has **1.1 GB** free, not 1.8 GB.
+- The glob `/home/user/work/fwd_v18c*` currently matches 8 passes: c, c3, cr1, ct, ctr1, cu, cur1 and cw.
+
+**Competition rules** (from /home/user/kern/pages.txt)
+- The winner licence is "Open Source - MIT".
+- The data licence is CC BY-NC 4.0.
+- We may select "up to two (2) Final Submissions".
+- If we select nothing, Kaggle selects automatically. That would take our two 0.451 forks, and both are ineligible.
+- Non-compliance leads to disqualification of the submission(s), or remediation within one week.
+- There are 5 prizes.
+
+**Correction to the brief.** Every Enamine, purchasable and PubChem insertion read ran on PF-d (`pf_local_final`, timsTOF token), not PF-b:
+- the reads were v12purch -0.018, v12purchrr -0.016, prop95 -0.010, prop98 -0.004 and enam-only 0.037, all on Oct 22-23;
+- the offline step of roadmap item 5 (Oct 25), which re-measures misfires under the debiased PeakFormer, never ran.
+
+So an Enamine re-test is not a repeat of a closed line. The exposure caveat under SE2 still applies.
+
+**Conversion on the LB is about 0.2, not 0.3.**
+- v17 to v17b gained +0.005 full for +0.031 spectral, a ratio of 0.16.
+- v18ce to v18cte gained +0.006 for +0.029, a ratio of 0.21.
+- Prediction constants used below: full = 0.2 x spectral; COCONUT probe = 0.4 x spectral; spectral = 0.6 x offline.
+
+**Honest outlook.** The PF-syn pick realistically lands at 0.350-0.354 public. What is left is variance reduction and keeping both picks eligible. A prize needs fewer than 5 eligible teams above us on the private LB, which we do not control; a clean compliance record is the asset we do control.
+
+### 1. Verdicts
+
+| proposal | verdict | evidence and changes |
+|---|---|---|
+| S1 PF-x-syn (d=384 x 6, from scratch, used as an ensemble member) | KEEP, modified (rank 4) | See below. |
+| S2 tpu_fc (continue tpu_f with a 0.5 synthetic share) | DOWNGRADED to contingency | Same recipe, so the lens itself expects at most +0.002 full. It has no ensemble value (corr 0.98). Its offline read is inflated along exactly the axis it changes: more synthetic exposure means more GLACIER-in-sample memorisation on the 486 public probe truths. It runs only if PF-x is CLOSED (D3) **and** specpftpuf-coco >= 0.196, pushed by Nov 10. |
+| S3 host-bottleneck fix | Logging only | `PF_PROF` timers inside the PF-x kernel are free. No producer processes and no batch-512 arm: TPU hours are not binding (~120 h left), a deadlock or OOM would cost the one session that matters, and deployable weights must come from one trainer version. |
+| SE1 `PF_SYN_DROP` run plus pair rebuild | REJECTED; one zero-cost piece kept | See below. |
+| SE2 Enamine-tier promotion under PF-syn | KEEP, offline first, gates tightened (rank 6) | See below. |
+| I1 mixed-PF 4-member ensemble (code change) | REJECTED | It changes the inference path (`casmi/own.py` stage1, `casmi/run_own.py` stage2) six weeks before the deadline. It adds the weaker tpu_p member, against the do-not-mix evidence. The only ensemble effect the LB has credited is LightGBM-seed averaging (v18ce), and E3 gets that on the stronger PeakFormer with no code change. |
+| I2 conversion-aware gate | KEEP as a standing rule | Pipeline reads of a PeakFormer change are no-harm checks; superiority is judged offline plus on the spectral probe. Reduced to the f2-alone spectral slot (seed-noise calibration); f+f2 is read offline only. The bar uses the measured 0.2 conversion. |
+| I3 stage-1-only read | DOWNGRADED to contingency | See below. |
+| E1 final-pick protocol and compliance lock | KEEP (rank 1), plus a **provisional selection today** | Select two eligible submissions in the UI now (s2v18cte v1 and s2v18c v1) and update them later. If the owner is unavailable in December, auto-selection would otherwise take the forks. Kaggle scores the better of the two picks, so their order does not matter. The pair is {best PF-syn build, v18c-lineage build}. |
+| E2 pinned-GLACIER rebuild | KEEP (rank 2) | See below. |
+| E3 4 seeds x {f, f2} | KEEP, modified (rank 3) | 4 LightGBM seeds on the adopted PeakFormer columns: tpu_f, or {tpu_f, PF-x} after D3b. f2 joins the columns only through its offline gate (D2b). pf_tpu_g never joins. Non-inferiority bars are accepted for same-recipe averaging; a new component must show superiority at the spectral level first. |
+| E4 TPU-chain record | KEEP a-d (rank 5); e as eligibility insurance | See below. |
+
+**S1, PF-x-syn.**
+- Why it is kept:
+  - The case for an independent member is real. Independently trained PF-d and PF-b correlate at 0.68 within a query; same-start fine-tunes correlate at 0.98, and their ensembles only equal the member mean.
+  - The TPU is otherwise idle.
+- Why the case is weaker than the lens says:
+  - The capacity argument is weak. The real-val drift (.8269 to .8237) coincides with the 25% synthetic share and the LR schedule.
+  - "Host-bound, so 3x the parameters is nearly free" rests on a single 120-step probe.
+  - An independent but weaker member hurts: PF-b + tpu_f scores .6269 against tpu_f's .6461. So GO requires the ensemble to beat tpu_f.
+- Changes to the proposal:
+  - No extra probe arms in the PF-x session (OOM or recompile risk at d=384).
+  - Strategy list is `8-chip` only. A 1-chip fallback cannot finish 70k steps, so the guard would cut it, giving wall-clock-dependent weights (G5 again).
+  - `PF_STEPS` is fixed and printed before the main run.
+  - A VOID rule, a non-public guard, and adoption by spectral probe plus pipeline no-harm (D3/D3b/D5).
+  - Last push Nov 10.
+
+**SE1, `PF_SYN_DROP` run and pair rebuild.**
+- Gate (a) is guaranteed by construction. Dropping the synthetic positives of exactly the 486 public probe truths must shrink their gain, so passing it shows nothing.
+- The costly parts (a TPU run, a pair rebuild, 3 slots) target an over-trust that stage-1 OOF does not show: the gain is +0.011 ± 0.003 for public truths and +0.011 ± 0.007 for non-public. The predicted effect, +0.003 ± 0.008, cannot be read on the LB.
+- The LB gain per hidden answer exceeds the offline gain, which is the opposite of over-trust.
+- It would also break every later comparison against tpu_f, just when PF-x needs a clean one.
+- Kept at zero cost: every offline PeakFormer read also reports public and non-public halves, and PF-x carries a non-public guard.
+
+**SE2, Enamine-tier promotion.**
+- The new evidence is genuine: the failed reads were PF-d era, and PF-syn is instrument-free and lifts timsTOF natural-product answers.
+- The exposure critique from the integration lens holds:
+  - PF-syn saw synthetic positives for every pool structure, so rel is biased toward the pool.
+  - The 236 "Enamine-unreachable" validation truths were themselves PF-syn positives, so their correct-and-fired rate is optimistic.
+  - Only the Zenodo-222 stratum is clean.
+  - Present-fire must be measured on present truths that have no public spectra.
+- A fired-only probe comes before any A/B (Oct 25 critic). The line is closed by Nov 13 either way.
+
+**I3, stage-1-only read.**
+- The decision is asymmetric. A flat read (± 0.006) cannot justify removing a stage worth +0.005 on validation and +0.015 on class-1 truths with public spectra, which is the class that carries L_T.
+- Pinning (E2) already solves the eligibility motive.
+- No later builds are left to save GLACIER sessions on.
+- It runs only if GLACIER breaks in a pick kernel.
+
+**E2, pinned-GLACIER rebuild.**
+- It replaces the commitment in plan.md (Oct 29 GLACIER-cache note) to "a GL_HAVE-free rebuild" with: fwd_v18c (the one fresh scripted pass) plus one recorded incremental pass per build.
+- That meets the same standard (every GLACIER score used in training comes from a scripted pass with a recorded `--have`) at about 1/10 of the CPU. A fresh pass would only be equivalent anyway (CPU batch noise ~0.99).
+- Its seeds 0-1 become the first half of the final build.
+
+**E4, TPU-chain record.**
+- (c) Image pin and (d) version logging go into the generator **before** the PF-x push.
+- (e) PF-b' is re-run on a T4 with `train_pf.py` and `PF_STEPS=57300`. It must not run on the TPU: `train_pf_xla.py` is a different code path with in-batch negatives, so it would not reproduce PF-b's recipe.
+- The GPU is used only when the owner leaves it idle; push by Nov 27.
+- pf_tpu_g is a reproduction demonstration only and never enters a pick.
+
+### 2. Ranking of the survivors (expected LB gain per scarce resource)
+
+| # | item | expected full-LB effect | scarce cost |
+|---|---|---|---|
+| 1 | E1 protocol, licences and provisional selection | Protects all of the prize EV | 0 compute; ~30 min owner |
+| 2 | E2 insurance builds s2v18cuPe and s2v18cPe | 0 ± 0.003; both picks final-ready by Nov 3 | 3 GLACIER worker-h, ~2 h local, 2 kernel commits, 2 slots |
+| 3 | E3 4-seed final on the adopted PeakFormer (s2v18cuP4e) | +0.001 to +0.003 public; private SD ~0.0035 -> ~0.0025 | ~2 h local, 2 GLACIER worker-h, 4 kernel commits, 4 slots |
+| 4 | S1 PF-x-syn (one run) | EV ≈ +0.001 (P(GO) 0.35-0.4 x +0.002 to +0.004); right tail +0.006 | 7 TPU-h (not binding) plus 1 queue wait, ~2.5 h local, 1 smoke session, 1 slot; plus 4 slots and 4 GLACIER sessions if adopted |
+| 5 | E4 a-d (docs, image pin, version log) | 0 | ~3-4 h local |
+| 6 | SE2 Enamine promotion, offline first | EV ≈ +0.001; ceiling +0.028 | ~0.5 day local, 0-3 slots |
+| 7 | I2 f2 spectral seed-noise read (only if f2 ran) | 0 (calibrates the PF-x read) | 1 kernel commit, 1 slot |
+| 8 | E4e PF-b' on a T4 (G5) | 0 (eligibility insurance) | 5 T4-h, owner-idle only |
+| 9 | S3 `PF_PROF` logging | 0 | ~20 min inside #4 |
+
+- **Contingency:** tpu_fc (S2), stage-1-only read (I3), pf_tpu_g (E4e).
+- **Rejected:** SE1, I1, the S3 refactor, f2 as a default member, f3 and later seeds, PF-x seed replicates or other sizes.
+- **Expected total:** about +0.003 public (0.348 -> ~0.351), most of it as lower private variance.
+
+### 3. Standing rules (every day)
+
+**Slots**
+- Each day's slots are pre-registered in plan.md by 23:00 UTC the day before, with a prediction and a rule.
+- A kernel that is not COMPLETE and verified by 00:05 is replaced by nothing.
+- No exploratory slots outside this roadmap.
+
+**Reading results**
+- A full-score difference below 0.008 (one public molecule) never decides anything by itself.
+- PeakFormer changes are judged offline and on the spectral probe; the pipeline read is a no-harm check.
+- Every offline PeakFormer read reports the 620-query total plus public and non-public halves (`scripts/eval_syn_probe.py ... coco qids_pub.txt qids_nonpub.txt`).
+
+**Compute**
+- Kaggle CPU: at most 3 sessions of ours; the owner comes first.
+- TPU: one session per account, queued sessions included.
+- GPU: owner first.
+
+**Disk**
+- Keep at least 300 MB free. Delete in this order:
+  1. ret_v18c3 and ret_v18cw OOF files (single-link, 170 MB);
+  2. fwd_v18c3 and fwd_v18cw, after the pins (192 MB);
+  3. v18ct/ctr1 rows, OOF and fwd, after D1 keeps tpu_f (~440 MB).
+
+**Local jobs**
+- Local jobs survive only inside active turns. Builds are restartable; arm a send_later check-in for every wait.
+
+**Build tags**
+- A suffix P on a build tag means pinned GLACIER (fwd_v18c plus that build's own incremental pass); 4e means the 4-seed ensemble.
+- If D1 switches back to pf_tpu_p, replace cu with ct in every tag below.
+
+### 4. Decision points (pre-registered)
+
+**D1 (Nov 1, ~02:00).** This amends the Nov 1 table and is recorded before its reading. The table's ADOPT rule still decides the "pick #1" label.
+- (a) **PeakFormer columns for every later build = pf_tpu_f.** Switch to pf_tpu_p only if (specpftpuf-coco <= 0.183 **and** probe18cue-coco <= 0.215) **or** (mask18cue-train < 0.126 **and** probe18cue-train < 0.150). The full-score difference v18cue − v18cte is never used for this choice.
+- (b) The table's "3rd confirming read" is D4.
+- (c) PF-syn leaves the final pair only if mean(v18cte, v18cue) < 0.342 **and** probe18cue-coco < 0.215.
+- (d) If specpftpuf-coco < 0.192, no more same-recipe TPU training (tpu_fc closed). If it is >= 0.196, tpu_fc stays as D3's contingency.
+
+**D2 (Nov 2): insurance integrity.**
+- Slots: s2v18cuPe and s2v18cPe.
+- First, a zero-slot list diff against s2v18cue v1 and s2v18ce v1. Pass needs >= 98% identical top-1 and >= 90% identical top-5 sets.
+- LB pass if |Δ| <= 0.006 against the parent reading.
+- If Δ < −0.006, treat it as a build error: diff the lists, do not adopt, and spend no slot until it is explained.
+- On a pass, the owner switches the provisional selection to {s2v18cuPe, s2v18cPe}.
+
+**D2b (only if f2 ran).**
+- Offline: f2 vs f, and {f, f2} vs f.
+- f2 joins the final columns only if {f, f2} >= f + 0.005 with CI > 0, and the non-public delta is >= 0.
+- Slot specpftpuf2-coco: prediction S_f ± 0.010, where S_f = the Nov 1 specpftpuf-coco reading.
+- If |f2 − f| >= 0.010, raise every later spectral bar by +0.004.
+
+**D3 (PF-x offline, the day it lands).** Read with eval_syn_probe, coco, pf_bern, paired bootstrap, against tpu_f (.6461).
+- **VOID** if there is a start-up failure, "PF_HOURS reached" before the last step, or a NaN. Re-push once with the same configuration, by Nov 10. A second VOID closes PF-x.
+- **GO** if either:
+  - the z-mean {PF-x, tpu_f} >= tpu_f + 0.008 with CI > 0, or
+  - PF-x alone >= tpu_f + 0.010 with CI > 0.
+- Guards for GO:
+  - cotr >= .576;
+  - real-val sum >= .818;
+  - non-public (134 queries) delta >= −0.010;
+  - the log shows the full step count.
+- Otherwise PF-x is CLOSED: no slot, no other size, no seed.
+
+**D3b (PF-x spectral slot, the day after GO).**
+- Kernel casmi26-specpfx-coco = specpftpuf-coco with OWN_PF = the GO variant.
+- Prediction: S_f + 0.6 x offline delta ± 0.012.
+- Adopt into the final columns at >= S_f + 0.008 (+0.004 if D2b raised the bar). Otherwise closed.
+
+**D4 (default final build).**
+- Slots: s2v18cuP4e, probe18cuP4e-coco, probe18cuP4e-train and mask18cuP4e-train.
+- Predictions:
+  - full = s2v18cuPe + 0.002 ± 0.005;
+  - COCONUT probe = probe18cue-coco ± 0.006;
+  - training probe = 0.157 ± 0.006;
+  - masked training probe = mask18cue-train ± 0.008.
+- **Non-inferiority PASS** if all of these hold, and the build becomes the pick-A candidate:
+  - full >= s2v18cuPe − 0.004;
+  - COCONUT probe >= probe18cue-coco − 0.006;
+  - training probe >= 0.150;
+  - masked training probe >= 0.126.
+- FAIL means a build error is suspected. Pick A becomes s2v18cuPe, and there is no second attempt.
+
+**D5 (PF-x final build, only after D3b adopts it).**
+- Slots: s2v18cx4e plus three probes.
+- Predictions: full = s2v18cuP4e + 0.2 x gain ± 0.005; COCONUT probe = probe18cuP4e-coco + 0.4 x gain ± 0.006.
+- It replaces D4's build as pick A only if all of these hold:
+  - full >= s2v18cuP4e − 0.004;
+  - COCONUT probe >= probe18cuP4e-coco (the mechanism must show);
+  - training probe >= 0.150;
+  - masked training probe >= 0.126.
+
+**D6 (Enamine; closes the 'other' line either way).**
+- **(a) Offline, by Nov 8.**
+  - First reproduce the PF-d reference within 2 points (sim_enam.parquet: present median rel −18, other +29).
+  - Then rerun with pf_tpu_f, and with the D3b PeakFormer if it was adopted.
+  - GATE: there must be a τ where both hold:
+    - present-fire <= 4% on timsTOF natural-product present queries whose truth has no public [M+H]+ spectrum;
+    - Zenodo-222 correct-and-fired >= 20%.
+  - If no τ qualifies, the line is CLOSED with 0 slots spent.
+- **(b) Fired-only probe (1 slot).**
+  - Lists: on the pick-A base, the promoted tier #1 at rank 1 for fired molecules, empty lists elsewhere.
+  - Hits = score x 124.
+  - At least 2 hits (score >= 0.016) proceeds to (c); otherwise CLOSED.
+- **(c) A/B (2 slots: full and masked training probe)** on identical pick-A lists.
+  - Prediction: +0.004 ± 0.006.
+  - Adopt for pick A only, at >= +0.005 with the masked training probe >= its parent − 0.006.
+  - Otherwise CLOSED, with no replicate.
+
+**D7 (G5).**
+- PF-b' is equivalent if its real-val sum is .820 ± 0.005 (cos .807, f.z .805).
+- Optional pf_tpu_g is equivalent if its offline COCONUT probe is within ± 0.010 of .646 and its real-val sum is within ± 0.005 of .8237.
+- The result is recorded either way. No slot, and it never changes a pick.
+
+**D8 (Nov 23).** The final pair is chosen by section 6.
+
+### 5. Day-by-day schedule
+
+TPU weeks reset Saturdays at 00:00 UTC. Dates assume TPU queue waits of at most 24 h; the slack window absorbs slips.
+
+| date | TPU / GPU | Kaggle CPU (≤3 ours) | local | LB slots | decision / hook |
+|---|---|---|---|---|---|
+| Oct 31 Sat | TPU week 1 (20 h). f2 QUEUED. Push PF-x after its smoke test passes: if f2 is still QUEUED, delete f2 first; if f2 is running, push when it ends. | PF-x CPU smoke (≤40 min); GLACIER workers glwv18cuP-0, glwv18cuPr1-0, glwv18cr1P-0 | Section 9 items 1-3; append this roadmap by 23:00 | (used) | Owner: provisional selection, LICENSE, licences |
+| Nov 1 Sun | PF-x queued or running | Commit and verify s2v18cuPe and s2v18cPe | Stages E-F of the 3 pinned builds; start seeds 2-3 (v18cuPr2, v18cuPr3: rows hard-linked, `GL_HAVE=/home/user/work/fwd_v18c`) | The 5 pre-registered Nov 1 slots | D1; pre-register Nov 2 |
+| Nov 2 Mon | PF-x | glwv18cuPr2-0, glwv18cuPr3-0 | Seeds 2-3 stage F; start the Enamine reference reproduction | s2v18cuPe, s2v18cPe, specpftpuf2-coco (only if f2 ran) | D2, D2b; owner updates the selection |
+| Nov 3 Tue | PF-x lands (planned) | Commit s2v18cuP4e, probe18cuP4e-coco, probe18cuP4e-train, mask18cuP4e-train; specpfx-coco if GO | D3 (~1 h); write reproduce.md §7 | none | D3; pre-register Nov 4 |
+| Nov 4 Wed | Contingency: PF-x re-push if VOID | (free) | If D3b adopts: PF columns {tpu_f, PF-x} on the ret18c rows -> ret18cx | s2v18cuP4e + 3 probes (D4); specpfx-coco (D3b) | D4 sets pick-A candidate; D3b |
+| Nov 5-6 | Week 1 ends Nov 6 | GLACIER x4 for the cx seeds (≤3 at a time) | cx stages D-F, 4 seeds, pinned; Enamine offline (D6a) | none | |
+| Nov 7 Sat | TPU week 2: PF-x re-push if VOID, or tpu_fc if D1(d) and D3 is CLOSED. GPU: PF-b' if the owner is idle | (free) | Enamine offline | none | |
+| Nov 8 Sun | | Commit and verify s2v18cx4e + 3 probes; casmi26-enamfire (on s2v18cuP4e lists) if D6a passes | D6a | none | Pre-register Nov 9 |
+| Nov 9 Mon | | | | s2v18cx4e + 3 probes (D5); enamfire (D6b) | D5, D6b |
+| Nov 10 Tue | **Last push of a deployable TPU weight** | A/B kernels if D6b passes | | none | Pick A fixed, apart from D6 |
+| Nov 11 Wed | | Verify the A/B kernels | | none | Pre-register Nov 12 |
+| Nov 12 Thu | | | | A/B full + masked training probe (D6c) | D6c; the lever phase ends |
+| Nov 13-22 | Week 3: pf_tpu_g if PF-b' passed (reproduction only) | Re-runs for slips (D3-D5 compressed) | Docs | Only re-reads forced by slips | **Nov 22: last new LB candidate** |
+| Nov 23 Mon | | | | none | **D8**: owner sets the final selection; screenshot to plan.md |
+| Nov 24-29 | PF-b' push deadline Nov 27 (D7) | Spot checks (section 7, item 7) | | none | |
+| Nov 30-Dec 5 | | | Write-up; final push_code.sh; record digests and dataset versions | none | **Dec 5: pick kernels frozen** |
+| Dec 6-7 | | | | none | Dec 7 entry/merger deadline: no merge |
+| Dec 8 / Dec 12 | | | | none | Verify the selection (screenshots) |
+| Dec 13-14 | | | | none | Nothing. Deadline Dec 14, 23:59 UTC |
+
+### 6. Final-pick procedure
+
+**The pair is {A, B}.** Order does not matter, because Kaggle scores the better of the two.
+
+**A is the first of these that exists and passed its read:**
+1. s2v18cx4e;
+2. s2v18cuP4e;
+3. s2v18cuPe;
+4. the D1 winner as built (s2v18cue or s2v18cte v1, with its GLACIER glob chain documented as it is).
+
+If D6c adopted the Enamine promotion, it is applied to A only.
+
+**B** is s2v18cPe if D2 passed, else s2v18c v1.
+
+**If D1(c) removed PF-syn,** A = s2v18cPe and B = s2v18c v1.
+
+**Constraints**
+- Both picks were scored at least 72 h before selection.
+- Image and dataset versions are recorded for both.
+- Never select a fork or any submission with an ineligible component.
+- Never choose between A candidates by public score when they differ by less than 0.008.
+
+**Timeline**
+- Provisional {s2v18cte, s2v18c}: Oct 31.
+- {s2v18cuPe, s2v18cPe}: Nov 2.
+- Final selection (D8): Nov 23.
+- Verification: Dec 8 and Dec 12.
+- Selection is a UI action by the owner.
+
+### 7. Reproducibility and eligibility before Dec 7
+
+1. **Oct 31 (owner):** provisional selection.
+2. **By Nov 3 (owner):**
+   - LICENSE file with the MIT text at the repo root; casmi26-code licence set to MIT on Kaggle.
+   - fp-data, pf-data, pc-calib and models: CC BY-NC 4.0 and private.
+   - pool2, pool4 and pool-v18c: CC BY 4.0, with ATTRIBUTION.md (reproduce.md G19).
+3. **Oct 31, before the PF-x push:**
+   - make_pf_tpu_kernel.py: an env-override argument, a strategy-list argument, a docker_image pin (the pfs-tpu-f digest) and `PF_PROF`.
+   - train_pf_xla.py: save the step count and the torch, torch_xla and libtpu versions in the checkpoint.
+   - Then push_code.sh.
+4. **Oct 31 - Nov 2:**
+   - Add the `GL_HAVE_PIN` override to build_pfswap_pair.sh.
+   - Replace the plan.md "GL_HAVE-free rebuild" line with the pinned standard (E2).
+5. **By Nov 8: reproduce.md §7, the PF-syn chain.** Record md5s for every checkpoint and ranker. Chain:
+   - build_sim_jobs.py;
+   - 24 simw2 workers: 48 files, 3,349,953 predictions; 13 files short by 1-2 structures (3-6 predictions), no top-ups;
+   - syn-prep2 (946badfb), with syn2p (2c80e057) as the deterministic 26-file subset;
+   - pfs-tpu-p, with `PF_STEPS=13538` stated explicitly;
+   - pfs-tpu-f: 40,000 steps, seed 43, 8 chips;
+   - pfx-tpu;
+   - the pinned builds and the 4-seed build.
+6. **By Nov 27:** G5 (D7). If the GPU is never idle, the write-up states "recipe and data public, ~57.3k steps from the log, not re-demonstrated".
+7. **Nov 24-29: spot checks.**
+   - (a) Re-run casmi26-syn-prep2 and check md5 946badfb.
+   - (b) Re-run one simw2 worker (2 files) and compare with the Oct 29-30 md5s.
+   - (c) Ranker md5 determinism. This comes free from the stage-D re-runs: v18cuP must equal 1bfde65f and v18cuPr1 must equal d3b10b6b.
+   - (d) List diff of each pick's commit run against its scored version.
+8. **Dec 1-5:**
+   - Write-up: method, data and licences, compute, reproduction commands.
+   - Final push_code.sh.
+   - Record the pick kernels' image digest and mounted dataset versions (G16).
+   - Freeze on Dec 5.
+9. **Dec 7:** no team merge. We are already entered.
+
+### 8. Do not do (consolidated)
+
+**Selection**
+- Do not leave the selection to Kaggle.
+- Do not select a fork.
+- Do not choose between PF-syn builds by public score.
+
+**PeakFormer training**
+- No same-recipe PeakFormer seeds beyond f2.
+- No PF-x replicates or other sizes.
+- No more collision energies or adducts, and no second simulator.
+- No Enamine-tier simulation.
+- No FP-syn.
+- No simulated analog library.
+- No GLACIER features in stage 1.
+- No GLACIER-made training queries.
+- No class-3 work.
+- No `PF_SYN_DROP` or cross-fitted PeakFormer runs.
+
+**Combining models**
+- No code-level mixed-PeakFormer ensembles.
+- Never put tpu_p, pfs1, pilot or PF-b checkpoints into any ensemble.
+- No post-hoc PeakFormer re-weighting or re-sorting.
+- No PeakFormer-variant features.
+- No PF x GLACIER agreement features.
+- No [M+H]+-only slot.
+
+**Closed lines**
+- Do not reopen class-1 trust, merge policy or any other closed line in the brief.
+- Do not drop stage 2 on a flat read.
+
+**Training practice**
+- No trainer refactors, and no behaviour change to the trainer for deployable weights.
+- No in-run calibrated or wall-clock step budgets.
+- No 1-chip fallback for PF-x.
+- No PeakFormer training on the T4, except the PF-b' reproduction.
+
+**Reading and building**
+- No swap pairs below the spectral bar.
+- Do not rank PeakFormer swaps by validation, simulated validation or the real-val log.
+
+**Deadlines**
+- No deployable TPU push after Nov 10.
+- No new LB candidate after Nov 22.
+- No change to the pick kernels after Dec 5.
+- Do not select a submission scored less than 72 h before the selection.
+
+**Data and teams**
+- No public datasets containing competition-derived data.
+- No CC BY labels on those datasets.
+- No team merges.
+
+### 9. Start today (Oct 31): the top 3, with exact first commands
+
+**1. Compliance lock and pre-registration** (0 compute; this protects all the EV).
+- Owner, in the UI: tick "Use for Final Score" on casmi26-own-s2v18cte v1 and casmi26-own-s2v18c v1.
+- Owner: add the MIT LICENSE.
+- Append this block to plan.md before 23:00.
+- First command, to read the current licences:
+```
+mkdir -p /home/user/work/meta; for d in casmi26-code casmi26-fp-data casmi26-pf-data casmi26-pc-calib casmi26-models casmi26-pool-v18c casmi26-pool4 casmi26-pool2; do kaggle datasets metadata bryantyu/$d -p /home/user/work/meta/$d >/dev/null && python3 -c "import json,sys; print(sys.argv[1], json.load(open(sys.argv[2])).get('licenses'))" $d /home/user/work/meta/$d/dataset-metadata.json; done
+```
+- Then edit the licences and run `kaggle datasets metadata --update -p /home/user/work/meta/<d> bryantyu/<d>`.
+
+**2. Pinned insurance builds: v18cuP / v18cuPr1 (pf_tpu_f) and v18cr1P (the hedge).**
+- First command, a dry run that counts the GLACIER predictions left against fwd_v18c alone:
+```
+S=/tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929f1c29ca/scratchpad/pin; mkdir -p $S; cd /home/user/work; for T in v18cu v18cur1 v18cr1; do R=ret${T#v}; python3 /home/user/claude_code_tests/scripts/build_fwd_jobs.py ret_${T}_train_oof.parquet col:s1_oof /home/user/work/pool_v18c 30 $S/${T}_train 6 '--have=/home/user/work/fwd_v18c/train.jobs_*.gl.json'; python3 /home/user/claude_code_tests/scripts/build_fwd_jobs.py ${R}_val_reach_c.parquet own_models/ret_ranker_$T.txt /home/user/work/pool_v18c 30 $S/${T}_val 2 '--have=/home/user/work/fwd_v18c/val.jobs_*.gl.json'; rm -f $S/${T}_*; done
+```
+- Then:
+  1. `rm /home/user/work/ret_v18c3_train_oof.parquet /home/user/work/ret_v18cw_train_oof.parquet` (frees 170 MB).
+  2. In build_pfswap_pair.sh, set `GL_HAVE="${GL_HAVE_PIN:-$W/fwd_v18c*}"`.
+  3. Hard-link `ret18cu_{train,val}_{pf,fp}.parquet` to `ret18cuP_*`. Check the `[ -f ] ||` guards so that stage C1 is skipped and stage D re-runs (this is the md5 check).
+  4. Run `GL_HAVE_PIN=/home/user/work/fwd_v18c bash scripts/build_pfswap_pair.sh /home/user/work/pfs/pf_tpu_f.pt v18cuP`.
+  5. Build v18cr1P the way v18cr1 was built, with `GL_HAVE=/home/user/work/fwd_v18c` and seed 1.
+  6. Generate the kernels s2v18cuPe and s2v18cPe by sed from s2v18cue and s2v18ce.
+
+**3. PF-x kernel, CPU smoke test and the f2 decision, plus the yardstick baseline.**
+- First commands:
+```
+kaggle kernels status bryantyu/casmi26-pfs-tpu-f2; kaggle kernels pull bryantyu/casmi26-pfs-tpu-f -p /home/user/work/kmeta/pfs-tpu-f -m && cat /home/user/work/kmeta/pfs-tpu-f/kernel-metadata.json
+python3 /tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929f1c29ca/scratchpad/synelse/pubsplit.py coco > /home/user/work/pfsyn_eval/pubsplit_coco_oct31.txt
+```
+- Then:
+  1. Write `qids_pub.txt` and `qids_nonpub.txt` to /home/user/work/pfsyn_eval/.
+  2. Make the generator changes from section 7, item 3.
+  3. Generate the kernel:
+     ```
+     python scripts/make_pf_tpu_kernel.py casmi26-pfx-tpu casmi26-syn-prep2 syn2.npz 51 8.3 600 500 70000 'PF_D=384,PF_LAYERS=6,PF_HEADS=8,PF_DMOL=512,PF_DROP=0.1,PF_LR=5e-4,PF_INIT=-,PF_PROF=1' 8-chip
+     ```
+  4. Diff its `PF_*` settings against kernels/casmi26-pfs-tpu-f. Only the intended keys may differ.
+  5. Smoke-test the same configuration on CPU: `PF_DEV=cpu`, 120 steps, batch 64. Then load it with `casmi.peakformer.PFScorer` and score 30 queries with `add_fp_feats`.
+  6. If the smoke test passes and f2 is still QUEUED, delete f2 and push casmi26-pfx-tpu.
+- Step budget: if the strategy probe's s/step x 1.6 exceeds 0.34 s, set `PF_STEPS = floor(6.3 h / (1.6 x probe s/step))`, rounded down to the nearest 1,000. Print it before the main run starts.
+
 ## Lessons from the Oct 31 submissions
 | kernel | prediction | LB | pair | rule outcome |
 |---|---|---|---|---|
