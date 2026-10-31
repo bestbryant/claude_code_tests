@@ -791,6 +791,24 @@ ISO-PF dMRR (skip lib >= 0.9, in_train protected) [paired bootstrap 95% CI]:
 - casmi26-pub480pf v1 commit run COMPLETE (06:00): 'PF-SYN applied | mode blend w 0.5 | molecules scored 12 | candidates
   scored 540 | outsiders 240 | neural top1 changed 6 | rank corr 0.65 | failures 0 | 6.3 s' (code dataset root layout,
   checkpoint sha b95c8c7b); V1 still = public 0.466 file; SUBMISSION READY 400 rows. The PF cell works on Kaggle.
+Offline ISO simulation 2 (workflow wf_e1f8344a-f1c, 07:25; verifier reproduced every point estimate and matched the
+Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2.md):
+- GLACIER in the ISO term helps only on a base WITHOUT GLACIER fusion (B0: PF + 0.5 gl +0.0097 vs PF +0.0040); on
+  GLACIER-fused bases (B0g ~ the public base) it is neutral to harmful (PF+gl minus PF -0.0052 at alpha 1) -> no gl / ice
+  term. pf_cos adds a little (logistic weight above pf_bern): PF + cos alpha 0.5 scope all = best candidate (GLACIER-fused
+  mean +0.0095 [+.0058,+.0135]).
+- Scope 'all' beats 'formula' on every GLACIER-fused base (+0.0031 [+.0008,+.0058] at 0.75; +0.0038 at 1.5).
+- Leader frozen costs a third of the gain but caps losses on bases that already carry PF-like evidence (fallback).
+- Size gates and a fixed 25-slot za reference: immaterial. Learned ISO (5-fold CV by query; LR / LightGBM): not better
+  than the hand rule; reduces to ~ za + 0.5 (z(pf) + z(pf_cos)) on the GLACIER-fused base. Not shipped.
+- Nov 2 decision table (slot 3 = alpha 0.75 formula, slot 5 = alpha 1.5 formula; deltas vs slot 1):
+  A. LB(1.5) >= LB(0.75) >= +0.004: alpha 1.0 scope all ISO_COS_W 1.0; alpha 1.5 scope all.
+  B. LB(0.75) >= +0.004 > LB(1.5): alpha 0.75 scope all; alpha 0.5 scope all ISO_COS_W 1.0.
+  C. both <= -0.004: no rank-1 ISO; optionally alpha 0.75 formula ISO_FREEZE_LEADER.
+  D1. both > -0.004 (likeliest; within one flip): alpha 0.75 scope all (+ the B second setting); if LB(1.5) - LB(0.75)
+      >= +0.004: alpha 1.0 scope all. D2. LB(1.5) <= -0.004 < LB(0.75) < +0.004: alpha 0.5 scope all.
+      D3. LB(0.75) <= -0.004 < LB(1.5): alpha 0.75 scope all ISO_FREEZE_LEADER.
+  ISO_COS_W and ISO_FREEZE_LEADER are being added to the ISO cell (defaults = current behaviour).
 - Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
   and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
 
