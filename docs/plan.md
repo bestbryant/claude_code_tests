@@ -788,6 +788,9 @@ ISO-PF dMRR (skip lib >= 0.9, in_train protected) [paired bootstrap 95% CI]:
   2-25 only or drop ISO. 0.75 vs 1.5 differ by <= ~2 public flips: the pair decides the sign better than the optimum.
 - Caveats: our lists are not the public lists; 977 / 979 val truths are syn2 structures (as are 96% of pool pids, so it
   matches pool-reachable hidden answers); CIs exclude retrain noise (~0.002-0.003).
+- casmi26-pub480pf v1 commit run COMPLETE (06:00): 'PF-SYN applied | mode blend w 0.5 | molecules scored 12 | candidates
+  scored 540 | outsiders 240 | neural top1 changed 6 | rank corr 0.65 | failures 0 | 6.3 s' (code dataset root layout,
+  checkpoint sha b95c8c7b); V1 still = public 0.466 file; SUBMISSION READY 400 rows. The PF cell works on Kaggle.
 - Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
   and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
 
