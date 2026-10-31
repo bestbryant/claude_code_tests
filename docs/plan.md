@@ -825,6 +825,10 @@ Nov 1 kernel verification (commit runs; all five pushed 06:40-07:42, 2 GPU sessi
   assertions passed; RANK2_OVERLAY inserted 1 (as pubm); MERGE applied 400, output d07858e7; SUBMISSION READY 400.
   Assets: bryantyu/casmi26-elig-assets created 12:05 (private; 26 files; LICENSE.txt MIT for *.py, MODELS_LICENSE.txt
   CC BY-NC 4.0 for the 6 model files). Rerun estimate for Engine 2: 22-27 min of a 45-min cap.
+- casmi26-pube1-iso075all v1 (eligible fork elig1 + PF-syn ISO alpha 0.75 scope all) VERIFIED (12:47): ELIG 1 12 / 12
+  mounts; ENGINE 2 OURS 12 / 12, keys 471 / 471; "PF-SYN applied | mode columns | ... | failures 0" (pf_tpu_f from
+  casmi26-elig-assets); MERGE applied 400 (= pube1 d07858e7); "ISO dryrun ok | changed rows 12 | top1 changed 0 | moved 129";
+  "ISO applied | alpha 0.75 | scope all | skipped lib 12"; SUBMISSION READY 400. The eligible pick candidate.
 - Kaggle output listing is paginated over all output files (hundreds under ice_site/): use --page-size 200 with a narrow
   --file-pattern (page size 1000 -> HTTP 400; default -> many requests -> HTTP 429).
 - Log fetching: the broad --file-pattern '(\.log|\.json)$' matches hundreds of dist-info JSON files under ice_site/ and
