@@ -802,6 +802,23 @@ Nov 1 kernel verification (commit runs; all five pushed 06:40-07:42, 2 GPU sessi
   ok | library skip off | considered 12 | reranked 12 | changed rows 8 | top1 changed 0 | protected 96 | moved candidates 64"
   (the rerank path works on Kaggle); "ISO applied | alpha 0.75 | scope formula | skipped lib 12 | changed rows 0" (expected:
   the visible molecules are library spectra); SUBMISSION READY 400.
+- casmi26-pubm-pfmid v1 VERIFIED: PF-SYN applied (columns, failures 0); "PF_MID trace | w 0.5 | molecules 400 | PF used 12 |
+  neural order changed 12"; MERGE applied 400, output 249da3bd (differs from pubm d2027d89: the hook acts); ISO off.
+- casmi26-pubm-pfall v1 VERIFIED: "PF-SYN applied | mode blend w 0.5 | ... | candidates scored 540 | outsiders 240 | neural top1
+  changed 6 | failures 0"; MERGE applied 400, output 61d8ff92; ISO off.
+- casmi26-pubm-iso150 v1 VERIFIED: PF-SYN applied (columns); MERGE d2027d89; "ISO dryrun ok | ... changed rows 8 | moved 79";
+  "ISO applied | alpha 1.5 | scope formula | skipped lib 12"; SUBMISSION READY 400.
+- Nov 2 pre-builds VERIFIED: casmi26-pubm-iso075all ("ISO dryrun ok | changed rows 12 | protected 136 | moved 102"; "ISO applied
+  | alpha 0.75 | scope all | cos w 0.0 | freeze leader False") and casmi26-pubm-iso05cos ("ISO dryrun ok | changed rows 12 |
+  moved 101"; "ISO applied | alpha 0.5 | scope all | cos w 1.0"); both SUBMISSION READY 400.
+- casmi26-pube0 v1 (ELIGIBLE fork elig0) VERIFIED (10:18): "ELIG 0 | F1 datasets mounted 10 / 10 | detached ones present:
+  none | F2a null Engine 2 | F3 SRC_BITS 0, SPEC_W 0.0 | F4 external reference spectra off | frozen source 47db922027a4";
+  "ELIG HASH CHECK | MATCH 364 | MISMATCH 0" (+ full SHA-256 of 13 large files: MATCH 7 / MISMATCH 0 / 6 recorded); per
+  dataset all rows match; "ENGINE 2 OFF (elig0 F2a)"; null engine steps 1-2 (12 / 12 lists, 460 candidates); ICE / GL ok;
+  "depositor-source bonus 0.5 bits 0"; "elig0 F3: src_spectral_library not loaded"; V1 = public 0.466 row for row; MERGE
+  applied 400, output 5a1d58e2; pipeline 12.5 min (pubm ~19.5-29). Ready for its LB read vs pubm (eligibility cost).
+- Kaggle output listing is paginated over all output files (hundreds under ice_site/): use --page-size 200 with a narrow
+  --file-pattern (page size 1000 -> HTTP 400; default -> many requests -> HTTP 429).
 - Log fetching: the broad --file-pattern '(\.log|\.json)$' matches hundreds of dist-info JSON files under ice_site/ and
   trips HTTP 429; fetch only "^(<slug>\.log|submission\.csv|pf_blend_report\.json|iso_report\.json|pf_mid_trace\.json)$".
 Offline ISO simulation 2 (workflow wf_e1f8344a-f1c, 07:25; verifier reproduced every point estimate and matched the
