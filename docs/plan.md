@@ -906,6 +906,10 @@ casmi26-pubm-sens v1 VERIFIED (10:49): "SENS setup | K 5 | mode raw | sha256 vs 
 copy = pin True | seeds decision GO"; "SENS applied | K 5 | mode raw | molecules 12 | rows 540 | changed top1 (neural) 6 |
 rank corr 0.9574 | 68.6 s" (failures 0); V1 = public 0.466; MERGE applied 400 (output 071ae617); ISO off; SUBMISSION READY
 400. Hidden-rerun cost of the 8 extra scorer runs ~35-40 min (budget 3,600 s). -> Nov 2 slot 5 = casmi26-pubm-sens.
+Combos VERIFIED (11:27) for Nov 3: casmi26-pube1-sens v1 (ELIG 1: 12 / 12 mounts + kernel source 1 / 1, no extra / detached;
+hash check MATCH 364 / MISMATCH 0; ENGINE 2 OURS 12 / 12, keys 471 / 471; SENS applied K 5, 540 rows, failures 0; MERGE applied
+400, output a65be6b2) and casmi26-pubm-eng3a-sens v1 (ENG3 w 1.0: 12 / 12, 143 new; SENS applied K 5, 540 rows; MERGE
+applied 400, output 38c9eec9).
 Note on slots 4-5 (built 06:30, workflow wf_0bc0d69b-776): eng3 keeps the original Engine 2 run untouched and RRF-merges our
 stage-1 top 40 into its list at the end of frozen cell 39 (1/(3 + r_eng2) + w/(3 + r_ours), top 40, Engine 2's SMILES for
 shared identities; every Engine 2 reader sees the merged list). Our stage-1 rankers use PeakFormer features (pf_tpu_f), so
