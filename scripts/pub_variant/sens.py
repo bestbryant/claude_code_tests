@@ -141,10 +141,11 @@ def _elig1_statement(k, mode, seeds):
         ">   F7's one-line normalized_smiles alias of prepare.py), on train.parquet only: it mounts\n"
         ">   sanpier/casmi-spectrum-model-v1, metric/rdkit-2026-3-3-wheel and the competition data, nothing else. F7\n"
         ">   retrained the published model bit-exactly with the same code (kernels/casmi26-saner-repro), and\n"
-        ">   casmi26-saner-seeds' own refit of the published seed is bit-exact as well. Cell 12 takes the refits only from\n"
-        ">   that kernel output (/kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or /kaggle/input/casmi26-saner-seeds),\n"
-        ">   never from a dataset or another mount, and checks each file's SHA-256 against its final_models_sha256.json;\n"
-        ">   any failure keeps the published scores.\n")
+        ">   casmi26-saner-seeds' own refit of the published seed is bit-exact as well (so is its seed-20262023 holdout\n"
+        ">   model against F7's run of that seed). Cell 12 takes the refits only from the folder where Kaggle mounts that\n"
+        ">   kernel output (/kaggle/input/notebooks/bryantyu/casmi26-saner-seeds first; /kaggle/input/casmi26-saner-seeds\n"
+        ">   in the older flat layout), not from any other mount, and checks each file's SHA-256 against its\n"
+        ">   final_models_sha256.json; any failure keeps the published scores.\n")
     return [
         (ELIG1_TITLE, '# Eligible fork elig1 + SENS · Variant M core + midx final layer, our stage 1 as Engine 2, saner seed '
                       f'ensemble (K {k}, {mode}), upstream datasets only\n'),
@@ -163,6 +164,8 @@ def _elig1_statement(k, mode, seeds):
         ("Not part of the fixes: the ISO cell (cell 17, off with", "Not part of the fixes: the ISO cell (cell 18, off with"),
         ("casmi26-pube1 is a new kernel with a score of its own.",
          "casmi26-pube1 and this SENS build of it are new\n>   kernels, each with a score of its own."),
+        ("> public code (Engine 1's ranker_v4b and fe_v4 tables, saner, our own G4 / G5:",     # saner: bit-exact (F7)
+         "> public code (Engine 1's ranker_v4b and fe_v4 tables, our own G4 / G5:"),
         ("count as using NIST? F7, a demonstrated retrain of saner's spectrum\n> model. F8, the licence",
          "count as using NIST? F8, the licence"),
         ("training-structure rows under the competition terms (a CC BY label conflicts with that).\n",
@@ -222,11 +225,12 @@ SOURCE_ELIG1 = [(
     "                                'bryantyu/casmi26-saner-seeds (kernel_sources)')\n",
     '    """Folder of the bryantyu/casmi26-saner-seeds output: the one holding final_models_sha256.json (paths containing\n'
     '    casmi26-saner-seeds first, then the shortest). elig1 (eligible build): only inside that kernel output, mounted at\n'
-    '    /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or /kaggle/input/casmi26-saner-seeds; never another mount."""\n'
+    '    /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds (first, as the ELIG line of cell 8) or, in the older flat\n'
+    '    layout, /kaggle/input/casmi26-saner-seeds; never another mount."""\n'
     "    hits = sorted(glob.glob(str(INPUT / '**' / 'final_models_sha256.json'), recursive=True),\n"
     "                  key=lambda p: (SENS_SOURCE not in p, len(p), p))\n"
     "    roots = (INPUT / 'notebooks' / 'bryantyu' / SENS_SOURCE, INPUT / SENS_SOURCE)   # elig1: the kernel output only\n"
-    '    hits = [p for p in hits if any(Path(p).is_relative_to(r) for r in roots)]\n'
+    '    hits = [p for r in roots for p in hits if Path(p).is_relative_to(r)]          # owner-qualified mount first\n'
     '    if not hits:\n'
     "        raise FileNotFoundError('final_models_sha256.json not in the kernel output bryantyu/casmi26-saner-seeds '\n"
     "                                '(elig1: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or '\n"
@@ -345,8 +349,8 @@ def apply(nb, meta, k, mode, cfg):
             'that export (driver cell, after score_final_lists / score_outside_candidates)')
     if base == 'elig1':
         record.update(cell=record['cell'].replace('sens_cell.py (', 'sens_cell.py + SOURCE_ELIG1 (', 1),
-                      source_rule='only the kernel output: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or '
-                                  '/kaggle/input/casmi26-saner-seeds (sens_source_dir, SOURCE_ELIG1)',
+                      source_rule='only the kernel output: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds (first) or '
+                                  '/kaggle/input/casmi26-saner-seeds (flat layout) (sens_source_dir, SOURCE_ELIG1)',
                       eligibility='seed refits of the published saner recipe (sanpier, Apache-2.0) trained by us on '
                                   'train.parquet only; status of the published final_model.pt (F7 closed)')
     return dict(record=record, cell_index=i_pf + 1, driver_index=i_pf + 2, cells_edited=sorted(edited),

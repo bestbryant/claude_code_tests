@@ -171,10 +171,10 @@ def check_combo(d, slug, base_slug, kind, k, mode):
                        '>   with OURS = False, PF-syn (cell 11) and ISO (cell 17)', '>   reports any mount that',
                        '> - Sections 6 and 8 name the datasets', '>   describe the forked notebook',
                        '> depositor flag naming the NIST MS', "> model. F8, the licence",
-                       '> training-structure rows under the competition terms',
+                       '> training-structure rows under the competition terms', "> public code (Engine 1's ranker_v4b",
                        '> **This version** (made by', '> formula-gated swaps) plus our PF_MID_W hook']
     bad = [l for l in removed if not any(l[2:].startswith(a) for a in allowed_removed)]
-    assert not bad and len(removed) <= (13 if kind == 'elig1' else 3), (bad, len(removed))
+    assert not bad and len(removed) <= (14 if kind == 'elig1' else 3), (bad, len(removed))
     for t in ('(cell 17) is\n> cell 15 of', 'cell 18 is\n> our ISO isomer reranker', f'SENS={k} SENS_MODE={mode}',
               'bryantyu/casmi26-saner-seeds', 'score_outside_candidates, then SENS'):
         assert t in c0, t
@@ -183,9 +183,10 @@ def check_combo(d, slug, base_slug, kind, k, mode):
     if kind == 'elig1':
         for t in ('ISO (cell 18) are off', 'the ISO cell (cell 18', 'kernel_sources', 'Apache-2.0', 'train.parquet only',
                   'final_models_sha256.json', '**Closed since casmi26-pube1:** F7', 'bit-exact',
-                  'never from a dataset or another mount', ', '.join(map(str, seeds))):
+                  'not from any other mount', 'seed-20262023 holdout', ', '.join(map(str, seeds))):
             assert t in c0, t
         assert 'F7, a demonstrated retrain' not in c0 and '(cell 17,' not in c0 and 'ISO (cell 17)' not in c0
+        assert 'fe_v4 tables, saner,' in b0 and 'fe_v4 tables, saner,' not in c0   # F6: saner is bit-exact (F7)
         assert cells[i5 + 1]['source'] == S.splice(bcells[i5]['source'], S.MD5_ELIG1, 's5')
         assert cells[i6 + 1]['source'] == S.splice(bcells[i6]['source'], S.MD6_ELIG1, 's6')
         assert cells[i8c + 1]['source'] == S.splice(bcells[i8c]['source'], S.credits_elig1(seeds), 'credits')
@@ -319,6 +320,7 @@ def source_checks(cell_elig, cell_eng3):
     with tempfile.TemporaryDirectory() as d:
         cases = {'notebooks': ['notebooks/bryantyu/casmi26-saner-seeds'], 'flat': ['casmi26-saner-seeds'],
                  'decoy_first': ['a/final', 'notebooks/bryantyu/casmi26-saner-seeds'],
+                 'both_layouts': ['casmi26-saner-seeds', 'notebooks/bryantyu/casmi26-saner-seeds'],
                  'dataset_only': ['datasets/someone/casmi26-saner-seeds'], 'other_only': ['b'], 'none': []}
         for name, rels in cases.items():
             inp, _, _ = make_tree(os.path.join(d, name), [], rels)
@@ -335,6 +337,8 @@ def source_checks(cell_elig, cell_eng3):
     assert res['flat'] == dict(elig1='casmi26-saner-seeds', eng3='casmi26-saner-seeds')
     assert res['decoy_first'] == dict(elig1='notebooks/bryantyu/casmi26-saner-seeds',
                                       eng3='notebooks/bryantyu/casmi26-saner-seeds')
+    assert res['both_layouts'] == dict(elig1='notebooks/bryantyu/casmi26-saner-seeds',    # as cell 8's ELIG line
+                                       eng3='casmi26-saner-seeds')                          # sens_cell.py's rule
     assert res['dataset_only'] == dict(elig1='FileNotFoundError (kernel output)', eng3='datasets/someone/casmi26-saner-seeds')
     assert res['other_only'] == dict(elig1='FileNotFoundError (kernel output)', eng3='b')
     assert res['none'] == dict(elig1='FileNotFoundError (kernel output)', eng3='FileNotFoundError')
