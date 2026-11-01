@@ -1,8 +1,9 @@
 """SENS builds (ours): casmi26-pubm with the saner neural term := a seed ensemble of the published saner recipe.
 
 Called by scripts/make_pub_variant.py SENS=K [SENS_MODE=raw|z] (K = ensemble size incl. the published model, 2..5;
-not with OURS / PF_MID_W / ISO_ALPHA / ELIG / ENG3_W) after its own structural edits, the ISO cell included. Nothing of
-the notebook is executed; every edit is an exact-anchor splice or an inserted cell:
+not with OURS / PF_MID_W / ISO_ALPHA / ELIG=0) after its own structural edits, the ISO cell included, and after
+elig.py (ELIG=1) or eng3.py (ENG3_W) when the build has one of them. Nothing of the notebook is executed; every edit is
+an exact-anchor splice or an inserted cell:
   cell 1            SENS / SENS_MODE / SENS_SEEDS / SENS_MAX_SECONDS lines after the ISO knobs;
   new code cell     scripts/pub_variant/sens_cell.py (id ours-sens-ensemble), right after the PF-syn cell (id pfsyn0001):
                     definitions only, like the PF-syn cell;
@@ -12,6 +13,18 @@ the notebook is executed; every edit is an exact-anchor splice or an inserted ce
                     ISO cell 18 once the new cell sits at 12), as are casmi.ours final_layer / iso (ours_meta);
   metadata          notebook casmi.ours.sens (the record below); kernel-metadata kernel_sources :=
                     ['bryantyu/casmi26-saner-seeds'] (its output holds final_model_seed<s>.pt + final_models_sha256.json).
+Bases (cfg of cell 1): 'pubm' (neither ELIG nor ENG3_W), 'eng3' (ENG3_W > 0) or 'elig1' (ELIG = 1). ENG3 / elig1 act inside
+the frozen pipeline (frozen cells 32 / 39 (/ 45), before its evidence export); SENS acts on the neural files scored from
+that export, in the driver cell: the two compose (SENS leaves the frozen notebook, Engine 2 and the ENG3 / ELIG
+modules as they are). Besides the edits above:
+  eng3   markdown cell 0: the ENG3 title names SENS, the SENS note follows the ENG3 note (with the composition).
+  elig1  inserted cell: sens_source_dir accepts only the kernel output (SOURCE_ELIG1: notebooks/bryantyu/
+         casmi26-saner-seeds or /kaggle/input/casmi26-saner-seeds), never another mount; cell 8: the ELIG mount check
+         lists the kernel source (elig.cell8_kernel_source_edits; CELL8_ELIG1: the driver is cell 13); markdown cell 0:
+         the eligibility statement gets the
+         SENS bullet (the refits' eligibility: F7), the ISO cell's new number and F7 as closed; sections 5 / 6 / 8 name
+         this build and the kernel output (credits row); notebook casmi.elig: kernel_sources, open / closed and
+         notebook_cells_edited in the new numbering.
 """
 import os
 
@@ -85,10 +98,16 @@ def cell_source():
     return open(os.path.join(HERE, 'sens_cell.py'), encoding='utf-8').read()
 
 
-def md0(text, k, mode, seeds):
-    assert text.startswith(TITLE0), text[:80]
-    return (f"# Variant M core + midx final layer + SENS: saner seed ensemble (K {k}, {mode})\n\n"
-            f"> **SENS (this build: scripts/make_pub_variant.py SENS={k} SENS_MODE={mode}).** The neural term is a seed\n"
+def _note(k, mode, seeds, base='pubm'):
+    """The SENS note of markdown cell 0 ('pubm': casmi26-pubm-sens's text; the other bases add the composition)."""
+    tail = {'pubm': '',
+            'eng3': ("> SENS composes with ENG3: the merge acts inside the frozen pipeline (frozen cells 32 / 39), before its\n"
+                     "> evidence export; the published scorer and SENS then score the exported final lists and outside candidates\n"
+                     "> (cell 13: run_public_pipeline, score_final_lists, score_outside_candidates, then SENS).\n"),
+            'elig1': ("> SENS composes with elig1: our Engine 2 acts inside the frozen pipeline (frozen cells 32 / 39 / 45), before\n"
+                      "> its evidence export; the published scorer and SENS then score the exported final lists and outside\n"
+                      "> candidates (cell 13: run_public_pipeline, score_final_lists, score_outside_candidates, then SENS).\n")}[base]
+    return (f"> **SENS (this build: scripts/make_pub_variant.py SENS={k} SENS_MODE={mode}).** The neural term is a seed\n"
             f"> ensemble of the published saner recipe: the published final_model.pt (seed {PUBLISHED_SEED}) and the refits of\n"
             f"> seeds {', '.join(map(str, seeds))} (final_model_seed<s>.pt, output of our kernel\n"
             "> bryantyu/casmi26-saner-seeds: the published train.py refit with another seed, sha256 checked against its\n"
@@ -100,8 +119,83 @@ def md0(text, k, mode, seeds):
             + ", neural_cos / neural_fp := the members' means, for every molecule\n"
             "> every member scored (neural_ok, finite); the published values otherwise and on any failure. Everything\n"
             "> after it (consensus, fragment check, final layer) is unchanged. PF-syn re-weighting (OURS, PF_MID) and ISO are\n"
-            "> off (OURS = False, ISO_ALPHA = 0), as in casmi26-pubm. Report: sens_report.json and the SENS lines.\n>\n"
-            + splice(text[len(TITLE0):], RENUMBER0, 'cell 0 (sens: cell numbers)'))
+            f"> off (OURS = False, ISO_ALPHA = 0), as in {'casmi26-pube1' if base == 'elig1' else 'casmi26-pubm'}. Report: "
+            "sens_report.json and the SENS lines.\n" + tail + ">\n")
+
+
+THIS_VERSION = '> **This version** (made by scripts/make_pub_variant.py; every setting is in cell 1)'
+ENG3_TITLE = '# Variant M core + midx final layer + ENG3: Engine 2 merged with our stage 1 (w {!r})\n\n'
+ELIG1_TITLE = ('# Eligible fork elig1 · Variant M core + midx final layer, our stage 1 as Engine 2, upstream datasets only\n')
+
+
+def _elig1_statement(k, mode, seeds):
+    """Splices of elig.md0_elig1(False) (the eligibility statement) for elig1 + SENS."""
+    sl = ', '.join(map(str, seeds))
+    bullet = (
+        "> - **SENS, the saner seed ensemble (not one of the fixes; cell 12).** The neural term averages the published\n"
+        f">   final_model.pt (seed {PUBLISHED_SEED}, sanpier/casmi-spectrum-model-v1) and our refits of seeds {sl}\n"
+        ">   (final_model_seed<s>.pt) from the output of our kernel bryantyu/casmi26-saner-seeds, attached as a kernel\n"
+        ">   source (kernel-metadata.json kernel_sources, not a dataset); the SENS note below gives the rule. The refits have\n"
+        ">   the eligibility status of the published final_model.pt: casmi26-saner-seeds ran sanpier's published train.py /\n"
+        ">   prepare.py / model.py / features.py (Apache-2.0) with the published config.json and only the seed changed (plus\n"
+        ">   F7's one-line normalized_smiles alias of prepare.py), on train.parquet only: it mounts\n"
+        ">   sanpier/casmi-spectrum-model-v1, metric/rdkit-2026-3-3-wheel and the competition data, nothing else. F7\n"
+        ">   retrained the published model bit-exactly with the same code (kernels/casmi26-saner-repro), and\n"
+        ">   casmi26-saner-seeds' own refit of the published seed is bit-exact as well. Cell 12 takes the refits only from\n"
+        ">   that kernel output (/kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or /kaggle/input/casmi26-saner-seeds),\n"
+        ">   never from a dataset or another mount, and checks each file's SHA-256 against its final_models_sha256.json;\n"
+        ">   any failure keeps the published scores.\n")
+    return [
+        (ELIG1_TITLE, '# Eligible fork elig1 + SENS · Variant M core + midx final layer, our stage 1 as Engine 2, saner seed '
+                      f'ensemble (K {k}, {mode}), upstream datasets only\n'),
+        ("> **Eligibility build elig1** (scripts/make_pub_variant.py with ELIG=1; the audit",
+         f"> **Eligibility build elig1 + SENS** (scripts/make_pub_variant.py with ELIG=1 SENS={k} SENS_MODE={mode}; the audit"),
+        ("elig0 (casmi26-pube0) with fix F2b in place of F2a. Changed against\n> casmi26-pubm:",
+         "elig0 (casmi26-pube0) with fix F2b in place of F2a, plus the saner seed\n"
+         "> ensemble SENS (not a fix; see below). Changed against casmi26-pubm:"),
+        ("with OURS = False, PF-syn (cell 11) and ISO (cell 17) are off.",
+         "with OURS = False, PF-syn (cell 11) and ISO (cell 18) are off."),
+        ("reports any mount that kernel-metadata.json does not list (EXTRA MOUNT)",
+         "reports any mount that kernel-metadata.json does not list (EXTRA MOUNT; the output of its kernel source\n"
+         ">   bryantyu/casmi26-saner-seeds counts as listed, and the ELIG line says whether it is mounted)"),
+        ("> - Sections 6 and 8 name the datasets attached here.", bullet + "> - Sections 6 and 8 name the datasets "
+                                                                  "(and the kernel output) attached here."),
+        ("Not part of the fixes: the ISO cell (cell 17, off with", "Not part of the fixes: the ISO cell (cell 18, off with"),
+        ("casmi26-pube1 is a new kernel with a score of its own.",
+         "casmi26-pube1 and this SENS build of it are new\n>   kernels, each with a score of its own."),
+        ("count as using NIST? F7, a demonstrated retrain of saner's spectrum\n> model. F8, the licence",
+         "count as using NIST? F8, the licence"),
+        ("training-structure rows under the competition terms (a CC BY label conflicts with that).\n",
+         "training-structure rows under the competition terms (a CC BY label conflicts with that). With SENS, F8 also\n"
+         "> covers the kernel bryantyu/casmi26-saner-seeds (pushed as a private kernel): the attribution and licence of its\n"
+         "> output (sanpier's Apache-2.0 training code; seed refits trained on the competition data, CC BY-NC 4.0).\n"
+         ">\n"
+         "> **Closed since casmi26-pube1:** F7, the saner retrain (Oct 31, kernels/casmi26-saner-repro: sanpier's published\n"
+         "> train.py / prepare.py, with the one-line normalized_smiles alias, retrained the published final_model.pt\n"
+         "> bit-exactly from train.parquet). The SENS refits come from the same code, config and data with other seeds.\n")]
+
+
+def md0(text, k, mode, seeds, base='pubm', w=None, elig_statement=None):
+    """Markdown cell 0 of the SENS build on `base`: 'pubm' (text = the generator's cell 0), 'eng3' (text = eng3.md0's,
+    w its weight) or 'elig1' (text = elig.md0_elig1(False) + the generator's cell 0 body; elig_statement = that
+    statement)."""
+    if base == 'pubm':
+        assert text.startswith(TITLE0), text[:80]
+        return (f"# Variant M core + midx final layer + SENS: saner seed ensemble (K {k}, {mode})\n\n"
+                + _note(k, mode, seeds) + splice(text[len(TITLE0):], RENUMBER0, 'cell 0 (sens: cell numbers)'))
+    assert text.count(THIS_VERSION) == 1, 'cell 0 layout'
+    i = text.index(THIS_VERSION)
+    rest = splice(text[i:], RENUMBER0, f'cell 0 (sens on {base}: cell numbers)')
+    if base == 'eng3':
+        title = ENG3_TITLE.format(float(w))
+        assert text.startswith(title), text[:100]
+        note3 = text[len(title):i]
+        assert note3.startswith('> **ENG3 (this build') and note3.endswith('\n>\n'), note3[-80:]
+        return (title[:-2] + f' + SENS: saner seed ensemble (K {k}, {mode})\n\n' + note3
+                + _note(k, mode, seeds, 'eng3') + rest)
+    assert base == 'elig1' and elig_statement is not None and text[:i] == elig_statement, 'cell 0: the elig1 statement'
+    return (splice(elig_statement, _elig1_statement(k, mode, seeds), 'cell 0 (elig1 statement, sens)')
+            + _note(k, mode, seeds, 'elig1') + rest)
 
 
 def ours_meta(ours):
@@ -117,13 +211,77 @@ def splice(text, edits, what):
     return text
 
 
+# ---- elig1 + SENS (eligible build): the checkpoints come only from the kernel output; sections 5 / 6 / 8 ----
+SOURCE_ELIG1 = [(
+    '    """Folder of the bryantyu/casmi26-saner-seeds output: the one holding final_models_sha256.json (paths containing\n'
+    '    casmi26-saner-seeds first, then the shortest)."""\n'
+    "    hits = sorted(glob.glob(str(INPUT / '**' / 'final_models_sha256.json'), recursive=True),\n"
+    "                  key=lambda p: (SENS_SOURCE not in p, len(p), p))\n"
+    '    if not hits:\n'
+    "        raise FileNotFoundError('final_models_sha256.json not under /kaggle/input: attach the output of '\n"
+    "                                'bryantyu/casmi26-saner-seeds (kernel_sources)')\n",
+    '    """Folder of the bryantyu/casmi26-saner-seeds output: the one holding final_models_sha256.json (paths containing\n'
+    '    casmi26-saner-seeds first, then the shortest). elig1 (eligible build): only inside that kernel output, mounted at\n'
+    '    /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or /kaggle/input/casmi26-saner-seeds; never another mount."""\n'
+    "    hits = sorted(glob.glob(str(INPUT / '**' / 'final_models_sha256.json'), recursive=True),\n"
+    "                  key=lambda p: (SENS_SOURCE not in p, len(p), p))\n"
+    "    roots = (INPUT / 'notebooks' / 'bryantyu' / SENS_SOURCE, INPUT / SENS_SOURCE)   # elig1: the kernel output only\n"
+    '    hits = [p for p in hits if any(Path(p).is_relative_to(r) for r in roots)]\n'
+    '    if not hits:\n'
+    "        raise FileNotFoundError('final_models_sha256.json not in the kernel output bryantyu/casmi26-saner-seeds '\n"
+    "                                '(elig1: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or '\n"
+    "                                '/kaggle/input/casmi26-saner-seeds): attach it (kernel_sources)')\n")]
+MD5_ELIG1 = [("casmi26-pube1 is a new\nkernel (the eligible fork elig1):",
+              "This SENS build of casmi26-pube1 is a new\nkernel (the eligible fork elig1 with the saner seed ensemble):")]
+MD6_ELIG1 = [("Copy & Edit this notebook (the competition data and the datasets\nattached to this build, listed in section 8, "
+              "stay attached).",
+              "Copy & Edit this notebook (the competition data, the datasets\nand the kernel output attached to this build, "
+              "listed in section 8, stay attached).")]
+CELL8_ELIG1 = [("# Runs before the pipeline (the stage functions are defined in the next cell and called in cell 12):\n",
+                "# Runs before the pipeline (the stage functions are defined in the next cell and called in cell 13):\n")]
+CREDITS_LINEAGE = '\n**Upstream lineage, not attached here.**'
+CREDITS_OURS_TAIL = '(our stage 1, casmi26-elig-assets).'
+
+
+def credits_elig1(seeds):
+    """Section 8 splices: the kernel output's table (before the upstream lineage) and our part of the work."""
+    table = ("\n**Kernel output attached to this build** (kernel-metadata.json kernel_sources; read only by the SENS cell, "
+             "cell 12):\n\n"
+             "| kernel | author | used for | licence |\n|---|---|---|---|\n"
+             f"| [{SOURCE_KERNEL}](https://www.kaggle.com/code/{SOURCE_KERNEL}) | us; training code by Saner Turhaner "
+             "(sanpier/casmi-spectrum-model-v1) | SENS: final_model_seed<s>.pt, refits of the published saner recipe "
+             f"with seeds {', '.join(map(str, seeds))} (published config, another seed), and final_models_sha256.json "
+             "(their SHA-256) | code Apache-2.0 (sanpier's published train.py / prepare.py / model.py / features.py, run "
+             "with F7's one-line normalized_smiles alias); weights trained on train.parquet only (competition data, "
+             "CC BY-NC 4.0); kernel pushed private, its licence and attribution are part of F8 |\n")
+    return [(CREDITS_LINEAGE, table + CREDITS_LINEAGE),
+            (CREDITS_OURS_TAIL, CREDITS_OURS_TAIL + " With SENS we also wrote the seed-ensemble cell (cell 12) and\n"
+             "trained its seed refits (casmi26-saner-seeds) with Saner Turhaner's published code.")]
+
+
+def _load_elig():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('pub_variant_elig_for_sens', os.path.join(HERE, 'elig.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)            # our generator code (constants and helpers), not notebook code
+    return mod
+
+
+def base_of(cfg):
+    """'pubm', 'eng3' or 'elig1' from the cell-1 configuration (ELIG=0 and ELIG + ENG3 are refused)."""
+    elig, w = cfg.get('ELIG'), cfg.get('ENG3_W')
+    assert elig in (None, 1) and (w is None or w > 0) and not (elig is not None and w is not None), (elig, w)
+    return 'elig1' if elig == 1 else 'eng3' if w is not None else 'pubm'
+
+
 def apply(nb, meta, k, mode, cfg):
     """Turn the generated pub variant (nb, meta) into the SENS build in place; returns a report (record = the notebook
-    metadata casmi.ours.sens)."""
+    metadata casmi.ours.sens). cfg: cell 1 (with ELIG = 1 / ENG3_W: the elig1 / ENG3 build made by elig.py / eng3.py)."""
     assert isinstance(k, int) and 2 <= k <= 1 + len(cfg['SENS_SEEDS']) and mode in MODES, (k, mode)
     assert cfg['SENS'] == k and cfg['SENS_MODE'] == mode, 'cell 1 SENS lines'
     assert check_config(cfg, k) is None, check_config(cfg, k)
-    assert 'ELIG' not in cfg and 'ENG3_W' not in cfg, 'SENS builds are neither ELIG nor ENG3 builds'
+    base = base_of(cfg)
+    elig = _load_elig() if base == 'elig1' else None
     cells = nb['cells']
     ids = [c.get('id') for c in cells]
     assert CELL_ID not in ids and ids.count(PF_CELL_ID) == 1 and ids.count(DRIVER_ID) == 1, 'notebook layout'
@@ -135,19 +293,43 @@ def apply(nb, meta, k, mode, cfg):
         drv.index('CONSENSUS_OK, REPORT, MOVES = build_consensus()'), 'driver order'
     cells[i_drv]['source'] = splice(drv, [(DRIVER_ANCHOR, DRIVER_ANCHOR.replace(
         'CONSENSUS_OK, REPORT, MOVES', DRIVER_BLOCK + 'CONSENSUS_OK, REPORT, MOVES'))], 'driver cell (sens)')
+    src = cell_source() if base != 'elig1' else splice(cell_source(), SOURCE_ELIG1, 'sens cell (elig1: kernel output only)')
     cells.insert(i_pf + 1, {'cell_type': 'code', 'execution_count': None, 'id': CELL_ID,
                             'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
-                            'source': cell_source()})
+                            'source': src})
     seeds = list(cfg['SENS_SEEDS'][:k - 1])
-    cells[0]['source'] = md0(cells[0]['source'], k, mode, seeds)
+    stmt = elig.md0_elig1(bool(cfg['OURS'])) if elig else None
+    cells[0]['source'] = md0(cells[0]['source'], k, mode, seeds, base, w=cfg.get('ENG3_W'), elig_statement=stmt)
     ids = [c.get('id') for c in cells]
     assert (ids.index(FINAL_ID), ids.index(ISO_ID)) == (17, 18), 'final layer / ISO cells after the insertion'
-    i4 = [i for i, c in enumerate(cells) if c['cell_type'] == 'markdown' and c['source'].startswith(SEC4)]
+    md = lambda head: [i for i, c in enumerate(cells) if c['cell_type'] == 'markdown' and c['source'].startswith(head)]
+    i4 = md(SEC4)
     assert len(i4) == 1, i4
     i4 = i4[0]
     cells[i4]['source'] = splice(cells[i4]['source'], RENUMBER4, f'cell {i4} (section 4; sens: cell numbers)')
+    edited = [0, 1, i_pf + 2, i4]
     assert meta.get('kernel_sources') == [], meta.get('kernel_sources')
     meta['kernel_sources'] = [SOURCE_KERNEL]
+    if base == 'elig1':
+        i8 = ids.index('3e2e781f')
+        assert i8 < i_pf and '# ── Eligibility (ours, elig1)' in cells[i8]['source'], 'cell 8 (elig1 block)'
+        cells[i8]['source'] = splice(cells[i8]['source'], elig.cell8_kernel_source_edits(meta['kernel_sources']) +
+                                     CELL8_ELIG1, f'cell {i8} (elig1 mount check: kernel sources; driver cell number)')
+        (i5,), (i6,), (i8c,) = md('## 5. Every submission'), md('## 6. Run it yourself'), md('## 8. Credits')
+        cells[i5]['source'] = splice(cells[i5]['source'], MD5_ELIG1, f'cell {i5} (section 5, elig1 + sens)')
+        cells[i6]['source'] = splice(cells[i6]['source'], MD6_ELIG1, f'cell {i6} (section 6, elig1 + sens)')
+        cells[i8c]['source'] = splice(cells[i8c]['source'], credits_elig1(seeds), f'cell {i8c} (credits, elig1 + sens)')
+        edited += [i8, i5, i6, i8c]
+        e = nb['metadata']['casmi']['elig']
+        assert e['level'] == 1 and e['datasets'] == elig.UPSTREAM + elig.ELIG1_DATASETS, e['datasets']
+        e['notebook_cells_edited'] = sorted(i + (i > i_pf) for i in e['notebook_cells_edited'])   # the SENS cell at 12
+        e['kernel_sources'] = list(meta['kernel_sources'])
+        assert [x[:2] for x in e['open']] == ['F5', 'F6', 'F7', 'F8'], e['open']
+        e['open'] = [x + ('; SENS: the kernel bryantyu/casmi26-saner-seeds (pushed private), attribution and licence of '
+                          'its output' if x.startswith('F8') else '') for x in e['open'] if not x.startswith('F7')]
+        e['closed'] = ['F7 saner retrain demonstration (Oct 31, kernels/casmi26-saner-repro: the published final_model.pt '
+                       'retrained bit-exactly from sanpier\'s published code and train.parquet); the SENS seed refits '
+                       '(casmi26-saner-seeds) come from the same code, config and data with other seeds']
     record = dict(
         k=k, mode=mode, published_seed=PUBLISHED_SEED, extra_seeds=seeds, source=f'{SOURCE_KERNEL} (kernel output: '
         'final_model_seed<s>.pt, final_models_sha256.json)', cell=f'scripts/pub_variant/sens_cell.py (id {CELL_ID}, '
@@ -156,5 +338,16 @@ def apply(nb, meta, k, mode, cfg):
               'z: neural_score := mean of the members\' within-molecule z (listed candidates; outsiders the same maps)')
         + '; neural_cos / neural_fp := member means; molecules with every row processed, neural_ok and finite for every '
         'member; published values otherwise and on any failure', max_seconds=cfg['SENS_MAX_SECONDS'])
-    return dict(record=record, cell_index=i_pf + 1, driver_index=i_pf + 2, cells_edited=[0, 1, i_pf + 2, i4],
-                cell_inserted=i_pf + 1)
+    if base != 'pubm':
+        record.update(base=base, composition=(
+            'ENG3 (frozen cells 32 / 39)' if base == 'eng3' else 'elig1 Engine 2 (frozen cells 32 / 39 / 45)')
+            + ' acts inside the frozen pipeline before its evidence export; SENS acts on the neural files scored from '
+            'that export (driver cell, after score_final_lists / score_outside_candidates)')
+    if base == 'elig1':
+        record.update(cell=record['cell'].replace('sens_cell.py (', 'sens_cell.py + SOURCE_ELIG1 (', 1),
+                      source_rule='only the kernel output: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds or '
+                                  '/kaggle/input/casmi26-saner-seeds (sens_source_dir, SOURCE_ELIG1)',
+                      eligibility='seed refits of the published saner recipe (sanpier, Apache-2.0) trained by us on '
+                                  'train.parquet only; status of the published final_model.pt (F7 closed)')
+    return dict(record=record, cell_index=i_pf + 1, driver_index=i_pf + 2, cells_edited=sorted(edited),
+                cell_inserted=i_pf + 1, base=base)

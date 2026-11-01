@@ -680,6 +680,56 @@ def _elig_extra_mounts():
 """
 
 
+# ELIG=1 builds that also attach kernel outputs through kernel-metadata kernel_sources (SENS: the seed refits of
+# bryantyu/casmi26-saner-seeds; scripts/pub_variant/sens.py applies these splices to cell 8 after apply(), so every other
+# build keeps its cell 8 byte-identical): ELIG_KERNEL_SOURCES; such an output counts as a listed mount in the EXTRA MOUNT
+# check (/kaggle/input/notebooks/<owner>/<slug> or /kaggle/input/<slug>); the ELIG line and elig1_report.json say whether
+# it is mounted. The detached check is unchanged (it names datasets only).
+def cell8_kernel_source_edits(kernels):
+    kernels = list(kernels)
+    assert kernels and all(isinstance(k, str) and k.count('/') == 1 and all(k.split('/')) for k in kernels), kernels
+    head = (f"ELIG_KERNEL_SOURCES = {kernels!r}   # kernel outputs of kernel-metadata.json kernel_sources (not datasets)\n"
+            "\n"
+            "\n"
+            "def _elig_kernel_root(ref):\n"
+            "    owner, slug = ref.split('/', 1)\n"
+            "    for p in (INPUT / 'notebooks' / owner / slug, INPUT / slug):\n"
+            "        if p.is_dir():\n"
+            "            return p\n"
+            "    return None\n")
+    return [
+        ("\n\n\ndef _elig_write_eng2_merge():\n", "\n" + head + "\n\ndef _elig_write_eng2_merge():\n"),
+        ("    # top-level folder of /kaggle/input that is not one of ELIG_DATASETS or COMP\n",
+         "    # top-level folder of /kaggle/input that is not one of ELIG_DATASETS, ELIG_KERNEL_SOURCES (kernel outputs:\n"
+         "    # notebooks/<owner>/<slug> or /kaggle/input/<slug>) or COMP\n"),
+        ("    slugs = {ref.split('/', 1)[1].lower() for ref in ELIG_DATASETS}\n",
+         "    kernels = set(ELIG_KERNEL_SOURCES)\n"
+         "    slugs = {ref.split('/', 1)[1].lower() for ref in ELIG_DATASETS + ELIG_KERNEL_SOURCES}\n"),
+        ("                          not (top.name == 'datasets' and f'{p.parent.name}/{p.name}' in known)]\n",
+         "                          not (top.name == 'datasets' and f'{p.parent.name}/{p.name}' in known) and\n"
+         "                          not (top.name == 'notebooks' and f'{p.parent.name}/{p.name}' in kernels)]\n"),
+        ("#     casmi26-code / -models and the original Engine 2's inputs), and (elig1) any other mount as EXTRA MOUNT.\n",
+         "#     casmi26-code / -models and the original Engine 2's inputs), and (elig1) any other mount as EXTRA MOUNT. The kernel\n"
+         "#     outputs of kernel_sources (ELIG_KERNEL_SOURCES) are listed mounts: counted in the ELIG line, never EXTRA MOUNT.\n"),
+        ("    absent = [ref for ref, root in roots if root is None]\n",
+         "    absent = [ref for ref, root in roots if root is None]\n"
+         "    kroots = [(ref, _elig_kernel_root(ref)) for ref in ELIG_KERNEL_SOURCES]\n"
+         "    kabsent = [ref for ref, root in kroots if root is None]\n"),
+        ("               absent=absent, detached_present=detached, extra_mounts=extra, spec_w=spec_w,",
+         "               absent=absent, kernel_sources={ref: str(root) if root else None for ref, root in kroots},\n"
+         "               kernel_sources_absent=kabsent, detached_present=detached, extra_mounts=extra, spec_w=spec_w,"),
+        ("          f\"{' (ABSENT: ' + ', '.join(absent) + ')' if absent else ''} | detached ones present: \"\n",
+         "          f\"{' (ABSENT: ' + ', '.join(absent) + ')' if absent else ''} | kernel sources mounted \"\n"
+         "          f\"{len(kroots) - len(kabsent)} / {len(kroots)}{' (ABSENT: ' + ', '.join(kabsent) + ')' if kabsent else ''} | \"\n"
+         "          f\"detached ones present: \"\n"),
+        ("    for _p in extra:\n"
+         "        print(f'ELIG EXTRA MOUNT {_p} (not in kernel-metadata.json)', flush=True)\n",
+         "    for _p in extra:\n"
+         "        print(f'ELIG EXTRA MOUNT {_p} (not in kernel-metadata.json)', flush=True)\n"
+         "    for _r in kabsent:\n"
+         "        print(f'ELIG KERNEL SOURCE ABSENT {_r} (kernel-metadata.json kernel_sources; its reader falls back)', flush=True)\n")]
+
+
 def build_cell(frozen_info, null_engine_src, mounts, level=0, eng2_src=None):
     """Code appended to notebook cell 8: pinned data + scripts/pub_variant/elig_cell.py (level 1: + eng2_merge.py)."""
     v43_text = open(os.path.join(HERE, V43_FILE), 'rb').read()

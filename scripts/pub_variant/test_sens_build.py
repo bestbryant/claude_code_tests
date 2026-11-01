@@ -6,7 +6,7 @@ Nothing of the notebooks is executed: cells are only parsed (ast.parse / symtabl
 and the generator (our code) is run into temporary directories.
   1. builds casmi26-pubm-sens (SENS=5 raw), a z / K 3 variant and the casmi26-pubm configuration with the current
      generator; SENS=0 is byte-identical to the casmi26-pubm configuration; the generator refuses SENS with OURS /
-     PF_MID_W / ISO_ALPHA / ELIG / ENG3_W, bad K / modes / seeds / budgets;
+     PF_MID_W / ISO_ALPHA / ELIG=0, bad K / modes / seeds / budgets (SENS with ELIG=1 / ENG3_W: test_sens_combo_build.py);
   2. every code cell parses; the inserted cell is scripts/pub_variant/sens_cell.py byte for byte, right after the PF-syn
      cell; the driver calls it after score_final_lists / score_outside_candidates / ours_pf_blend and before
      build_consensus; every global the cell reads is bound before that call; its scorer command line / cwd /
@@ -51,7 +51,7 @@ E3T = _mod('pub_variant_eng3_build_t', 'test_eng3_build.py')     # gen / load / 
 PUBM_ARGS = ['OURS=False', 'PF_MID_W=0', 'ISO_ALPHA=0']
 SENS_ARGS = ['SENS=5', 'SENS_MODE=raw'] + PUBM_ARGS
 EXISTING = dict(E3T.EXISTING, **{'casmi26-pubm-eng3a': ['ENG3_W=1.0'] + PUBM_ARGS,
-                                 'casmi26-pubm-eng3b': ['ENG3_W=0.5'] + PUBM_ARGS})
+                                 'casmi26-pubm-eng3b': ['ENG3_W=0.5'] + PUBM_ARGS, 'casmi26-pubm-sens': SENS_ARGS})
 gen, load, diff_cells, frozen_of = E3T.gen, E3T.load, E3T.diff_cells, E3T.frozen_of
 
 
@@ -273,7 +273,7 @@ ALLOWED = {'final_model.pt': 'bundle.find_bundle (cell 8): a root needs config.j
                              'MODEL_PINS; the refit folders hold no config.json, src/ holds no final_model.pt'}
 
 
-def collision_check(nb, fz):
+def collision_check(nb, fz, extra_scoped=None):
     texts = {f'frozen {i}': ''.join(c['source']) for i, c in enumerate(fz['cells']) if c['cell_type'] == 'code'}
     for i, c in enumerate(nb['cells']):
         if c['cell_type'] == 'code':
@@ -312,7 +312,7 @@ def collision_check(nb, fz):
                 p = re.sub(r'\{[^}]*\}', '*', p)
                 if pat.startswith('/') and not pat.startswith('/kaggle/input'):
                     continue
-                if p in E3T.SCOPED:
+                if p in E3T.SCOPED or p in (extra_scoped or {}):
                     continue
                 checked.append(p)
                 h = glob.glob(os.path.join(root, '**', p), recursive=True)
@@ -334,7 +334,6 @@ def regen(out_head, out_work):
         tarfile.open(fileobj=io.BytesIO(raw)).extractall(root, filter='data')
         os.symlink(os.path.join(REPO, 'kernels'), os.path.join(root, 'kernels'))
         head_gen = os.path.join(root, 'scripts', 'make_pub_variant.py')
-        assert not os.path.exists(os.path.join(root, 'scripts', 'pub_variant', 'sens.py')), 'HEAD has sens.py?'
         for slug, args in EXISTING.items():
             rc1, o1 = gen(slug, args, out_head, head_gen)
             rc2, o2 = gen(slug, args, out_work)
@@ -365,7 +364,7 @@ def main():
             (['SENS=5', 'OURS=False', 'PF_MID_W=0', 'ISO_ALPHA=0.5'], 'need OURS = True'),
             (['SENS=5', 'OURS_MODE=columns', 'ISO_ALPHA=0.5'], 'not combined with PF-syn'),
             (['SENS=5', 'OURS_MODE=columns', 'PF_MID_W=0.5'], 'not combined with PF-syn'),
-            (['SENS=5', 'ELIG=0'] + PUBM_ARGS, 'ELIG / ENG3_W'), (['SENS=5', 'ENG3_W=1.0'] + PUBM_ARGS, 'ELIG / ENG3_W'),
+            (['SENS=5', 'ELIG=0'] + PUBM_ARGS, 'not combined with ELIG=0'),
             (['SENS=1'] + PUBM_ARGS, '2..5'), (['SENS=6'] + PUBM_ARGS, '2..5'), (['SENS=-1'] + PUBM_ARGS, '2..5'),
             (['SENS=x'] + PUBM_ARGS, 'an integer'), (['SENS=2.5'] + PUBM_ARGS, 'an integer'),
             (['SENS=5', 'SENS_MODE=mean'] + PUBM_ARGS, 'raw or z'), (['SENS_MODE=z'] + PUBM_ARGS, 'without SENS'),
