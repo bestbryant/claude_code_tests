@@ -24,6 +24,14 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   at the end of frozen cell 39 (ENG's first reader is cell 41) Engine 2's lists become the per-molecule top 40 by
   1 / (3 + r_engine2) + w / (3 + r_ours) (eng3_merge.py), read by every later reader of Engine 2, e.g.
   python scripts/make_pub_variant.py casmi26-pubm-eng3a ENG3_W=1.0 OURS=False PF_MID_W=0 ISO_ALPHA=0
+  SENS=K (K = ensemble size incl. the published saner model, 2..5; default 0 = off; not with ELIG / ENG3_W, and
+  OURS = False, PF_MID_W = ISO_ALPHA = 0 for now) [SENS_MODE=raw|z, default raw] builds the saner seed-ensemble variant
+  (scripts/pub_variant/sens.py, sens_cell.py): a new cell after the PF-syn cell, called by the driver cell after
+  score_outside_candidates and before build_consensus, scores the final lists and the outside candidates once more per
+  extra seed (the first K - 1 of cell 1's SENS_SEEDS: final_model_seed<s>.pt of the kernel output
+  bryantyu/casmi26-saner-seeds, mounted via kernel_sources) with the pinned neural_scores.py and sets neural_score
+  (raw: the members' mean; z: their mean within-molecule z) and neural_cos / neural_fp (means), e.g.
+  python scripts/make_pub_variant.py casmi26-pubm-sens SENS=5 SENS_MODE=raw OURS=False PF_MID_W=0 ISO_ALPHA=0
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -64,6 +72,23 @@ if not math.isfinite(ENG3_W) or ENG3_W < 0:
     sys.exit(f'ENG3_W={ENG3_W!r}: a finite weight >= 0 (0 = off)')
 if ENG3_W > 0 and ELIG is not None:
     sys.exit('ENG3_W merges our stage 1 into the ORIGINAL Engine 2 (rank line): not valid with ELIG')
+sens_args = [a.split('=', 1)[1] for a in args if a.startswith('SENS=')]
+sens_mode_args = [a.split('=', 1)[1] for a in args if a.startswith('SENS_MODE=')]
+args = [a for a in args if not a.startswith(('SENS=', 'SENS_MODE='))]
+assert len(sens_args) <= 1 and len(sens_mode_args) <= 1, 'SENS / SENS_MODE given twice'
+try:
+    SENS = int(sens_args[0]) if sens_args else 0
+except ValueError:
+    sys.exit(f'SENS={sens_args[0]!r}: an integer ensemble size (0 = off)')
+SENS_MODE = sens_mode_args[0] if sens_mode_args else 'raw'
+if sens_mode_args and SENS == 0:
+    sys.exit('SENS_MODE without SENS: SENS=K (K >= 2) turns the seed ensemble on')
+if SENS != 0 and not 2 <= SENS <= 5:
+    sys.exit(f'SENS={SENS}: the ensemble size incl. the published model, 2..5 (0 = off)')
+if SENS_MODE not in ('raw', 'z'):
+    sys.exit(f'SENS_MODE={SENS_MODE!r}: raw or z')
+if SENS and (ELIG is not None or ENG3_W > 0):
+    sys.exit('SENS (saner seed ensemble) is not combined with ELIG / ENG3_W for now')
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
 dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
 assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
@@ -285,6 +310,11 @@ if ENG3_W > 0:
     _spec = _ilu.spec_from_file_location('pub_variant_eng3', os.path.join(here, 'eng3.py'))
     eng3 = _ilu.module_from_spec(_spec); _spec.loader.exec_module(eng3)       # our generator code, not notebook code
     c1 = splice(c1, eng3.cell1_edits(ENG3_W), 'cell 1 (eng3)')
+if SENS:
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location('pub_variant_sens', os.path.join(here, 'sens.py'))
+    sens = _ilu.module_from_spec(_spec); _spec.loader.exec_module(sens)       # our generator code, not notebook code
+    c1 = splice(c1, sens.cell1_edits(SENS, SENS_MODE), 'cell 1 (sens)')
 defaults = config_values(c1)
 settings = {}
 for a in args:
@@ -310,6 +340,8 @@ if (cfg['ISO_COS_W'] > 0 or cfg['ISO_FREEZE_LEADER']) and not cfg['ISO_ALPHA'] >
 if ENG3_W > 0 and (cfg['OURS'] or cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0):
     sys.exit('ENG3_W builds carry no PF-syn re-weighting (dropped from the rank line on Nov 1): '
              'OURS=False PF_MID_W=0 ISO_ALPHA=0')
+if SENS and sens.check_config(cfg, SENS):
+    sys.exit(sens.check_config(cfg, SENS))
 cells[1]['source'] = c1
 cells.insert(17, {'cell_type': 'code', 'execution_count': None, 'id': ISO_ID,
                   'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
@@ -318,6 +350,8 @@ elig_report = elig.apply(nb, meta, ELIG, cfg) if ELIG is not None else None   # 
                                                                                # 23; metadata; datasets per OURS)
 eng3_report = eng3.apply(nb, meta, ENG3_W, cfg) if ENG3_W > 0 else None       # ENG3: frozen cells 32 / 39; cells 0, 1,
                                                                                # 8, 9; metadata datasets
+sens_report = sens.apply(nb, meta, SENS, SENS_MODE, cfg) if SENS else None    # SENS: new cell after PF-syn, driver
+                                                                               # call, cells 0 / 1; kernel_sources
 for i, c in enumerate(cells):
     if c['cell_type'] == 'code':
         ast.parse(c['source'], f'cell {i}')                   # syntax only; nothing here is executed
@@ -333,6 +367,9 @@ elif elig_report and not cfg['OURS']:
     nb['metadata']['casmi']['ours']['pf_checkpoint'] += ' (not attached in this ELIG build: OURS = False)'
 if eng3_report:
     nb['metadata']['casmi']['ours']['eng3'] = eng3_report['record']
+if sens_report:
+    nb['metadata']['casmi']['ours'].update(sens.ours_meta(nb['metadata']['casmi']['ours']))   # cells 17 / 18 here
+    nb['metadata']['casmi']['ours']['sens'] = sens_report['record']
 os.makedirs(dst, exist_ok=True)
 with open(os.path.join(dst, 'notebook.ipynb'), 'w', encoding='utf-8') as f:
     f.write(json.dumps(nb, ensure_ascii=False, separators=(',', ':')))
@@ -350,3 +387,7 @@ if eng3_report:
     print('ENG3 w', ENG3_W, '| frozen', eng3_report['frozen']['original_sha256'][:12], '->',
           eng3_report['frozen']['patched_sha256'][:12], '| patched frozen cells', eng3_report['frozen']['patched_cells'],
           '| notebook cells edited', eng3_report['cells_edited'], '| datasets', len(meta['dataset_sources']))
+if sens_report:
+    print('SENS K', SENS, '| mode', SENS_MODE, '| extra seeds', sens_report['record']['extra_seeds'], '| cell inserted',
+          sens_report['cell_inserted'], '| notebook cells edited', sens_report['cells_edited'], '| kernel_sources',
+          meta['kernel_sources'])
