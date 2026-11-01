@@ -902,6 +902,17 @@ merged 12 | shared identities 186 | new from ours 143 / 82"; keys 471 / 471, mis
 ICE_UNION 805 / 811 (pubm 814); V1 = public 0.466; MERGE applied 400 (outputs 9b3d0073 / 62cb7f98, pubm d2027d89); ISO off;
 SUBMISSION READY 400. Max RSS main 7.8 GB / worker 7.0 GB (eng3a commit). Ready for Nov 2 slots 4-5.
 
+## Public refresh Nov 1 07:00 (workflow wf_54c6b8c9-5e5; docs/public_refresh_nov1.md)
+- LB: 4,493 teams; top 0.521 / 0.519 / 0.512; 230 teams tie at 0.479 (ranks 45-274, ties ordered by submission time ->
+  we are rank ~256); 0.480 would be rank ~32-44. 18 teams moved above 0.479 since Oct 31, none with a public notebook.
+- No public notebook gives a reproducible gain over 0.479: midx copies 0.479; outsider tails, PubChem same-formula channels,
+  guarded swaps flat (0.479); BIO_W / TRAIN_W / gate 0.80 variants 0.478; prior blocked from ranks 2-3 0.477 (the prior's
+  gain sits in ranks 2-3); "clean preprocessing" 0.472. heliosli's learned same-formula FRAGMENT reranker (1-2 bond-cut
+  fragments matched to peaks, explained intensity, complementary pairs, neutral losses; guards: training structures keep
+  slots, skip lib >= 0.9) shows 0.480 on a 0.468 base (team 0.486) with private weights (verbatim rerun 0.468).
+- Next lever: our own fragment-feature same-formula reranker (explicit physics evidence, decorrelated from saner / PF /
+  GLACIER), trained on our data, offline gate on structure-disjoint val before any Kaggle build.
+
 ## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
 45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
 weights anywhere. 9 ineligible: the CC BY-NC-SA v4g container mount (A5) and all of Engine 2 (prvsiyan FP models,
