@@ -115,11 +115,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-31 | casmi26-own-s2v18cte v1 | PeakFormer swap to pf_tpu_p, 2-seed ensemble v18ct + v18ctr1 | **0.348** (best eligible; bar 0.350) |
 | 10-31 | casmi26-probe18cte-coco v1 | v18cte lists restricted to COCONUT-not-train | **0.221** |
 | 10-31 | casmi26-probe18cte-train v1 | v18cte lists restricted to training structures | 0.157 |
-| 11-01 | casmi26-pubm v1 | slot 1: fork of the 0.480 notebook + midx 0.479 final layer, no PF (rank control) | (pending) |
-| 11-01 | casmi26-pubm-pfmid v1 | slot 2: + PF-syn in the ranks 2-25 neural rank (PF_MID_W 0.5) | (pending) |
-| 11-01 | casmi26-pubm-iso075 v1 | slot 3: + PF-syn isomer reranker alpha 0.75, formula scope | (pending) |
-| 11-01 | casmi26-pubm-pfall v1 | slot 4: + PF-syn blended into the neural term (PF_W 0.5) | (pending) |
-| 11-01 | casmi26-pubm-iso150 v1 | slot 5: + PF-syn isomer reranker alpha 1.5, formula scope | (pending) |
+| 11-01 | casmi26-pubm v1 | slot 1: fork of the 0.480 notebook + midx 0.479 final layer, no PF (rank control) | **0.479** (best) |
+| 11-01 | casmi26-pubm-pfmid v1 | slot 2: + PF-syn in the ranks 2-25 neural rank (PF_MID_W 0.5) | 0.472 |
+| 11-01 | casmi26-pubm-iso075 v1 | slot 3: + PF-syn isomer reranker alpha 0.75, formula scope | 0.474 |
+| 11-01 | casmi26-pubm-pfall v1 | slot 4: + PF-syn blended into the neural term (PF_W 0.5) | 0.465 |
+| 11-01 | casmi26-pubm-iso150 v1 | slot 5: + PF-syn isomer reranker alpha 1.5, formula scope | 0.463 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -863,6 +863,34 @@ Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2
   (alpha 0.5 scope all ISO_COS_W 1.0); pushed once GPU sessions free up.
 - Public pool coverage: 93.6% of the public pipeline's 710,701-structure pool (pool_popularity.csv) is in our pool v18c
   and therefore in syn2 (99.2% of non-NP-flagged, 90.7% of COCONUT/LOTUS-flagged); extra simulation not worth it now.
+
+## Lessons from the Nov 1 submissions (scored ~05:00, 4.9 h after submission)
+| slot | kernel | prediction | LB | vs slot 1 | rule outcome |
+|---|---|---|---|---|---|
+| 1 | pubm (control) | 0.479 +- 0.004 | **0.479** | - | >= 0.472: port sane; midx 0.479 reproduced (our best) |
+| 2 | pubm-pfmid (PF ranks 2-25) | slot 1 + 0.002 +- 0.006 | 0.472 | -0.007 | < +0.002: PF does not help ranks 2-25 |
+| 3 | pubm-iso075 (ISO 0.75 formula) | slot 1 + 0.004 +- 0.010 | 0.474 | -0.005 | <= -0.004: rank-1 PF moves hurt |
+| 4 | pubm-pfall (PF blend in the neural term) | slot 1 + 0.003 +- 0.010 | 0.465 | -0.014 | PF in the fusion / fragment check hurts |
+| 5 | pubm-iso150 (ISO 1.5 formula) | slot 1 + 0.006 +- 0.015 | 0.463 | -0.016 | dose-response NEGATIVE (0.75: -0.005, 1.5: -0.016) |
+- Every PF-syn variant is below the control, monotone in the PF weight. Slots 2-3 alone are within the documented rerun
+  noise of this lineage (identical reruns up to 0.006 apart), slots 4-5 are not. Decision table outcome C ("both <= -0.004:
+  the public base already carries isomer evidence like the B1 control -> no rank-1 ISO"): PF-syn is DROPPED from the public
+  line (no ISO, no PF_MID, no blend). The offline sim's plain / documentation-transplanted regimes did not transfer; the
+  public lists behave like B1 (base already has saner + GLACIER + ICEBERG + fragment evidence; PF double counts). PF-syn's
+  measured value stays inside our own pipeline (eligible line), where it was the only spectral model.
+- Implication for the rank: our unique contribution to the 0.479 line must be a DIFFERENT engine / candidate signal, not a
+  re-weighting of the same candidates. First test: our stage 1 as Engine 2 (pube1, also the eligible pick) and as an extra
+  engine merged with the original Engine 2 (rank line).
+
+## NOV 2 SLOTS (pre-registered Nov 1 05:10, after the Nov 1 reading, before any Nov 2 reading)
+| slot | kernel | what it measures | prediction | rule |
+|---|---|---|---|---|
+| 1 | casmi26-pube1 v1 (eligible: upstream mounts + OUR stage 1 as Engine 2) | eligible score; with slot 2: our Engine 2 vs null | 0.472 +- 0.010 | >= 0.476: the eligible fork is a full-strength pick #1; >= pubm 0.479: our Engine 2 beats prvsiyan's -> try it in the rank line |
+| 2 | casmi26-pube0 v1 (eligible: null Engine 2) | eligibility cost without Engine 2 | 0.468 +- 0.010 | pubm - pube0 = cost of F1-F4 + losing Engine 2; pube1 - pube0 = value of our Engine 2 |
+| 3 | casmi26-pubm v1 again (identical resubmission) | LB rerun noise of this lineage | 0.479 +- 0.006 | |slot 3 - 0.479| = the noise floor for every later single reading |
+| 4 | casmi26-pubm-eng3a (rank: Engine 2 list = RRF(prvsiyan Engine 2, our stage 1), equal weights) if built and verified by 00:05 | our engine ADDED to the rank line | 0.479 + 0.003 +- 0.008 | >= +0.004 over the slot 1/3 mean of pubm: keep; else drop |
+| 5 | casmi26-pubm-eng3b (as 4, our list weight 0.5) if verified, else nothing | dose of the extra engine | 0.479 + 0.002 +- 0.008 | the better of 4 / 5 sets the weight |
+PF-based candidates (pubm-iso075all, -iso05cos, pube1-iso075all) are withdrawn after the Nov 1 reading.
 
 ## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
 45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
