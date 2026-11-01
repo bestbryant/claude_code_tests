@@ -896,6 +896,11 @@ stage-1 top 40 into its list at the end of frozen cell 39 (1/(3 + r_eng2) + w/(3
 shared identities; every Engine 2 reader sees the merged list). Our stage-1 rankers use PeakFormer features (pf_tpu_f), so
 eng3 vs pubm is "our whole engine added", not a PF-free contrast; PF re-weighting / ISO stay off. Local 12-molecule run:
 186 shared identities, 143 (w 1.0) / 82 (w 0.5) of ours enter the top 40, rank 1 changes 0 / 12 (library spectra).
+VERIFIED (06:40): casmi26-pubm-eng3a v1 and casmi26-pubm-eng3b v1 - "ENG3 OURS subprocess | status done | rc 0 | molecules 12
+| ok 12 | timeout 0 | ~207 s | assets MANIFEST 25/25, pinned 22/22, pool 3/3"; "ENG3 | w 1.0 / 0.5 | molecules 12 | ours 12 |
+merged 12 | shared identities 186 | new from ours 143 / 82"; keys 471 / 471, mismatches 0; "ENG3 merge | top1 changed 0";
+ICE_UNION 805 / 811 (pubm 814); V1 = public 0.466; MERGE applied 400 (outputs 9b3d0073 / 62cb7f98, pubm d2027d89); ISO off;
+SUBMISSION READY 400. Max RSS main 7.8 GB / worker 7.0 GB (eng3a commit). Ready for Nov 2 slots 4-5.
 
 ## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
 45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
