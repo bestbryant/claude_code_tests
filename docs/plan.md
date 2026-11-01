@@ -942,6 +942,12 @@ SUBMISSION READY 400. Max RSS main 7.8 GB / worker 7.0 GB (eng3a commit). Ready 
 .8509 (585 structures; tpu_f ended at .8237) -> D3 validity and the real-val guard (>= .818) pass. D3 offline probe vs tpu_f
 (.6461) running (workflow wf_96647317-f22). A GO would only touch our own stage 1 (Engine 2 OURS / eng3), not the public
 neural term.
+D3 RESULT (workflow wf_96647317-f22, verifier re-scored all 620 queries bit-identically): GO. pf_bern RR vs tpu_f: coco
+.6883 vs .6461 = +.0423 [+.022, +.064]; cotr .6151 (+.0341); non-public 134 +.0370; z-mean {PF-x, tpu_f} +.0328 (not better
+than PF-x alone: -.0095 [-.024, +.005]) -> carry PF-x alone (pf_pfx_tpu.pt, md5 53b2c5eb, /home/user/work/pfs/). D3b
+prediction for a spectral slot: S_f + .025 +- .012. Use: a new stage-1 ranker pair on PF-x columns (build_pfswap_pair.sh)
+for Engine 2 OURS / eng3 - built ONLY if the Nov 2 readings show our engine helps (pube1 vs pube0, eng3a vs pubm);
+otherwise PF-x stays on the shelf.
 
 ## Fragment reranker offline gate (Nov 1 10:00, workflow wf_05f02b1d-b7d; scratchpad fragrr/results.md) -> NOT BUILT
 Our heliosli-style fragment reranker (1-cut / 2-cut / ring-pair fragments matched to peaks; explained intensity, matched
