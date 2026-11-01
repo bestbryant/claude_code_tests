@@ -38,6 +38,15 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   output, lists it in cell 8's mount check and in the eligibility statement / credits (sens.py), e.g.
   python scripts/make_pub_variant.py casmi26-pube1-sens ELIG=1 SENS=5 SENS_MODE=raw OURS=False PF_MID_W=0 ISO_ALPHA=0
   python scripts/make_pub_variant.py casmi26-pubm-eng3a-sens ENG3_W=1.0 SENS=5 SENS_MODE=raw OURS=False PF_MID_W=0 ISO_ALPHA=0
+  CUSTOM_W_TOP=w / CUSTOM_W_MID=w (floats in [0, 2]; defaults 0.25 / 0.75) rewrite only the CUSTOM line of cell 1 (the
+  consensus: rank 1 by 1/(3 + b) + w_top/(3 + n), ranks 2-25 by 1/(3 + b) + w_mid/(3 + n)); the default value leaves the
+  build unchanged. MIDX_NEURAL_W=w (float in [0, 2]; absent = the midx literal 0.75) adds MIDX_NEURAL_W = w to cell 1 and
+  makes the final layer's ranks 2-25 score 1/(3 + b) + MIDX_NEURAL_W/(3 + n) + prior read it in place of the literal
+  (0.75 = midx exactly; scripts/pub_variant/wm.py). Note: the final layer re-sorts ranks 2-25 of the CUSTOM order with its
+  own weight, so CUSTOM_W_MID alone changes only exact ties of that score and the fallback answer (final layer failed).
+  Any of them away from the default:
+  a note in markdown cell 0 and casmi.ours.weights; VARIANT 'CUSTOM' (and FRAG_ON_V2 for MIDX_NEURAL_W) required, e.g.
+  python scripts/make_pub_variant.py casmi26-pubm-sens-wm100 SENS=5 SENS_MODE=raw CUSTOM_W_MID=1.0 MIDX_NEURAL_W=1.0 OURS=False PF_MID_W=0 ISO_ALPHA=0
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -95,6 +104,20 @@ if SENS_MODE not in ('raw', 'z'):
     sys.exit(f'SENS_MODE={SENS_MODE!r}: raw or z')
 if SENS and ELIG == 0:
     sys.exit('SENS (saner seed ensemble) is not combined with ELIG=0 (null Engine 2) for now: ELIG=1, ENG3_W or neither')
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location('pub_variant_wm', os.path.join(here, 'wm.py'))
+wm = _ilu.module_from_spec(_spec); _spec.loader.exec_module(wm)               # our generator code, not notebook code
+wm_args = {o: [a.split('=', 1)[1] for a in args if a.startswith(o + '=')] for o in wm.OPTIONS}
+args = [a for a in args if not a.startswith(tuple(o + '=' for o in wm.OPTIONS))]
+assert all(len(v) <= 1 for v in wm_args.values()), 'CUSTOM_W_TOP / CUSTOM_W_MID / MIDX_NEURAL_W given twice'
+WM = {}
+for _o, _v in wm_args.items():
+    if _v:
+        WM[_o], _why = wm.parse(_o, _v[0])
+        if _why:
+            sys.exit(_why)
+W_TOP, W_MID = WM.get('CUSTOM_W_TOP', wm.W_TOP), WM.get('CUSTOM_W_MID', wm.W_MID)
+MIDX_W = WM.get('MIDX_NEURAL_W')                         # None: the midx literal 0.75, no hook (default builds unchanged)
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
 dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
 assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
@@ -302,6 +325,8 @@ for i, start in ((1, '# ── Configuration'), (11, '# ── PF-syn'), (16, '#
 midx = open(os.path.join(here, 'midx_cell15.txt'), encoding='utf-8', newline='').read()
 assert hashlib.sha256(midx.encode()).hexdigest() == MIDX_SHA256, 'midx_cell15.txt differs from the pulled source'
 cells[16]['source'] = splice(midx, MIDX, 'cell 16 (midx)')
+if MIDX_W is not None:                                   # MIDX_NEURAL_W: cell 1's weight in place of the literal 0.75
+    cells[16]['source'] = splice(cells[16]['source'], wm.final_edits(MIDX_W), 'cell 16 (midx, MIDX_NEURAL_W)')
 cells[11]['source'] = splice(cells[11]['source'], PF, 'cell 11 (PF-syn)')
 cells[0]['source'] = splice(cells[0]['source'], MD0, 'cell 0 (title)')
 cells[17]['source'] = splice(cells[17]['source'], MD17, 'cell 17 (section 4)')
@@ -321,6 +346,8 @@ if SENS:
     _spec = _ilu.spec_from_file_location('pub_variant_sens', os.path.join(here, 'sens.py'))
     sens = _ilu.module_from_spec(_spec); _spec.loader.exec_module(sens)       # our generator code, not notebook code
     c1 = splice(c1, sens.cell1_edits(SENS, SENS_MODE), 'cell 1 (sens)')
+c1 = splice(c1, wm.cell1_edits(W_TOP, W_MID, MIDX_W), 'cell 1 (weights)')    # nothing at the defaults
+assert wm.custom_of(c1) == (W_TOP, W_MID, 0), wm.custom_of(c1)
 defaults = config_values(c1)
 settings = {}
 for a in args:
@@ -348,6 +375,8 @@ if ENG3_W > 0 and (cfg['OURS'] or cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0):
              'OURS=False PF_MID_W=0 ISO_ALPHA=0')
 if SENS and sens.check_config(cfg, SENS):
     sys.exit(sens.check_config(cfg, SENS))
+if wm.check_config(cfg, W_TOP, W_MID, MIDX_W):
+    sys.exit(wm.check_config(cfg, W_TOP, W_MID, MIDX_W))
 cells[1]['source'] = c1
 cells.insert(17, {'cell_type': 'code', 'execution_count': None, 'id': ISO_ID,
                   'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
@@ -377,6 +406,7 @@ if eng3_report:
 if sens_report:
     nb['metadata']['casmi']['ours'].update(sens.ours_meta(nb['metadata']['casmi']['ours']))   # cells 17 / 18 here
     nb['metadata']['casmi']['ours']['sens'] = sens_report['record']
+wm_report = wm.apply(nb, W_TOP, W_MID, MIDX_W)        # weights away from the template: cell 0 note, casmi.ours.weights
 os.makedirs(dst, exist_ok=True)
 with open(os.path.join(dst, 'notebook.ipynb'), 'w', encoding='utf-8') as f:
     f.write(json.dumps(nb, ensure_ascii=False, separators=(',', ':')))
@@ -398,3 +428,6 @@ if sens_report:
     print('SENS K', SENS, '| mode', SENS_MODE, '| extra seeds', sens_report['record']['extra_seeds'], '| cell inserted',
           sens_report['cell_inserted'], '| notebook cells edited', sens_report['cells_edited'], '| kernel_sources',
           meta['kernel_sources'], *(['| on', sens_report['base']] if sens_report['base'] != 'pubm' else []))
+if wm_report:
+    print('WEIGHTS | CUSTOM w_top', W_TOP, '| w_mid', W_MID, '| MIDX_NEURAL_W',
+          MIDX_W if MIDX_W is not None else 'not given (midx literal 0.75)', '| final layer cell', wm_report['final_cell'])
