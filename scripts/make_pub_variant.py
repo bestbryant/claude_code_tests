@@ -17,6 +17,13 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   (eng2_merge.py, written by cell 8), cells 39 / 45 merge its top 40 with the null engine where it has no list;
   dataset_sources = the upstream set + those two datasets (never casmi26-code / -models), e.g.
   python scripts/make_pub_variant.py casmi26-pube1 ELIG=1 OURS=False PF_MID_W=0 ISO_ALPHA=0
+  ENG3_W=w (w > 0; default 0 = off; not with ELIG; no PF-syn re-weighting: OURS = False, PF_MID_W = ISO_ALPHA = 0;
+  the added engine's own rankers still use PeakFormer features from pf_tpu_f.pt) builds the rank-line ENG3 variant
+  (scripts/pub_variant/eng3.py): frozen cell 32 runs the original Engine 2 unchanged and then OUR stage 1 (casmi.run_eng2,
+  elig1's configuration; bryantyu/casmi26-elig-assets + casmi26-pool-v18c attached besides casmi26-pubm's datasets);
+  at the end of frozen cell 39 (ENG's first reader is cell 41) Engine 2's lists become the per-molecule top 40 by
+  1 / (3 + r_engine2) + w / (3 + r_ours) (eng3_merge.py), read by every later reader of Engine 2, e.g.
+  python scripts/make_pub_variant.py casmi26-pubm-eng3a ENG3_W=1.0 OURS=False PF_MID_W=0 ISO_ALPHA=0
 Structural edits of kernels/casmi26-pub480pf (left unchanged), the same for every variant:
   - cell 16 (final layer) := cell 15 of baidalinadilzhan/casmi26-midx-exact-dedup-fill (team LB 0.479; verbatim in
     scripts/pub_variant/midx_cell15.txt, SHA-256 pinned) spliced with the PF_MID_W hook of the researcher's drop-in
@@ -46,6 +53,17 @@ assert len(elig_args) <= 1, 'ELIG given twice'
 ELIG = int(elig_args[0]) if elig_args else None
 if ELIG is not None and ELIG not in (0, 1):
     sys.exit(f'ELIG={ELIG}: ELIG=0 (F1 + F2a + F3 + F4) or ELIG=1 (F1 + F2b + F3 + F4: our stage 1 as Engine 2)')
+eng3_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG3_W=')]
+args = [a for a in args if not a.startswith('ENG3_W=')]
+assert len(eng3_args) <= 1, 'ENG3_W given twice'
+try:
+    ENG3_W = float(eng3_args[0]) if eng3_args else 0.0
+except ValueError:
+    sys.exit(f'ENG3_W={eng3_args[0]!r}: a number (0 = off)')
+if not math.isfinite(ENG3_W) or ENG3_W < 0:
+    sys.exit(f'ENG3_W={ENG3_W!r}: a finite weight >= 0 (0 = off)')
+if ENG3_W > 0 and ELIG is not None:
+    sys.exit('ENG3_W merges our stage 1 into the ORIGINAL Engine 2 (rank line): not valid with ELIG')
 src = os.path.join(root, 'kernels', 'casmi26-pub480pf')
 dst = os.path.join(os.path.abspath(out_dirs[0]) if out_dirs else os.path.join(root, 'kernels'), slug)
 assert slug not in ('casmi26-pub480pf', 'casmi26-pub480') and os.sep not in slug and slug not in ('', '.', '..'), \
@@ -262,6 +280,11 @@ if ELIG is not None:
     _spec = _ilu.spec_from_file_location('pub_variant_elig', os.path.join(here, 'elig.py'))
     elig = _ilu.module_from_spec(_spec); _spec.loader.exec_module(elig)       # our generator code, not notebook code
     c1 = splice(c1, elig.cell1_edits(ELIG) if ELIG else elig.cell1_edits(), 'cell 1 (elig)')
+if ENG3_W > 0:
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location('pub_variant_eng3', os.path.join(here, 'eng3.py'))
+    eng3 = _ilu.module_from_spec(_spec); _spec.loader.exec_module(eng3)       # our generator code, not notebook code
+    c1 = splice(c1, eng3.cell1_edits(ENG3_W), 'cell 1 (eng3)')
 defaults = config_values(c1)
 settings = {}
 for a in args:
@@ -284,12 +307,17 @@ if (cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0) and not cfg['OURS']:
     sys.exit('PF_MID_W / ISO_ALPHA read the PF-syn columns: they need OURS = True')
 if (cfg['ISO_COS_W'] > 0 or cfg['ISO_FREEZE_LEADER']) and not cfg['ISO_ALPHA'] > 0:
     sys.exit('ISO_COS_W / ISO_FREEZE_LEADER act only inside the ISO reranker: they need ISO_ALPHA > 0')
+if ENG3_W > 0 and (cfg['OURS'] or cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0):
+    sys.exit('ENG3_W builds carry no PF-syn re-weighting (dropped from the rank line on Nov 1): '
+             'OURS=False PF_MID_W=0 ISO_ALPHA=0')
 cells[1]['source'] = c1
 cells.insert(17, {'cell_type': 'code', 'execution_count': None, 'id': ISO_ID,
                   'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
                   'source': open(os.path.join(here, 'iso_cell.py'), encoding='utf-8').read()})
 elig_report = elig.apply(nb, meta, ELIG, cfg) if ELIG is not None else None   # F1 / F2a / F3 / F4 (cells 0, 8, 16, 21,
                                                                                # 23; metadata; datasets per OURS)
+eng3_report = eng3.apply(nb, meta, ENG3_W, cfg) if ENG3_W > 0 else None       # ENG3: frozen cells 32 / 39; cells 0, 1,
+                                                                               # 8, 9; metadata datasets
 for i, c in enumerate(cells):
     if c['cell_type'] == 'code':
         ast.parse(c['source'], f'cell {i}')                   # syntax only; nothing here is executed
@@ -303,6 +331,8 @@ if elig_report and ELIG == 1:
                                                         ('on' if cfg['OURS'] else 'off: OURS = False') + ')')
 elif elig_report and not cfg['OURS']:
     nb['metadata']['casmi']['ours']['pf_checkpoint'] += ' (not attached in this ELIG build: OURS = False)'
+if eng3_report:
+    nb['metadata']['casmi']['ours']['eng3'] = eng3_report['record']
 os.makedirs(dst, exist_ok=True)
 with open(os.path.join(dst, 'notebook.ipynb'), 'w', encoding='utf-8') as f:
     f.write(json.dumps(nb, ensure_ascii=False, separators=(',', ':')))
@@ -316,3 +346,7 @@ if elig_report:
     print('ELIG', ELIG, '| frozen', elig_report['frozen']['original_sha256'][:12], '->',
           elig_report['frozen']['patched_sha256'][:12], '| patched frozen cells', elig_report['frozen']['patched_cells'],
           '| datasets', len(meta['dataset_sources']))
+if eng3_report:
+    print('ENG3 w', ENG3_W, '| frozen', eng3_report['frozen']['original_sha256'][:12], '->',
+          eng3_report['frozen']['patched_sha256'][:12], '| patched frozen cells', eng3_report['frozen']['patched_cells'],
+          '| notebook cells edited', eng3_report['cells_edited'], '| datasets', len(meta['dataset_sources']))

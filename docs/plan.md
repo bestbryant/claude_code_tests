@@ -891,6 +891,11 @@ Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2
 | 4 | casmi26-pubm-eng3a (rank: Engine 2 list = RRF(prvsiyan Engine 2, our stage 1), equal weights) if built and verified by 00:05 | our engine ADDED to the rank line | 0.479 + 0.003 +- 0.008 | >= +0.004 over the slot 1/3 mean of pubm: keep; else drop |
 | 5 | casmi26-pubm-eng3b (as 4, our list weight 0.5) if verified, else nothing | dose of the extra engine | 0.479 + 0.002 +- 0.008 | the better of 4 / 5 sets the weight |
 PF-based candidates (pubm-iso075all, -iso05cos, pube1-iso075all) are withdrawn after the Nov 1 reading.
+Note on slots 4-5 (built 06:30, workflow wf_0bc0d69b-776): eng3 keeps the original Engine 2 run untouched and RRF-merges our
+stage-1 top 40 into its list at the end of frozen cell 39 (1/(3 + r_eng2) + w/(3 + r_ours), top 40, Engine 2's SMILES for
+shared identities; every Engine 2 reader sees the merged list). Our stage-1 rankers use PeakFormer features (pf_tpu_f), so
+eng3 vs pubm is "our whole engine added", not a PF-free contrast; PF re-weighting / ISO stay off. Local 12-molecule run:
+186 shared identities, 143 (w 1.0) / 82 (w 0.5) of ours enter the top 40, rank 1 changes 0 / 12 (library spectra).
 
 ## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
 45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
