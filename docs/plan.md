@@ -913,6 +913,19 @@ SUBMISSION READY 400. Max RSS main 7.8 GB / worker 7.0 GB (eng3a commit). Ready 
 - Next lever: our own fragment-feature same-formula reranker (explicit physics evidence, decorrelated from saner / PF /
   GLACIER), trained on our data, offline gate on structure-disjoint val before any Kaggle build.
 
+## Fragment reranker offline gate (Nov 1 10:00, workflow wf_05f02b1d-b7d; scratchpad fragrr/results.md) -> NOT BUILT
+Our heliosli-style fragment reranker (1-cut / 2-cut / ring-pair fragments matched to peaks; explained intensity, matched
+counts, complementary pairs, neutral losses, rarity weights, within-group z / ranks; LightGBM lambdarank within query x
+formula groups, 77k train rows; 2 ms / candidate) - verifier reproduced every number exactly, no leakage:
+- within-formula truth-first: fragment score 0.34 (base order 0.75, PF 0.46, GLACIER 0.56); residual model on top of the base
+  order learns nothing (flat CV curve).
+- ISO on bases that already carry fragment + GLACIER evidence (B0gf, + doc-transplanted variants): best +-0.0005 (alpha 0.25),
+  -0.007 at 0.5, -0.022 at 0.75 (CI below 0). Positive only on a base WITHOUT fragment evidence (B0x: +0.0025 at 0.25 / PF+FR
+  +0.0106) - consistent with heliosli's +0.012 being measured on a base without the fragment check; pubm has it.
+- Correlation with PF 0.27 (different signal), but weaker and partly duplicating the base's fragment evidence.
+Decision: no Kaggle variant. Re-weighting levers on the public lists (PF Nov 1 LB; fragments offline) are exhausted; the
+remaining lever is additional ENGINES / candidates (eng3 on Nov 2) and the eligible line.
+
 ## ELIGIBLE FORK (Oct 31 08:40; audit workflow wf_1dac4c75-94f, full text docs/fork_eligibility.md)
 45 assets of casmi26-pubm audited (licence / NIST / non-commercial / reproducibility). No NIST spectra or NIST-trained
 weights anywhere. 9 ineligible: the CC BY-NC-SA v4g container mount (A5) and all of Engine 2 (prvsiyan FP models,
