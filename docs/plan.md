@@ -115,6 +115,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 10-31 | casmi26-own-s2v18cte v1 | PeakFormer swap to pf_tpu_p, 2-seed ensemble v18ct + v18ctr1 | **0.348** (best eligible; bar 0.350) |
 | 10-31 | casmi26-probe18cte-coco v1 | v18cte lists restricted to COCONUT-not-train | **0.221** |
 | 10-31 | casmi26-probe18cte-train v1 | v18cte lists restricted to training structures | 0.157 |
+| 11-01 | casmi26-pubm v1 | slot 1: fork of the 0.480 notebook + midx 0.479 final layer, no PF (rank control) | (pending) |
+| 11-01 | casmi26-pubm-pfmid v1 | slot 2: + PF-syn in the ranks 2-25 neural rank (PF_MID_W 0.5) | (pending) |
+| 11-01 | casmi26-pubm-iso075 v1 | slot 3: + PF-syn isomer reranker alpha 0.75, formula scope | (pending) |
+| 11-01 | casmi26-pubm-pfall v1 | slot 4: + PF-syn blended into the neural term (PF_W 0.5) | (pending) |
+| 11-01 | casmi26-pubm-iso150 v1 | slot 5: + PF-syn isomer reranker alpha 1.5, formula scope | (pending) |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
