@@ -891,6 +891,17 @@ Kaggle iso_order exactly on 13,472 query evaluations; scratchpad isosim/results2
 | 4 | casmi26-pubm-eng3a (rank: Engine 2 list = RRF(prvsiyan Engine 2, our stage 1), equal weights) if built and verified by 00:05 | our engine ADDED to the rank line | 0.479 + 0.003 +- 0.008 | >= +0.004 over the slot 1/3 mean of pubm: keep; else drop |
 | 5 | casmi26-pubm-eng3b (as 4, our list weight 0.5) if verified, else nothing | dose of the extra engine | 0.479 + 0.002 +- 0.008 | the better of 4 / 5 sets the weight |
 PF-based candidates (pubm-iso075all, -iso05cos, pube1-iso075all) are withdrawn after the Nov 1 reading.
+SANER SEED ENSEMBLE (Nov 1 10:23, kernels/casmi26-saner-seeds v1, T4 102 min): 4 extra seeds of the published recipe
+(holdout MRR@25 0.486 / 0.482 / 0.470 / 0.472; per-query Spearman to the published model ~0.87, top-1 agreement 0.41-0.47).
+Ensembles on the published validation set (1,000 molecules x 256 candidates, clean holdout models), vs the published model
+0.4844: k=2 0.5175, k=3 0.5338, k=4 0.5305, k=5 0.5315 (+0.047 [+0.031, +0.064]; vs mean member +0.053 [+0.043, +0.062];
+top-1 0.344 -> 0.387); raw mean = z mean. Full refits of all seeds done (refit parity: the published seed's refit is
+bit-exact again). Decision GO -> casmi26-pubm-sens (neural term = mean of the 5 refit models, raw) pushed 10:30.
+NOV 2 AMENDMENT (10:35, before any Nov 2 reading): slot 5 casmi26-pubm-eng3b -> casmi26-pubm-sens v1 IF its commit run is
+VERIFIED ("SENS applied | K 5 | ..." with failures 0, SUBMISSION READY 400, MERGE applied); else slot 5 stays eng3b.
+Prediction: pubm 0.479 + 0.006 +- 0.010 (the neural term's LB share is small: saner added +0.001 at w 0.25 and +0.004 with
+the 0.75 order, so a much better neural scorer moves ranks 2-25 mostly); rule: >= +0.004 over the slot 1 / 3 pubm mean ->
+adopt SENS in every line (rank and eligible); <= -0.004 -> the neural term's offline gain does not transfer.
 Note on slots 4-5 (built 06:30, workflow wf_0bc0d69b-776): eng3 keeps the original Engine 2 run untouched and RRF-merges our
 stage-1 top 40 into its list at the end of frozen cell 39 (1/(3 + r_eng2) + w/(3 + r_ours), top 40, Engine 2's SMILES for
 shared identities; every Engine 2 reader sees the merged list). Our stage-1 rankers use PeakFormer features (pf_tpu_f), so
