@@ -937,6 +937,12 @@ SUBMISSION READY 400. Max RSS main 7.8 GB / worker 7.0 GB (eng3a commit). Ready 
 - Next lever: our own fragment-feature same-formula reranker (explicit physics evidence, decorrelated from saner / PF /
   GLACIER), trained on our data, offline gate on structure-disjoint val before any Kaggle build.
 
+## PF-x landed (Nov 1, casmi26-pfx-tpu v1): started ~15:00 after ~35 h in the TPU queue; 8 chips, 60,000 / 60,000 steps
+(18,258 s, exit 0, no NaN, no PF_HOURS stop); 25.15M parameters; real-val sum by epoch .8398 / .8429 / .8479 / .8476 / .8476 /
+.8509 (585 structures; tpu_f ended at .8237) -> D3 validity and the real-val guard (>= .818) pass. D3 offline probe vs tpu_f
+(.6461) running (workflow wf_96647317-f22). A GO would only touch our own stage 1 (Engine 2 OURS / eng3), not the public
+neural term.
+
 ## Fragment reranker offline gate (Nov 1 10:00, workflow wf_05f02b1d-b7d; scratchpad fragrr/results.md) -> NOT BUILT
 Our heliosli-style fragment reranker (1-cut / 2-cut / ring-pair fragments matched to peaks; explained intensity, matched
 counts, complementary pairs, neutral losses, rarity weights, within-group z / ranks; LightGBM lambdarank within query x
