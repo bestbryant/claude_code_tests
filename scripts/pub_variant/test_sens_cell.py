@@ -17,6 +17,17 @@ No public / third-party code is executed.
      sha256 mismatch, missing checkpoint, scorer exit 1, failure between the two replaces, budget, wrong pin of
      neural_scores.py, a missing evidence file; no outsider features file (final lists only); input failures of one
      member keep that molecule published.
+  C. SENS_MODE 'swap' (the cell with sens.py's SOURCE_SWAP splices), sens_ensemble_frames: the swapped molecules'
+     neural_score / neural_cos / neural_fp equal the seed's values bit for bit, every other molecule (seed not neural_ok /
+     not finite in any row, published inactive) keeps the published values bit for bit; outside candidates: the seed's
+     values where both scored the row, else the published values (rows of unswapped molecules and molecules absent
+     from the lists untouched); audit columns, sens_members (1 seed / 0 published), stats; swap refuses two extra
+     members; in modes raw / z the swap cell gives exactly the original cell's frames and stats.
+  D. ours_seed_ensemble of the swap cell end to end with the stub (K 2, one seed): files = the seed's scorer output on
+     the swapped molecules, published elsewhere; one bundle / two scorer runs; log lines 'SENS setup | K 2 (published +
+     s) | mode swap', 'SENS seeds | vs published on the swapped lists', 'SENS applied | K 2 | mode swap | ...';
+     fallbacks with the published files byte-identical (SENS 3, two seeds, sha256 mismatch, scorer exit 1, missing
+     checkpoint); the swap cell in raw mode (K 2) writes exactly what the original cell writes.
 """
 import ast
 import contextlib
@@ -30,6 +41,8 @@ import tempfile
 import time
 from pathlib import Path
 
+import importlib.util
+
 import numpy as np
 import pandas as pd
 
@@ -37,11 +50,16 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 CELL = (HERE / 'sens_cell.py').read_text(encoding='utf-8')
 T, W = 0.07, 0.5                     # stand-ins for config temperature / fp_score_weight
+_spec = importlib.util.spec_from_file_location('pub_variant_sens_cell_t', HERE / 'sens.py')
+SENS_PY = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(SENS_PY)    # our generator code (the SOURCE_SWAP splices)
+CELL_SWAP = SENS_PY.cell_source('swap')
+COLS = ('neural_score', 'neural_cos', 'neural_fp')
 
 
-def cell_ns(**g):
+def cell_ns(_cell=None, **g):
     ns = dict(g)
-    exec(compile(CELL, 'sens_cell.py', 'exec'), ns)        # definitions only (our code)
+    exec(compile(_cell or CELL, 'sens_cell.py', 'exec'), ns)        # definitions only (our code)
     return ns
 
 
@@ -323,7 +341,7 @@ def run_driver(tree, **over):
              MODEL_PINS=tree['MODEL_PINS'], MODULE_SHA256=tree['MODULE_SHA256'], NB_T0=time.time(), NEURAL_OK=True,
              OUTSIDERS_OK=True, SENS=5, SENS_MODE='raw', SENS_SEEDS=list(SEEDS), SENS_MAX_SECONDS=600)
     g.update({k: v for k, v in over.items() if not k.startswith('_')})
-    ns = cell_ns(**g)
+    ns = cell_ns(over.get('_cell'), **g)
     if '_os_replace_fail_on' in over:          # make the n-th os.replace inside the cell fail
         real, calls = os, []
 
@@ -459,7 +477,200 @@ def test_driver():
     return out
 
 
+
+# ------------------------------------------------------------------------------------------------- C. swap, pure
+SWAP_SEED = 20263023
+
+
+def test_swap_pure():
+    ens = cell_ns(CELL_SWAP)['sens_ensemble_frames']
+    ens0 = cell_ns()['sens_ensemble_frames']
+    assert CELL_SWAP != CELL and all(CELL.count(old) == 1 and CELL_SWAP.count(new) == 1 for old, new in SENS_PY.SOURCE_SWAP)
+    # raw / z: the swap cell is the original cell (frames and stats identical)
+    for mode in ('raw', 'z'):
+        M, O = frames(np.random.default_rng(5), [('a', 5), ('b', 3), ('c', 2)], 2)
+        M[2].loc[M[2].molecule_id == 'b', 'neural_ok'] = False
+        r0, r1 = ens0(M[0], O[0], M[1:], O[1:], mode, [1, 2]), ens(M[0], O[0], M[1:], O[1:], mode, [1, 2])
+        assert r0[0].equals(r1[0]) and r0[1].equals(r1[1]) and r0[2] == r1[2], mode
+    rng = np.random.default_rng(7)
+    mols = [('m0', 6), ('m1', 5), ('m2', 4), ('m3', 7), ('m4', 3), ('m5', 2), ('m6', 5)]
+    M, O = frames(rng, mols, 1)
+    pub, sd = M
+    # m1: the seed's scorer not neural_ok on one row -> published kept
+    sd.loc[sd.index[sd.molecule_id == 'm1'][2], 'neural_ok'] = False
+    # m2: the seed's neural_cos not finite on one row -> published kept
+    sd.loc[sd.index[sd.molecule_id == 'm2'][0], 'neural_cos'] = np.inf
+    # m3: not processed (placeholders, neural_ok False in both) -> inactive
+    for f in M:
+        f.loc[f.molecule_id == 'm3', 'processed'] = False
+        f.loc[f.molecule_id == 'm3', 'neural_ok'] = False
+        f.loc[f.molecule_id == 'm3', list(COLS)] = 0.0
+    # m4: the published model not neural_ok (the seed is) -> inactive, published kept
+    pub.loc[pub.molecule_id == 'm4', 'neural_ok'] = False
+    # m6: the seed constant on the molecule -> swapped all the same (nothing is z-scored)
+    sd.loc[sd.molecule_id == 'm6', 'neural_score'] = np.float32(1.5)
+    # outsiders: m0 row 1 the seed not ok (-> published), row 2 the published not ok (-> published, untouched);
+    # m5 row 0 the seed's neural_fp nan (-> published); molecule 'zz' absent from the final lists
+    opub, osd = O
+    o0, o5 = opub.index[opub.molecule_id == 'm0'], opub.index[opub.molecule_id == 'm5']
+    osd.loc[o0[1], 'neural_ok'] = False
+    osd.loc[o0[1], 'neural_score'] = np.nan
+    opub.loc[o0[2], 'neural_ok'] = False
+    osd.loc[o5[0], 'neural_fp'] = np.nan
+    O = [pd.concat([f, f.iloc[:2].assign(molecule_id='zz', smiles=['Oz0', 'Oz1'])], ignore_index=True) for f in O]
+    opub, osd = O
+    keep_m, keep_o = pub.copy(), opub.copy()
+    nm, no, st = ens(pub, opub, [sd], [osd], 'swap', [SWAP_SEED])
+    assert pub.equals(keep_m) and opub.equals(keep_o), 'inputs modified'
+    swapped = ('m0', 'm5', 'm6')
+    sw = pub.molecule_id.isin(swapped).to_numpy()
+    for c in COLS:
+        assert nm[c].dtype == np.float64 and no[c].dtype == np.float64
+        got, p64, s64 = nm[c].to_numpy(), pub[c].to_numpy(np.float64), sd[c].to_numpy(np.float64)
+        assert np.array_equal(got[sw], s64[sw]), c                        # the seed's values, bit for bit
+        assert np.array_equal(got[~sw], p64[~sw], equal_nan=True), c      # published, bit for bit
+        assert np.array_equal(nm[f'{c}_published'].to_numpy(), p64, equal_nan=True), c
+    assert np.array_equal(nm[f'neural_score_seed{SWAP_SEED}'].to_numpy(), sd.neural_score.to_numpy(np.float64))
+    assert (nm.sens_members.to_numpy() == np.where(sw, 1, 0)).all()
+    keep = [c for c in pub.columns if c not in COLS]
+    assert nm[keep].equals(pub[keep]) and no[[c for c in opub.columns if c not in COLS]].equals(
+        opub[[c for c in opub.columns if c not in COLS]])
+    # outside candidates, row by row
+    n_seed = n_pub_only = n_kept = 0
+    for j in range(len(opub)):
+        m = opub.molecule_id.iloc[j]
+        ok = [bool(f.neural_ok.iloc[j]) and all(np.isfinite(float(f[c].iloc[j])) for c in COLS) for f in O]
+        if m in swapped and all(ok):
+            want, mem = osd, 1
+            n_seed += 1
+        else:
+            want, mem = opub, 0
+            n_pub_only += int(m in swapped and ok[0])
+            n_kept += int(not (m in swapped and ok[0]))
+        for c in COLS:
+            a, b = float(no[c].iloc[j]), float(np.float64(want[c].iloc[j]))
+            assert a == b or (np.isnan(a) and np.isnan(b)), (m, j, c, a, b)
+        assert no.sens_members.iloc[j] == mem, (m, j)
+    assert (n_seed, n_pub_only, n_kept) == (3 * 3 - 3, 2, 3 * 4 + 2 + 1), (n_seed, n_pub_only, n_kept)
+    assert float(no.neural_score.iloc[o0[2]]) == float(opub.neural_score.iloc[o0[2]])   # published not ok: untouched
+    # stats
+    tops, rhos = [], []
+    for m in swapped:
+        a = pub.neural_score[pub.molecule_id == m].to_numpy(np.float64)
+        b = sd.neural_score[sd.molecule_id == m].to_numpy(np.float64)
+        tops.append(int(np.argmax(a) != np.argmax(b)))
+        if len(a) > 2 and np.ptp(b) > 0:
+            rhos.append(pd.Series(a).rank().corr(pd.Series(b).rank()))
+    assert st['k'] == 2 and st['mode'] == 'swap' and st['molecules'] == 3 and st['kept_not_ok'] == 2 and \
+        st['inactive'] == 2 and st['molecules_total'] == len(mols), st
+    assert st['rows_main'] == 6 + 2 + 5 and st['outsiders'] == n_seed and st['outsiders_published_only'] == n_pub_only \
+        and st['outsiders_kept'] == n_kept and st['rows'] == st['rows_main'] + n_seed, st
+    assert st['top1_changed'] == sum(tops) and st['rho'] == round(float(np.mean(rhos)), 4), (st, tops, rhos)
+    d = st['per_seed'][str(SWAP_SEED)]
+    assert d['molecules'] == 3 and d['top1_agree'] == round(1 - sum(tops) / 3, 4) and d['rho'] == st['rho'], d
+    # a constructed case: the seed's leader differs on 'a' -> changed top1 1, values = the seed's
+    base = pd.DataFrame(dict(molecule_id=['a'] * 3 + ['b'] * 3, smiles=list('xyzuvw'), baseline_rank=[1, 2, 3] * 2,
+                             processed=True, neural_ok=True, neural_cos=0.1, neural_fp=0.2,
+                             neural_score=np.array([3, 2, 1, 3, 2, 1], np.float32)))
+    other = base.assign(neural_score=np.array([0, 9, 1, 3, 1, 2], np.float32), neural_cos=0.3, neural_fp=0.4)
+    nm, no, st = ens(base, None, [other], None, 'swap', ['s'])
+    assert no is None and nm.neural_score.tolist() == [0, 9, 1, 3, 1, 2] and st['top1_changed'] == 1
+    assert np.allclose(nm.neural_cos, np.float64(np.float32(0.3))) and (nm.sens_members == 1).all()
+    # refusals: swap takes exactly one extra member; unknown modes
+    third = other.assign(neural_score=np.float32(1.0))
+    for f, why in ((lambda: ens(base, None, [other, third], None, 'swap', ['s', 't']), 'swap: exactly one extra member'),
+                   (lambda: ens0(base, None, [other], None, 'swap', ['s']), 'mode'),     # the original cell refuses swap
+                   (lambda: ens(base, None, [other], None, 'mean', ['s']), 'mode')):
+        try:
+            f()
+        except AssertionError as e:
+            assert why in str(e), (why, str(e))
+        else:
+            raise AssertionError(f'not refused: {why}')
+    return dict(swapped=list(swapped), outsiders=dict(seed=n_seed, published_only=n_pub_only, kept=n_kept))
+
+
+# ---------------------------------------------------------------------------------------------- D. swap, driver
+def test_swap_driver():
+    out = {}
+    os.environ['INC_PANEL'] = 'set-by-test'
+    with tempfile.TemporaryDirectory() as d:
+        tree = build_tree(Path(d) / 'swap', ckpt_extra={SWAP_SEED: b'fail=m2'})   # seeds decision: GO k 5 raw
+        rep, log, _ = run_driver(tree, _cell=CELL_SWAP, SENS=2, SENS_MODE='swap', SENS_SEEDS=[SWAP_SEED])
+        assert rep['status'] == 'applied' and (rep['k'], rep['mode'], rep['seeds']) == (2, 'swap', [SWAP_SEED]), (rep, log)
+        assert rep['failures'] == 2 and rep['molecules'] == 4 and rep['kept_not_ok'] == 1 and rep['inactive'] == 1, rep
+        assert list(rep['checkpoints']) == [str(SWAP_SEED)] and rep['checkpoints'][str(SWAP_SEED)]['ok']
+        assert [(r['seed'], r['file']) for r in rep['runs']] == [(SWAP_SEED, 'neural_candidate_features.parquet'),
+                                                                 (SWAP_SEED, 'outsider_neural_features.parquet')]
+        lines = [l for l in log.splitlines() if l.startswith('SENS ')]
+        assert len(lines) == 3, log
+        assert lines[0].startswith(f'SENS setup | K 2 (published + {SWAP_SEED}) | mode swap | source ') and \
+            'sha256 vs final_models_sha256.json 1/1 ok (.sha256 files 1/1)' in lines[0] and \
+            'NOTE: build K 2 mode swap, seeds decision k 5 mode raw' in lines[0], lines[0]
+        assert lines[1].startswith(f'SENS seeds | vs published on the swapped lists | {SWAP_SEED} rho '), lines[1]
+        assert lines[2].startswith('SENS applied | K 2 | mode swap | molecules 4 | rows ') and \
+            '| changed top1 (neural) ' in lines[2] and '| rank corr ' in lines[2] and lines[2].endswith(' s'), lines[2]
+        root = tree['ROOT']
+        assert not list((root / 'sens_work').glob('bundle_*'))
+        assert json.loads((root / 'sens_report.json').read_text())['status'] == 'applied'
+        call = json.loads((root / 'sens_work' / f'neural_candidate_features_seed{SWAP_SEED}.parquet.call.json').read_text())
+        assert call['argv'][0] == str(root / 'sens_work' / f'bundle_{SWAP_SEED}') and call['env']['INC_PANEL'] is None
+        on_ids = ['m0', 'm1', 'm3', 'm4']                    # m2: the seed's input failure; m5: not processed
+        for name in ('neural_candidate_features', 'outsider_neural_features'):
+            nf = pd.read_parquet(root / f'{name}.parquet')
+            pub = pd.read_parquet(root / 'sens_backup' / f'{name}.parquet')
+            mem = pd.read_parquet(root / 'sens_work' / f'{name}_seed{SWAP_SEED}.parquet')
+            on = nf.molecule_id.isin(on_ids).to_numpy()
+            for c in COLS:
+                assert np.array_equal(nf[c].to_numpy()[on], mem[c].to_numpy(np.float64)[on]), (name, c)
+                assert np.array_equal(nf[c].to_numpy()[~on], pub[c].to_numpy(np.float64)[~on]), (name, c)
+                assert np.array_equal(nf[f'{c}_published'].to_numpy(), pub[c].to_numpy(np.float64)), (name, c)
+            assert np.array_equal(nf[f'neural_score_seed{SWAP_SEED}'].to_numpy(), mem.neural_score.to_numpy(np.float64))
+            assert (nf.sens_members.to_numpy() == np.where(on, 1, 0)).all(), name
+            assert nf[[c for c in pub.columns if c not in COLS]].equals(pub[[c for c in pub.columns if c not in COLS]])
+            assert not np.array_equal(nf.neural_score.to_numpy()[on], pub.neural_score.to_numpy(np.float64)[on])
+        out['applied'] = {k: rep[k] for k in ('molecules', 'rows', 'top1_changed', 'rho', 'outsiders', 'kept_not_ok')}
+        out['line'] = lines[2]
+        # the swap cell in raw mode, K 2: exactly what the original cell writes
+        res = {}
+        for which, cell in (('original', None), ('swap_cell', CELL_SWAP)):
+            tr = build_tree(Path(d) / f'raw_{which}')
+            rep, log, _ = run_driver(tr, _cell=cell, SENS=2, SENS_MODE='raw', SENS_SEEDS=[SWAP_SEED])
+            assert rep['status'] == 'applied', (which, rep)
+            res[which] = (pd.read_parquet(tr['ROOT'] / 'neural_candidate_features.parquet'),
+                          pd.read_parquet(tr['ROOT'] / 'outsider_neural_features.parquet'),
+                          [l.rsplit(' | ', 1)[0] if l.startswith('SENS applied') else l      # seconds dropped
+                           for l in log.splitlines() if l.startswith('SENS ') and not l.startswith('SENS setup')])
+        a, b = res['original'], res['swap_cell']
+        assert a[0].equals(b[0]) and a[1].equals(b[1]) and a[2] == b[2], (a[2], b[2])
+        assert len(a[2]) == 2 and a[2][0].startswith('SENS seeds | vs published on the ensembled lists |') and \
+            a[2][1].startswith('SENS applied | K 2 | mode raw |'), a[2]
+        # fallbacks: the published files stay byte for byte
+        cases = [('SENS 3', dict(SENS=3, SENS_SEEDS=[20262023, SWAP_SEED]), 'ONE extra seed'),
+                 ('two seeds', dict(SENS_SEEDS=[20262023, SWAP_SEED]), 'ONE extra seed'),
+                 ('sha256 mismatch', dict(), 'sha256 differs'),
+                 ('scorer exit 1', dict(), 'neural_scores.py exit 1'),
+                 ('missing checkpoint', dict(SENS_SEEDS=[20269999]), 'not in')]
+        for i, (name, over, why) in enumerate(cases):
+            tr = build_tree(Path(d) / f's{i}', ckpt_extra={SWAP_SEED: b'EXIT1'} if name == 'scorer exit 1' else None)
+            if name == 'sha256 mismatch':
+                tb = json.loads((tr['src'] / 'final_models_sha256.json').read_text())
+                tb[f'final_model_seed{SWAP_SEED}.pt']['file_sha256'] = '1' * 64
+                (tr['src'] / 'final_models_sha256.json').write_text(json.dumps(tb))
+            before = published_bytes(tr)
+            args = dict(dict(SENS=2, SENS_MODE='swap', SENS_SEEDS=[SWAP_SEED]), **over)
+            rep, log, _ = run_driver(tr, _cell=CELL_SWAP, **args)
+            assert rep['status'] == 'fallback_published' and why in rep['error'], (name, rep.get('error'), log)
+            assert published_bytes(tr) == before, name
+            last = log.strip().splitlines()[-1]
+            assert 'WARNING SENS failed, published saner scores kept' in log and \
+                last.startswith(f"SENS fallback_published | K {args['SENS']} | mode swap | molecules 0 | rows 0 |"), last
+            assert not list((tr['ROOT']).glob('*.sens.tmp'))
+            out[name] = rep['error'][:90]
+    os.environ.pop('INC_PANEL', None)
+    return out
+
 if __name__ == '__main__':
-    res = dict(A=test_pure(), B=test_driver())
+    res = dict(A=test_pure(), B=test_driver(), C=test_swap_pure(), D=test_swap_driver())
     print(json.dumps(res, indent=1, default=str))
     print('sens cell tests OK')

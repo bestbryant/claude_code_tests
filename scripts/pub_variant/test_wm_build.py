@@ -25,7 +25,8 @@ read as text, and the generator (our code) is run into temporary directories.
      consensus.py orders rank 1 by w_top and ranks 2-25 by w_mid (leader_safe_order); the final layer reads
      variants/submission_CUSTOM.csv;
   --regen: every existing pub-variant slug (all 15 kernels/ dirs with the ISO cell) regenerated with git HEAD's scripts/
-     and with the working ones into throwaway folders, byte-compared (stdout too), and compared with kernels/<slug>.
+     and with the working ones into throwaway folders, byte-compared (stdout too), and compared with kernels/<slug>; the
+     SENS swap kernels (SWAP, test_sens_swap_build.py) too once git HEAD's sens.py has the swap mode.
 """
 import ast
 import copy
@@ -63,6 +64,12 @@ EXISTING = dict(TSB.EXISTING, **{'casmi26-pube1-sens': ['ELIG=1'] + SENS5 + PUBM
                                  'casmi26-pubm-eng3a-sens': ['ENG3_W=1.0'] + SENS5 + PUBM})
 WM100 = 'casmi26-pubm-sens-wm100'
 WM100_ARGS = SENS5 + ['CUSTOM_W_MID=1.0', 'MIDX_NEURAL_W=1.0'] + PUBM
+SWAP = {  # SENS_MODE swap (seed-swap placebo, docs/plan.md NOV 3 SLOTS; checked by test_sens_swap_build.py)
+    'casmi26-pubm-swap1': ['SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM,
+    'casmi26-pubm-swap2': ['SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20263023]'] + PUBM,
+    'casmi26-pube1-swap1': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM,
+    'casmi26-pube1-swap2': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20263023]'] + PUBM}
+SWAP_MODES = "MODES = ('raw', 'z', 'swap')"            # the sens.py line that marks a generator with the swap mode
 BUILDS = {  # slug: (args, base slug, base args, w_top, w_mid, midx_w, elig)
     WM100: (WM100_ARGS, 'casmi26-pubm-sens', SENS5 + PUBM, 0.25, 1.0, 1.0, False),
     'casmi26-zz-midonly': (SENS5 + ['CUSTOM_W_MID=1.0'] + PUBM, 'casmi26-pubm-sens', SENS5 + PUBM, 0.25, 1.0, None, False),
@@ -342,6 +349,8 @@ def regen(out_head, out_work, extra=None):
         os.symlink(os.path.join(REPO, 'kernels'), os.path.join(root, 'kernels'))
         head_gen = os.path.join(root, 'scripts', 'make_pub_variant.py')
         todo = dict(EXISTING, **(extra if os.path.isfile(os.path.join(root, 'scripts', 'pub_variant', 'wm.py')) else {}))
+        if SWAP_MODES in open(os.path.join(root, 'scripts', 'pub_variant', 'sens.py'), encoding='utf-8').read():
+            todo.update(SWAP)
         for slug, args in todo.items():
             rc1, o1 = gen(slug, args, out_head, head_gen)
             rc2, o2 = gen(slug, args, out_work)
@@ -363,7 +372,7 @@ def main():
     pub = {s for s in os.listdir(os.path.join(REPO, 'kernels'))
            if os.path.isfile(os.path.join(REPO, 'kernels', s, 'notebook.ipynb')) and
            'ours-iso-rerank' in open(os.path.join(REPO, 'kernels', s, 'notebook.ipynb'), encoding='utf-8').read()}
-    assert pub - {WM100} == set(EXISTING), sorted(pub ^ set(EXISTING))          # every existing pub variant covered
+    assert pub - {WM100} - set(SWAP) == set(EXISTING), sorted((pub - set(SWAP)) ^ set(EXISTING))   # every pub variant
     with tempfile.TemporaryDirectory() as d:
         bases = {b: a for _, (_, b, a, *_r) in BUILDS.items()}
         for slug, args in list(bases.items()) + [(s, v[0]) for s, v in BUILDS.items()]:

@@ -25,7 +25,7 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   1 / (3 + r_engine2) + w / (3 + r_ours) (eng3_merge.py), read by every later reader of Engine 2, e.g.
   python scripts/make_pub_variant.py casmi26-pubm-eng3a ENG3_W=1.0 OURS=False PF_MID_W=0 ISO_ALPHA=0
   SENS=K (K = ensemble size incl. the published saner model, 2..5; default 0 = off; not with ELIG=0, and OURS = False,
-  PF_MID_W = ISO_ALPHA = 0 for now; with ELIG=1 or ENG3_W it is added to that build) [SENS_MODE=raw|z, default raw]
+  PF_MID_W = ISO_ALPHA = 0 for now; with ELIG=1 or ENG3_W it is added to that build) [SENS_MODE=raw|z|swap, default raw]
   builds the saner seed-ensemble variant
   (scripts/pub_variant/sens.py, sens_cell.py): a new cell after the PF-syn cell, called by the driver cell after
   score_outside_candidates and before build_consensus, scores the final lists and the outside candidates once more per
@@ -38,6 +38,13 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   output, lists it in cell 8's mount check and in the eligibility statement / credits (sens.py), e.g.
   python scripts/make_pub_variant.py casmi26-pube1-sens ELIG=1 SENS=5 SENS_MODE=raw OURS=False PF_MID_W=0 ISO_ALPHA=0
   python scripts/make_pub_variant.py casmi26-pubm-eng3a-sens ENG3_W=1.0 SENS=5 SENS_MODE=raw OURS=False PF_MID_W=0 ISO_ALPHA=0
+  SENS=2 SENS_MODE=swap SENS_SEEDS=[s] (only with SENS=2 and exactly one seed, which has to be named) builds the
+  seed-swap placebo (docs/plan.md NOV 3 SLOTS): the same SENS cell in its swap mode (sens.py SOURCE_SWAP) scores with
+  final_model_seed<s>.pt once and sets neural_score / neural_cos / neural_fp := the seed's own values (no averaging) for
+  every molecule the published model and the seed both scored (processed, neural_ok, finite in every row), on its
+  outside candidates where both scored them; published values otherwise (kept in the audit columns), e.g.
+  python scripts/make_pub_variant.py casmi26-pubm-swap1 SENS=2 SENS_MODE=swap SENS_SEEDS=[20262023] OURS=False PF_MID_W=0 ISO_ALPHA=0
+  python scripts/make_pub_variant.py casmi26-pube1-swap2 ELIG=1 SENS=2 SENS_MODE=swap SENS_SEEDS=[20263023] OURS=False PF_MID_W=0 ISO_ALPHA=0
   CUSTOM_W_TOP=w / CUSTOM_W_MID=w (floats in [0, 2]; defaults 0.25 / 0.75) rewrite only the CUSTOM line of cell 1 (the
   consensus: rank 1 by 1/(3 + b) + w_top/(3 + n), ranks 2-25 by 1/(3 + b) + w_mid/(3 + n)); the default value leaves the
   build unchanged. MIDX_NEURAL_W=w (float in [0, 2]; absent = the midx literal 0.75) adds MIDX_NEURAL_W = w to cell 1 and
@@ -100,8 +107,12 @@ if sens_mode_args and SENS == 0:
     sys.exit('SENS_MODE without SENS: SENS=K (K >= 2) turns the seed ensemble on')
 if SENS != 0 and not 2 <= SENS <= 5:
     sys.exit(f'SENS={SENS}: the ensemble size incl. the published model, 2..5 (0 = off)')
-if SENS_MODE not in ('raw', 'z'):
-    sys.exit(f'SENS_MODE={SENS_MODE!r}: raw or z')
+if SENS_MODE not in ('raw', 'z', 'swap'):
+    sys.exit(f'SENS_MODE={SENS_MODE!r}: raw or z (or swap with SENS=2)')
+if SENS_MODE == 'swap' and SENS != 2:
+    sys.exit(f'SENS_MODE=swap (seed-swap placebo) replaces the published model by ONE extra seed: SENS=2, not {SENS}')
+if SENS_MODE == 'swap' and not any(a.startswith('SENS_SEEDS=') for a in args):
+    sys.exit('SENS_MODE=swap: name the one extra seed, SENS_SEEDS=[s] (e.g. SENS_SEEDS=[20262023])')
 if SENS and ELIG == 0:
     sys.exit('SENS (saner seed ensemble) is not combined with ELIG=0 (null Engine 2) for now: ELIG=1, ENG3_W or neither')
 import importlib.util as _ilu

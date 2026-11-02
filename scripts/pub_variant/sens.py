@@ -1,9 +1,12 @@
 """SENS builds (ours): casmi26-pubm with the saner neural term := a seed ensemble of the published saner recipe.
 
-Called by scripts/make_pub_variant.py SENS=K [SENS_MODE=raw|z] (K = ensemble size incl. the published model, 2..5;
+Called by scripts/make_pub_variant.py SENS=K [SENS_MODE=raw|z|swap] (K = ensemble size incl. the published model, 2..5;
 not with OURS / PF_MID_W / ISO_ALPHA / ELIG=0) after its own structural edits, the ISO cell included, and after
-elig.py (ELIG=1) or eng3.py (ENG3_W) when the build has one of them. Nothing of the notebook is executed; every edit is
-an exact-anchor splice or an inserted cell:
+elig.py (ELIG=1) or eng3.py (ENG3_W) when the build has one of them. SENS=2 SENS_MODE=swap SENS_SEEDS=[s] is the
+seed-swap placebo (docs/plan.md, NOV 3 SLOTS): the one extra seed's neural_score / neural_cos / neural_fp replace the
+published model's, nothing averaged (the cell is sens_cell.py with the SOURCE_SWAP splices; cell 0 / 1, the elig1
+statement, section 5 and the credits say so; every raw / z build is unchanged). Nothing of the notebook is executed;
+every edit is an exact-anchor splice or an inserted cell:
   cell 1            SENS / SENS_MODE / SENS_SEEDS / SENS_MAX_SECONDS lines after the ISO knobs;
   new code cell     scripts/pub_variant/sens_cell.py (id ours-sens-ensemble), right after the PF-syn cell (id pfsyn0001):
                     definitions only, like the PF-syn cell;
@@ -53,7 +56,7 @@ RENUMBER0 = [('the final layer (cell 16) is\n> cell 15 of', 'the final layer (ce
              ('PeakFormer; cell 17 is\n> our ISO isomer reranker.', 'PeakFormer; cell 18 is\n> our ISO isomer reranker.')]
 RENUMBER4 = [('fill\n(cell 16) and, when ISO_ALPHA > 0, the ISO reranker (cell 17);',
               'fill\n(cell 17) and, when ISO_ALPHA > 0, the ISO reranker (cell 18);')]
-MODES = ('raw', 'z')
+MODES = ('raw', 'z', 'swap')    # 'swap': seed-swap placebo (SENS = 2: the one extra seed's scores replace the published)
 
 
 def _line(code, comment):
@@ -61,7 +64,18 @@ def _line(code, comment):
 
 
 def cell1_block(k, mode):
-    assert isinstance(k, int) and 2 <= k <= 1 + len(SEEDS) and mode in MODES, (k, mode)
+    assert isinstance(k, int) and 2 <= k <= 1 + len(SEEDS) and mode in MODES and (mode != 'swap' or k == 2), (k, mode)
+    if mode == 'swap':        # SENS_SEEDS: the build command names the seed (SENS_SEEDS=[s], set after these lines)
+        return ("\n"
+                "# Ours (SENS swap): seed-swap placebo in the neural term (the cell after PF-syn; scripts/make_pub_variant.py\n"
+                "# SENS=2 SENS_MODE=swap SENS_SEEDS=[s]): neural_score / neural_cos / neural_fp of the final lists and the outside\n"
+                "# candidates := those of the ONE refit of the published saner recipe in SENS_SEEDS (final_model_seed<s>.pt of the\n"
+                "# kernel output bryantyu/casmi26-saner-seeds, sha256 checked) in place of the published model's, nothing\n"
+                "# averaged; the published scores where the refit did not score and on any failure.\n"
+                + _line(f'SENS = {k!r}', 'the published model + the one extra seed (swap: always 2)')
+                + _line(f'SENS_MODE = {mode!r}', "'swap': the extra seed's scores replace the published ones (placebo)")
+                + _line(f'SENS_SEEDS = {SEEDS[:1]!r}', 'the one extra seed (swap; named by the build command)')
+                + _line(f'SENS_MAX_SECONDS = {MAX_SECONDS!r}', 'budget of the extra scorings (also stops past 8.0 h of session)'))
     return ("\n"
             "# Ours (SENS): saner seed ensemble in the neural term (the cell after PF-syn; scripts/make_pub_variant.py SENS=K):\n"
             "# neural_score / neural_cos / neural_fp of the final lists and the outside candidates := the ensemble of the\n"
@@ -88,14 +102,70 @@ def check_config(cfg, k):
         return f'SENS_SEEDS {seeds!r}: a list of distinct int seeds without the published {PUBLISHED_SEED}'
     if len(seeds) < k - 1:
         return f'SENS={k} needs {k - 1} extra seeds; SENS_SEEDS has {len(seeds)}'
+    if cfg.get('SENS_MODE') == 'swap' and (k != 2 or len(seeds) != 1):
+        return (f'SENS_MODE swap replaces the published model by ONE extra seed: SENS=2 and SENS_SEEDS=[s] '
+                f'(here SENS={k}, SENS_SEEDS {seeds!r})')
     t = cfg.get('SENS_MAX_SECONDS')
     if isinstance(t, bool) or not isinstance(t, (int, float)) or not t > 0 or t != t or t == float('inf'):
         return f'SENS_MAX_SECONDS {t!r}: a finite number of seconds > 0'
     return None
 
 
-def cell_source():
-    return open(os.path.join(HERE, 'sens_cell.py'), encoding='utf-8').read()
+def cell_source(mode=None):
+    """The inserted cell: sens_cell.py byte for byte ('raw' / 'z'), or with the SOURCE_SWAP splices (mode 'swap')."""
+    src = open(os.path.join(HERE, 'sens_cell.py'), encoding='utf-8').read()
+    return splice(src, SOURCE_SWAP, 'sens cell (swap)') if mode == 'swap' else src
+
+
+# ---- SENS_MODE 'swap' (seed-swap placebo, SENS = 2): the cell's swap path, spliced in only for swap builds so that
+# sens_cell.py (and every raw / z build that carries it verbatim) stays unchanged. Same molecule gate as the ensemble
+# (every row processed, neural_ok and finite for the published model and the seed); the seed's own values, no
+# averaging; outside candidates of a swapped molecule take the seed's values where both scored them, else keep theirs.
+SOURCE_SWAP = [
+    ("#   both modes       neural_cos / neural_fp := means of the members' values (the fragment checks gate on their absolute\n"
+     "#                    differences, so they keep their units; in 'raw' mode the mean score stays cos / T + w fp)\n",
+     "#   'raw' / 'z'      neural_cos / neural_fp := means of the members' values (the fragment checks gate on their absolute\n"
+     "#                    differences, so they keep their units; in 'raw' mode the mean score stays cos / T + w fp)\n"
+     "#   SENS_MODE 'swap' (seed-swap placebo; SENS = 2, one extra seed; scripts/pub_variant/sens.py SOURCE_SWAP):\n"
+     "#                    neural_score / neural_cos / neural_fp := the extra seed's own values, nothing averaged (the\n"
+     "#                    published model's units); a changed molecule's outside candidate takes them when the published\n"
+     "#                    model and the seed both scored it (neural_ok, finite), else keeps its published values;\n"
+     "#                    sens_members 1 = the seed's values, 0 = the published values kept\n"),
+    ("    assert mode in ('raw', 'z'), f'mode {mode!r}'\n",
+     "    assert mode in ('raw', 'z', 'swap'), f'mode {mode!r}'\n"),
+    ("    assert members_main and len(seeds) == len(members_main) and len(set(map(str, seeds))) == len(seeds), seeds\n",
+     "    assert members_main and len(seeds) == len(members_main) and len(set(map(str, seeds))) == len(seeds), seeds\n"
+     "    assert mode != 'swap' or len(members_main) == 1, f'swap: exactly one extra member, not {len(members_main)}'\n"),
+    ("        if mode == 'raw':\n"
+     "            e = s.mean(0)\n",
+     "        if mode == 'swap':                          # the extra seed's own values in place of the published ones\n"
+     "            e = s[1]\n"
+     "            maps[str(mid)] = None\n"
+     "        elif mode == 'raw':\n"
+     "            e = s.mean(0)\n"),
+    ("            new[c][idx] = vals[c][:, idx].mean(0)\n"
+     "        nmem[idx] = K\n",
+     "            new[c][idx] = vals[c][1, idx] if mode == 'swap' else vals[c][:, idx].mean(0)\n"
+     "        nmem[idx] = 1 if mode == 'swap' else K\n"),
+    ("                if zm is None:\n"
+     "                    e, e1 = s.mean(0), s[0]\n",
+     "                if mode == 'swap':                  # the seed's values; not scored by the seed: published, as it is\n"
+     "                    e, e1 = s[1], s[0]\n"
+     "                elif zm is None:\n"
+     "                    e, e1 = s.mean(0), s[0]\n"),
+    ("                cf = {c: vo[c][:, idx].mean(0) for c in ('neural_cos', 'neural_fp')}\n",
+     "                cf = {c: vo[c][1, idx] if mode == 'swap' else vo[c][:, idx].mean(0)\n"
+     "                      for c in ('neural_cos', 'neural_fp')}\n"),
+    ("            nmo[idx[full]] = K\n"
+     "            nmo[idx[alone]] = 1\n",
+     "            nmo[idx[full]] = 1 if mode == 'swap' else K\n"
+     "            nmo[idx[alone]] = 0 if mode == 'swap' else 1\n"),
+    ("        assert mode in ('raw', 'z'), f'SENS_MODE {mode!r}'\n",
+     "        assert mode in ('raw', 'z', 'swap'), f'SENS_MODE {mode!r}'\n"
+     "        assert mode != 'swap' or (K == 2 and len(SENS_SEEDS) == 1), \\\n"
+     "            f'SENS_MODE swap replaces the published model by ONE extra seed: SENS 2, one seed ({K}, {SENS_SEEDS!r})'\n"),
+    ("        print('SENS seeds | vs published on the ensembled lists | ' + ' | '.join(\n",
+     "        print(f\"SENS seeds | vs published on the {'swapped' if mode == 'swap' else 'ensembled'} lists | \" + ' | '.join(\n")]
 
 
 def _note(k, mode, seeds, base='pubm'):
@@ -107,6 +177,21 @@ def _note(k, mode, seeds, base='pubm'):
             'elig1': ("> SENS composes with elig1: our Engine 2 acts inside the frozen pipeline (frozen cells 32 / 39 / 45), before\n"
                       "> its evidence export; the published scorer and SENS then score the exported final lists and outside\n"
                       "> candidates (cell 13: run_public_pipeline, score_final_lists, score_outside_candidates, then SENS).\n")}[base]
+    if mode == 'swap':
+        s = seeds[0]
+        return (f"> **SENS swap (this build: scripts/make_pub_variant.py SENS=2 SENS_MODE=swap SENS_SEEDS=[{s}]).** A placebo\n"
+                "> of the neural term: the published saner model is replaced by ONE refit of its own recipe, seed\n"
+                f"> {s} (final_model_seed{s}.pt, output of our kernel bryantyu/casmi26-saner-seeds: the published\n"
+                "> train.py refit with another seed, sha256 checked against its final_models_sha256.json); nothing is averaged.\n"
+                "> The pinned neural_scores.py scores the final lists and the outside candidates once more with the refit (the\n"
+                "> same inputs and command line as the published scorer, the same model code and config); neural_score /\n"
+                "> neural_cos / neural_fp := the refit's values for every molecule whose rows the published model and the refit\n"
+                "> both scored (processed, neural_ok, finite), and for its outside candidates that both scored; the published\n"
+                "> values otherwise and on any failure (kept as neural_score_published, neural_cos_published and\n"
+                "> neural_fp_published). Everything after it (consensus, fragment check, final layer) is unchanged. PF-syn\n"
+                "> re-weighting (OURS, PF_MID) and ISO are off (OURS = False, ISO_ALPHA = 0), as in "
+                f"{'casmi26-pube1' if base == 'elig1' else 'casmi26-pubm'}.\n"
+                "> Report: sens_report.json and the SENS lines.\n" + tail + ">\n")
     return (f"> **SENS (this build: scripts/make_pub_variant.py SENS={k} SENS_MODE={mode}).** The neural term is a seed\n"
             f"> ensemble of the published saner recipe: the published final_model.pt (seed {PUBLISHED_SEED}) and the refits of\n"
             f"> seeds {', '.join(map(str, seeds))} (final_model_seed<s>.pt, output of our kernel\n"
@@ -129,7 +214,9 @@ ELIG1_TITLE = ('# Eligible fork elig1 · Variant M core + midx final layer, our 
 
 
 def _elig1_statement(k, mode, seeds):
-    """Splices of elig.md0_elig1(False) (the eligibility statement) for elig1 + SENS."""
+    """Splices of elig.md0_elig1(False) (the eligibility statement) for elig1 + SENS (mode 'swap': _elig1_swap)."""
+    if mode == 'swap':
+        return _elig1_swap(seeds)
     sl = ', '.join(map(str, seeds))
     bullet = (
         "> - **SENS, the saner seed ensemble (not one of the fixes; cell 12).** The neural term averages the published\n"
@@ -178,13 +265,65 @@ def _elig1_statement(k, mode, seeds):
          "> bit-exactly from train.parquet). The SENS refits come from the same code, config and data with other seeds.\n")]
 
 
+def _elig1_swap(seeds):
+    """_elig1_statement for SENS_MODE 'swap' (one seed): the same anchors, the swap's wording."""
+    assert len(seeds) == 1, seeds
+    s = seeds[0]
+    bullet = (
+        "> - **SENS swap, the saner seed-swap placebo (not one of the fixes; cell 12).** The neural term is that of our refit\n"
+        f">   of the published saner recipe with seed {s} (final_model_seed{s}.pt) from the output of our kernel\n"
+        ">   bryantyu/casmi26-saner-seeds, attached as a kernel source (kernel-metadata.json kernel_sources, not a dataset),\n"
+        f">   in place of the published final_model.pt (seed {PUBLISHED_SEED}, sanpier/casmi-spectrum-model-v1, which still\n"
+        ">   scores first: its values stay in the audit columns and wherever the refit did not score); the SENS note below\n"
+        ">   gives the rule. The refit has the eligibility status of the published final_model.pt: casmi26-saner-seeds ran\n"
+        ">   sanpier's published train.py / prepare.py / model.py / features.py (Apache-2.0) with the published config.json\n"
+        ">   and only the seed changed (plus F7's one-line normalized_smiles alias of prepare.py), on train.parquet only: it\n"
+        ">   mounts sanpier/casmi-spectrum-model-v1, metric/rdkit-2026-3-3-wheel and the competition data, nothing else. F7\n"
+        ">   retrained the published model bit-exactly with the same code (kernels/casmi26-saner-repro), and\n"
+        ">   casmi26-saner-seeds' own refit of the published seed is bit-exact as well (so is its seed-20262023 holdout\n"
+        ">   model against F7's run of that seed). Cell 12 takes the refit only from the folder where Kaggle mounts that\n"
+        ">   kernel output (/kaggle/input/notebooks/bryantyu/casmi26-saner-seeds first; /kaggle/input/casmi26-saner-seeds\n"
+        ">   in the older flat layout), not from any other mount, and checks the file's SHA-256 against its\n"
+        ">   final_models_sha256.json; any failure keeps the published scores.\n")
+    swap = {
+        ELIG1_TITLE: ('# Eligible fork elig1 + SENS swap · Variant M core + midx final layer, our stage 1 as Engine 2, saner '
+                      f'seed swap (seed {s} in place of the published model: placebo), upstream datasets only\n'),
+        "> **Eligibility build elig1** (scripts/make_pub_variant.py with ELIG=1; the audit":
+            f"> **Eligibility build elig1 + SENS swap** (scripts/make_pub_variant.py with ELIG=1 SENS=2 SENS_MODE=swap "
+            f"SENS_SEEDS=[{s}]; the audit",
+        "elig0 (casmi26-pube0) with fix F2b in place of F2a. Changed against\n> casmi26-pubm:":
+            "elig0 (casmi26-pube0) with fix F2b in place of F2a, plus the saner seed\n"
+            "> swap SENS (a placebo, not a fix; see below). Changed against casmi26-pubm:",
+        "> - Sections 6 and 8 name the datasets attached here.":
+            bullet + "> - Sections 6 and 8 name the datasets (and the kernel output) attached here.",
+        "casmi26-pube1 is a new kernel with a score of its own.":
+            "casmi26-pube1 and this SENS swap build of it are new\n>   kernels, each with a score of its own.",
+        "training-structure rows under the competition terms (a CC BY label conflicts with that).\n":
+            "training-structure rows under the competition terms (a CC BY label conflicts with that). With SENS, F8 also\n"
+            "> covers the kernel bryantyu/casmi26-saner-seeds (pushed as a private kernel): the attribution and licence of its\n"
+            "> output (sanpier's Apache-2.0 training code; seed refits trained on the competition data, CC BY-NC 4.0).\n"
+            ">\n"
+            "> **Closed since casmi26-pube1:** F7, the saner retrain (Oct 31, kernels/casmi26-saner-repro: sanpier's published\n"
+            "> train.py / prepare.py, with the one-line normalized_smiles alias, retrained the published final_model.pt\n"
+            f"> bit-exactly from train.parquet). The SENS swap refit (seed {s}) comes from the same code, config and data\n"
+            "> with another seed.\n"}
+    edits = _elig1_statement(2, 'raw', seeds)            # the anchors (and the edits swap shares with the ensemble)
+    assert set(swap) <= {old for old, _ in edits}, sorted(set(swap) - {old for old, _ in edits})
+    return [(old, swap.get(old, new)) for old, new in edits]
+
+def _title(k, mode, seeds):
+    """What the SENS build adds to the cell-0 title (bases pubm / eng3)."""
+    return (f'SENS swap: the published saner model replaced by seed {seeds[0]} (placebo)' if mode == 'swap' else
+            f'SENS: saner seed ensemble (K {k}, {mode})')
+
+
 def md0(text, k, mode, seeds, base='pubm', w=None, elig_statement=None):
     """Markdown cell 0 of the SENS build on `base`: 'pubm' (text = the generator's cell 0), 'eng3' (text = eng3.md0's,
     w its weight) or 'elig1' (text = elig.md0_elig1(False) + the generator's cell 0 body; elig_statement = that
     statement)."""
     if base == 'pubm':
         assert text.startswith(TITLE0), text[:80]
-        return (f"# Variant M core + midx final layer + SENS: saner seed ensemble (K {k}, {mode})\n\n"
+        return (f"# Variant M core + midx final layer + {_title(k, mode, seeds)}\n\n"
                 + _note(k, mode, seeds) + splice(text[len(TITLE0):], RENUMBER0, 'cell 0 (sens: cell numbers)'))
     assert text.count(THIS_VERSION) == 1, 'cell 0 layout'
     i = text.index(THIS_VERSION)
@@ -194,7 +333,7 @@ def md0(text, k, mode, seeds, base='pubm', w=None, elig_statement=None):
         assert text.startswith(title), text[:100]
         note3 = text[len(title):i]
         assert note3.startswith('> **ENG3 (this build') and note3.endswith('\n>\n'), note3[-80:]
-        return (title[:-2] + f' + SENS: saner seed ensemble (K {k}, {mode})\n\n' + note3
+        return (title[:-2] + f' + {_title(k, mode, seeds)}\n\n' + note3
                 + _note(k, mode, seeds, 'eng3') + rest)
     assert base == 'elig1' and elig_statement is not None and text[:i] == elig_statement, 'cell 0: the elig1 statement'
     return (splice(elig_statement, _elig1_statement(k, mode, seeds), 'cell 0 (elig1 statement, sens)')
@@ -237,6 +376,9 @@ SOURCE_ELIG1 = [(
     "                                '/kaggle/input/casmi26-saner-seeds): attach it (kernel_sources)')\n")]
 MD5_ELIG1 = [("casmi26-pube1 is a new\nkernel (the eligible fork elig1):",
               "This SENS build of casmi26-pube1 is a new\nkernel (the eligible fork elig1 with the saner seed ensemble):")]
+MD5_ELIG1_SWAP = [("casmi26-pube1 is a new\nkernel (the eligible fork elig1):",
+                   "This SENS swap build of casmi26-pube1 is a new\nkernel (the eligible fork elig1 with one seed refit "
+                   "in place of the published saner model):")]
 MD6_ELIG1 = [("Copy & Edit this notebook (the competition data and the datasets\nattached to this build, listed in section 8, "
               "stay attached).",
               "Copy & Edit this notebook (the competition data, the datasets\nand the kernel output attached to this build, "
@@ -247,20 +389,28 @@ CREDITS_LINEAGE = '\n**Upstream lineage, not attached here.**'
 CREDITS_OURS_TAIL = '(our stage 1, casmi26-elig-assets).'
 
 
-def credits_elig1(seeds):
+def credits_elig1(seeds, mode='raw'):
     """Section 8 splices: the kernel output's table (before the upstream lineage) and our part of the work."""
+    swap = mode == 'swap'
+    use = (f"SENS swap: final_model_seed{seeds[0]}.pt, the refit of the published saner recipe with seed {seeds[0]} "
+           "(published config, another seed) whose scores replace the published model's, and final_models_sha256.json "
+           "(its SHA-256)" if swap else
+           "SENS: final_model_seed<s>.pt, refits of the published saner recipe "
+           f"with seeds {', '.join(map(str, seeds))} (published config, another seed), and final_models_sha256.json "
+           "(their SHA-256)")
     table = ("\n**Kernel output attached to this build** (kernel-metadata.json kernel_sources; read only by the SENS cell, "
              "cell 12):\n\n"
              "| kernel | author | used for | licence |\n|---|---|---|---|\n"
              f"| [{SOURCE_KERNEL}](https://www.kaggle.com/code/{SOURCE_KERNEL}) | us; training code by Saner Turhaner "
-             "(sanpier/casmi-spectrum-model-v1) | SENS: final_model_seed<s>.pt, refits of the published saner recipe "
-             f"with seeds {', '.join(map(str, seeds))} (published config, another seed), and final_models_sha256.json "
-             "(their SHA-256) | code Apache-2.0 (sanpier's published train.py / prepare.py / model.py / features.py, run "
+             f"(sanpier/casmi-spectrum-model-v1) | {use} | code Apache-2.0 (sanpier's published train.py / prepare.py / "
+             "model.py / features.py, run "
              "with F7's one-line normalized_smiles alias); weights trained on train.parquet only (competition data, "
              "CC BY-NC 4.0); kernel pushed private, its licence and attribution are part of F8 |\n")
-    return [(CREDITS_LINEAGE, table + CREDITS_LINEAGE),
-            (CREDITS_OURS_TAIL, CREDITS_OURS_TAIL + " With SENS we also wrote the seed-ensemble cell (cell 12) and\n"
-             "trained its seed refits (casmi26-saner-seeds) with Saner Turhaner's published code.")]
+    ours = (" With SENS swap we also wrote the seed-ensemble cell (cell 12, here in its swap mode)\nand trained its "
+            "seed refit (casmi26-saner-seeds) with Saner Turhaner's published code." if swap else
+            " With SENS we also wrote the seed-ensemble cell (cell 12) and\n"
+            "trained its seed refits (casmi26-saner-seeds) with Saner Turhaner's published code.")
+    return [(CREDITS_LINEAGE, table + CREDITS_LINEAGE), (CREDITS_OURS_TAIL, CREDITS_OURS_TAIL + ours)]
 
 
 def _load_elig():
@@ -269,6 +419,13 @@ def _load_elig():
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)            # our generator code (constants and helpers), not notebook code
     return mod
+
+
+SWAP_RULE = ("swap (seed-swap placebo): neural_score / neural_cos / neural_fp := the one extra seed's own values, nothing "
+             "averaged, for molecules with every row processed, neural_ok and finite for the published model and the seed; "
+             "their outside candidates: the seed's values where both are neural_ok and finite; published values otherwise "
+             "and on any failure (audit columns neural_*_published, neural_score_seed<s>; sens_members 1 = seed, 0 = "
+             "published)")
 
 
 def base_of(cfg):
@@ -297,7 +454,8 @@ def apply(nb, meta, k, mode, cfg):
         drv.index('CONSENSUS_OK, REPORT, MOVES = build_consensus()'), 'driver order'
     cells[i_drv]['source'] = splice(drv, [(DRIVER_ANCHOR, DRIVER_ANCHOR.replace(
         'CONSENSUS_OK, REPORT, MOVES', DRIVER_BLOCK + 'CONSENSUS_OK, REPORT, MOVES'))], 'driver cell (sens)')
-    src = cell_source() if base != 'elig1' else splice(cell_source(), SOURCE_ELIG1, 'sens cell (elig1: kernel output only)')
+    src = cell_source(mode)
+    src = src if base != 'elig1' else splice(src, SOURCE_ELIG1, 'sens cell (elig1: kernel output only)')
     cells.insert(i_pf + 1, {'cell_type': 'code', 'execution_count': None, 'id': CELL_ID,
                             'metadata': {'_kg_hide-input': True, 'jupyter': {'source_hidden': True}}, 'outputs': [],
                             'source': src})
@@ -320,9 +478,10 @@ def apply(nb, meta, k, mode, cfg):
         cells[i8]['source'] = splice(cells[i8]['source'], elig.cell8_kernel_source_edits(meta['kernel_sources']) +
                                      CELL8_ELIG1, f'cell {i8} (elig1 mount check: kernel sources; driver cell number)')
         (i5,), (i6,), (i8c,) = md('## 5. Every submission'), md('## 6. Run it yourself'), md('## 8. Credits')
-        cells[i5]['source'] = splice(cells[i5]['source'], MD5_ELIG1, f'cell {i5} (section 5, elig1 + sens)')
+        cells[i5]['source'] = splice(cells[i5]['source'], MD5_ELIG1_SWAP if mode == 'swap' else MD5_ELIG1,
+                                     f'cell {i5} (section 5, elig1 + sens)')
         cells[i6]['source'] = splice(cells[i6]['source'], MD6_ELIG1, f'cell {i6} (section 6, elig1 + sens)')
-        cells[i8c]['source'] = splice(cells[i8c]['source'], credits_elig1(seeds), f'cell {i8c} (credits, elig1 + sens)')
+        cells[i8c]['source'] = splice(cells[i8c]['source'], credits_elig1(seeds, mode), f'cell {i8c} (credits, elig1 + sens)')
         edited += [i8, i5, i6, i8c]
         e = nb['metadata']['casmi']['elig']
         assert e['level'] == 1 and e['datasets'] == elig.UPSTREAM + elig.ELIG1_DATASETS, e['datasets']
@@ -336,10 +495,11 @@ def apply(nb, meta, k, mode, cfg):
                        '(casmi26-saner-seeds) come from the same code, config and data with other seeds']
     record = dict(
         k=k, mode=mode, published_seed=PUBLISHED_SEED, extra_seeds=seeds, source=f'{SOURCE_KERNEL} (kernel output: '
-        'final_model_seed<s>.pt, final_models_sha256.json)', cell=f'scripts/pub_variant/sens_cell.py (id {CELL_ID}, '
-        f'cell {i_pf + 1})', call=f'driver cell {i_pf + 2} (id {DRIVER_ID}): after ours_pf_blend, before build_consensus',
-        rule=("raw: neural_score := mean of the members' neural_score" if mode == 'raw' else
-              'z: neural_score := mean of the members\' within-molecule z (listed candidates; outsiders the same maps)')
+        'final_model_seed<s>.pt, final_models_sha256.json)', cell='scripts/pub_variant/sens_cell.py'
+        + (' + SOURCE_SWAP' if mode == 'swap' else '') + f' (id {CELL_ID}, cell {i_pf + 1})', call=f'driver cell {i_pf + 2} (id {DRIVER_ID}): after ours_pf_blend, before build_consensus',
+        rule=SWAP_RULE if mode == 'swap' else
+        ("raw: neural_score := mean of the members' neural_score" if mode == 'raw' else
+         'z: neural_score := mean of the members\' within-molecule z (listed candidates; outsiders the same maps)')
         + '; neural_cos / neural_fp := member means; molecules with every row processed, neural_ok and finite for every '
         'member; published values otherwise and on any failure', max_seconds=cfg['SENS_MAX_SECONDS'])
     if base != 'pubm':
@@ -348,7 +508,7 @@ def apply(nb, meta, k, mode, cfg):
             + ' acts inside the frozen pipeline before its evidence export; SENS acts on the neural files scored from '
             'that export (driver cell, after score_final_lists / score_outside_candidates)')
     if base == 'elig1':
-        record.update(cell=record['cell'].replace('sens_cell.py (', 'sens_cell.py + SOURCE_ELIG1 (', 1),
+        record.update(cell=record['cell'].replace(' (id ', ' + SOURCE_ELIG1 (id ', 1),
                       source_rule='only the kernel output: /kaggle/input/notebooks/bryantyu/casmi26-saner-seeds (first) or '
                                   '/kaggle/input/casmi26-saner-seeds (flat layout) (sens_source_dir, SOURCE_ELIG1)',
                       eligibility='seed refits of the published saner recipe (sanpier, Apache-2.0) trained by us on '
