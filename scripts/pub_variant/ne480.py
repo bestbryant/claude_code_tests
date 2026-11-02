@@ -10,6 +10,9 @@ text (the code runs only on Kaggle):
   ENS_BLOCK  around score_final_lists(): the final lists are scored with the public model and with OURS_BUNDLE, then
              neural_score := 0.5 z(public) + 0.5 z(ours) (within-molecule z), neural_cos / neural_fp / neural_std := means,
              neural_ok := both; the outside candidates are then scored with OURS_BUNDLE alone (BUNDLE stays OURS_BUNDLE).
+  FIND_NEW   in materialise_sources() (cell id ac4866c0): bgunshui's fallback when find_bundle sees two bundles with
+             the public pins (the kernel output also carries kit_staged/, a copy of the public kit): the shortest
+             path containing casmi-spectrum-model-v1.
 Kernel source: bgunshui/casmi26-scorer-train-public (kernel-metadata kernel_sources). With ELIG=1 the eligibility cell 8
 counts it as a listed mount (elig.cell8_kernel_source_edits). Not combined with SENS / ENG3_W / OURS (one neural-term
 change at a time).
@@ -22,6 +25,9 @@ ANCHOR_SWAP = 'BUNDLE = materialise_sources()\n'
 ANCHOR_ENS = 'NEURAL_OK = score_final_lists()\n'
 SWAP_BLOCK = '# ---- private-model swap: use our own longer-trained spectrum model ----\ndef _swap_to_ours(base_bundle):\n    """Find our private scorer bundle and use it as the neural scorer.\n\n    Accepts any attached data source that contains final_model.pt + config_used.json\n    (works for a Kaggle dataset or for a kernel output), while ignoring the public\n    kit bundle and the staged copy of it.\n    """\n    import shutil as _s\n    from pathlib import Path as _P\n    _hits = []\n    for _p in _P(\'/kaggle/input\').rglob(\'final_model.pt\'):\n        _par = _p.parent\n        if \'casmi-spectrum-model-v1\' in str(_p) or \'kit_staged\' in str(_p):\n            continue\n        if (_par / \'config_used.json\').is_file() or \'casmi_spectrum_model_ours\' in str(_p) or \'scorer-v2-model\' in str(_p):\n            _hits.append(_p)\n    if not _hits:\n        print(\'OURS: private model not found under /kaggle/input, keeping the public bundle\')\n        return base_bundle\n    _src = _hits[0].parent\n    _dst = _P(\'/kaggle/working/ours_bundle\'); _dst.mkdir(parents=True, exist_ok=True)\n    _s.copy2(_P(base_bundle) / \'model.py\', _dst / \'model.py\')\n    _s.copy2(_P(base_bundle) / \'features.py\', _dst / \'features.py\')\n    _cfg = _src / \'config_used.json\'\n    if _cfg.is_file():\n        _s.copy2(_cfg, _dst / \'config_used.json\')\n    _s.copy2(_P(base_bundle) / \'config.json\', _dst / \'config.json\')\n    _s.copy2(_src / \'final_model.pt\', _dst / \'final_model.pt\')\n    print(\'OURS BUNDLE READY:\', sorted(p.name for p in _dst.iterdir()), \'from\', _src)\n    return str(_dst)\n\n\nPUB_BUNDLE = BUNDLE\nOURS_BUNDLE = _swap_to_ours(PUB_BUNDLE)\nBUNDLE = OURS_BUNDLE\n'
 ENS_BLOCK = "BUNDLE = PUB_BUNDLE\nNEURAL_OK = score_final_lists()\nshutil.copyfile(ROOT / 'neural_candidate_features.parquet', ROOT / 'neural_public.parquet')\nBUNDLE = OURS_BUNDLE\nif score_final_lists():\n    shutil.copyfile(ROOT / 'neural_candidate_features.parquet', ROOT / 'neural_ours.parquet')\n    import pandas as _pd\n    _a = _pd.read_parquet(ROOT / 'neural_public.parquet').set_index(['molecule_id', 'smiles'])\n    _b = _pd.read_parquet(ROOT / 'neural_ours.parquet').set_index(['molecule_id', 'smiles']).reindex(_a.index)\n    def _z(_s):\n        _g = _s.groupby(level=0)\n        return (_s - _g.transform('mean')) / _g.transform(lambda x: x.std(ddof=0)).clip(lower=1e-6)\n    _a['neural_score'] = 0.5 * _z(_a['neural_score'].fillna(0.0)) + 0.5 * _z(_b['neural_score'].fillna(0.0))\n    _a['neural_cos'] = 0.5 * _a['neural_cos'] + 0.5 * _b['neural_cos'].fillna(0.0)\n    _a['neural_fp'] = 0.5 * _a['neural_fp'] + 0.5 * _b['neural_fp'].fillna(0.0)\n    _a['neural_std'] = 0.5 * _a['neural_std'] + 0.5 * _b['neural_std'].fillna(0.0)\n    _a['neural_ok'] = _a['neural_ok'].astype(bool) & _b['neural_ok'].fillna(False).astype(bool)\n    _a.reset_index().to_parquet(ROOT / 'neural_candidate_features.parquet', index=False)\n    print('ENSEMBLE neural = 0.5*z(public) + 0.5*z(ours)', flush=True)\nBUNDLE = OURS_BUNDLE\n"
+FIND_CELL_ID = 'ac4866c0'   # materialise_sources(): its find_bundle call
+FIND_OLD = '    bundle = find_bundle(str(INPUT), ROOT, MODEL_PINS)\n'
+FIND_NEW = "    from pathlib import Path as _BPath\n    def _find_bundle_safe():\n        try:\n            return find_bundle(str(INPUT), ROOT, MODEL_PINS)\n        except AssertionError:\n            _cands = [p.parent for p in _BPath('/kaggle/input').rglob('final_model.pt')\n                      if (p.parent / 'config.json').is_file() and 'casmi-spectrum-model-v1' in str(p)]\n            print('BUNDLE FALLBACK candidates', len(_cands), flush=True)\n            assert _cands, 'public model bundle not found'\n            return str(sorted(_cands, key=lambda p: len(str(p)))[0])\n    bundle = _find_bundle_safe()\n"
 SWAP_SHA256 = None   # filled below
 import hashlib as _h
 SWAP_SHA256 = _h.sha256(SWAP_BLOCK.encode()).hexdigest()
@@ -56,12 +62,15 @@ def apply(nb, meta, cfg, elig=None):
     assert ids.count(DRIVER_ID) == 1, 'driver cell'
     i = ids.index(DRIVER_ID)
     cells[i]['source'] = splice(cells[i]['source'], driver_edits(), 'driver cell (ne480)')
+    assert ids.count(FIND_CELL_ID) == 1, 'materialise_sources cell'
+    j = ids.index(FIND_CELL_ID)
+    cells[j]['source'] = splice(cells[j]['source'], [(FIND_OLD, FIND_NEW)], 'materialise_sources (ne480)')
     t = cells[0]['source']
     head, rest = t.split('\n', 1)
     cells[0]['source'] = head + '\n\n' + MD_NOTE + rest.lstrip('\n')
     assert meta.get('kernel_sources') == [], meta.get('kernel_sources')
     meta['kernel_sources'] = [SOURCE_KERNEL]
-    edited = [0, i]
+    edited = [0, j, i]
     if elig is not None:
         i8 = ids.index('3e2e781f')
         assert '# ── Eligibility (ours, elig1)' in cells[i8]['source'], 'cell 8 (elig1 block)'

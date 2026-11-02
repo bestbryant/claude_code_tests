@@ -2,7 +2,8 @@
 1. every committed NE480 kernel regenerates byte-identically (notebook + kernel-metadata);
 2. the driver cell of the pubm-based NE480 build equals bgunshui/casmi26-480-neural-ensemble's driver cell except our
    guarded PF-syn call (a no-op with OURS = False), when the upstream copy is present locally (read as text only);
-3. NE480 adds exactly one kernel source and touches only the driver cell, cell 0 and (ELIG=1) cell 8 of the base build;
+3. NE480 adds exactly one kernel source and touches only the driver cell, materialise_sources, cell 0 and (ELIG=1)
+   cell 8 of the base build; materialise_sources equals upstream cell 10;
 4. the option refuses SENS / OURS / ELIG=0.
 Nothing of the notebooks is executed."""
 import difflib
@@ -21,6 +22,14 @@ PF_CALL = ['try:', '    PF_REPORT = ours_pf_blend()          # PF-syn joins the 
            'except Exception as _pf_exc:',
            "    print('WARNING PF-SYN wrapper error, saner-only neural term kept:', repr(_pf_exc)[:300], flush=True)",
            "    PF_REPORT = {'status': 'wrapper_error', 'error': repr(_pf_exc)[:300]}"]
+
+
+def _fix(line):
+    """Upstream cell 10 carries cp1251-mojibake box characters; repair a line when it round-trips."""
+    try:
+        return line.encode('cp1251').decode('utf-8')
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return line
 
 
 def gen(slug, args, out):
@@ -55,7 +64,8 @@ def main():
             nb0, meta0 = load(d, base)
             changed = [i for i, (x, y) in enumerate(zip(nb['cells'], nb0['cells'])) if src(x) != src(y)]
             drv = [c.get('id') for c in nb['cells']].index('67514abd')
-            want = sorted([0, drv] + ([[c.get('id') for c in nb['cells']].index('3e2e781f')] if elig else []))
+            ids_ = [c.get('id') for c in nb['cells']]
+            want = sorted([0, drv, ids_.index('ac4866c0')] + ([ids_.index('3e2e781f')] if elig else []))
             assert len(nb['cells']) == len(nb0['cells']) and changed == want, (slug, changed, want)   # 3
             assert meta['kernel_sources'] == ['bgunshui/casmi26-scorer-train-public'] and meta0['kernel_sources'] == []
             assert {k: v for k, v in meta.items() if k not in ('id', 'title', 'kernel_sources')} == \
@@ -66,6 +76,10 @@ def main():
                                                       lineterm='', n=0) if not l.startswith(('---', '+++', '@@'))]
                 assert d_ == ['-'] + ['+' + l for l in PF_CALL], d_
                 print('driver cell = upstream + our PF-syn no-op call')
+                fix = lambda x: '\n'.join(_fix(l) for l in x.split('\n'))
+                fi = ids_.index('ac4866c0')
+                assert fix(src(up['cells'][10])) == src(nb['cells'][fi]), 'materialise_sources = upstream cell 10'
+                print('materialise_sources cell = upstream cell 10 (box characters repaired)')
         for bad in (['NE480=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM, ['NE480=1', 'OURS=True'],
                     ['ELIG=0', 'NE480=1'] + PUBM):                         # 4
             rc, log = gen('zz-bad', bad, d)
