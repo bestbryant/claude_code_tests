@@ -1022,6 +1022,9 @@ kernel output bgunshui/casmi26-scorer-train-public; outsiders scored by the refi
 Both only if VERIFIED by 00:05 (ne480: "OURS BUNDLE READY ... casmi_spectrum_model_ours_v2", "ENSEMBLE neural = 0.5*z(public)
 + 0.5*z(ours)", SUBMISSION READY / submission.csv 400 rows... as the pubm checks; pube1-ne: also "ELIG 1 | F1 datasets mounted
 12 / 12 | kernel sources mounted 1 / 1", ENGINE 2 OURS 12 / 12, no EXTRA MOUNT); else the original slot 4 / 5 kernels.
+casmi26-ne480 v1 VERIFIED (10:49): "OURS BUNDLE READY ... from /kaggle/input/notebooks/bgunshui/casmi26-scorer-train-public/
+casmi_spectrum_model_ours_v2", "BUNDLE FALLBACK candidates 1", "ENSEMBLE neural = 0.5*z(public) + 0.5*z(ours)", SUBMISSION
+READY 400, MERGE applied 400, Exact V2 control d70577d4c045f90a; no Traceback / WARNING.
 casmi26-pube1-ne v2 VERIFIED (10:47): "ELIG 1 | F1 datasets mounted 12 / 12 | kernel sources mounted 1 / 1 | detached ones
 present: none | extra mounts: none"; ENGINE 2 OURS 12 / 12 (fallback 0, 235 s, key check 471 / 0 mismatches); "OURS BUNDLE
 READY ... from /kaggle/input/notebooks/bgunshui/casmi26-scorer-train-public/casmi_spectrum_model_ours_v2"; "BUNDLE FALLBACK
