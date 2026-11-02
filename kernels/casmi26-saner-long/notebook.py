@@ -40,8 +40,13 @@ STEPS. Each step prints 'SEEDS CHECK <name>: OK | FAIL | INFO {...}'. The full r
       epoch 1, epoch 52 = 0.6602795453044211 within 1e-6, and the full 56-epoch history as extra detail; same seed, data
       and code, but ours continues past epoch 56). Each completed holdout model is then scored with train.validate's
       metric (MRR@25 with pessimistic ties, top-1, recall@25), and the configuration table is recomputed.
- 7.   Configurations on the published holdout. A paired bootstrap (5,000 query resamples, shared by all comparisons) puts
-      every row against published16, long_20261023, ahmed_long and the mean of its own members:
+      Selection optimism of the singles: a long model (and ahmed_long) is its best_validation_model.pt, the epoch with the
+      highest diagnostic MRR@25 on these same 1,000 queries (published16 is its last epoch, still rising). So 'long_<s>
+      vs published16' is biased up and 'ensemble vs long_<s>' biased down, beyond the bootstrap CI. Each long single also
+      reports history_mrr25_best_pm2 (mean training-time diagnostic MRR@25 over epochs best-2..best+2), a less biased value.
+ 7.   Configurations on the published holdout. A paired bootstrap (5,000 query resamples, shared by all comparisons,
+      including the CI of the 'SEEDS EVAL single' lines) puts every row against published16, long_20261023, ahmed_long and
+      the mean of its own members:
       (a) singles; (b) our long seeds k = 2, 3 (raw, z); (c) published16 + one long model (each seed and ahmed_long), z
       0.5/0.5; (d) published16 + our long seeds, z, equal weights and 0.5 / 0.5 (published / mean of the long seeds);
       (e) ahmed_long + each seed (raw, z); all-long = ahmed_long + our seeds (raw, z); published16 + all-long (z, equal
@@ -52,25 +57,33 @@ STEPS. Each step prints 'SEEDS CHECK <name>: OK | FAIL | INFO {...}'. The full r
       gold labels. It is rewritten after every member.
  8.   Full refit for each completed long holdout: train_stage(refit=True, epochs = that seed's holdout best_epoch) =
       train.run's second call (seed s + 1). Saved as /kaggle/working/final_model_long<s>.pt with .sha256, and listed in
-      final_models_sha256.json (file + state-dict sha256).
+      final_models_sha256.json (file + state-dict sha256). A refit that cannot finish inside its soft deadline even at
+      the speed of its own holdout (stage.py load time + the holdout's per-epoch training seconds of epochs 1..best) is
+      skipped with a FAIL check instead of burning its timeout.
  9.   Contaminated diagnostics of the finals. They were trained on the validation molecules, so this is a sanity check,
       not a quality number: Spearman to the same seed's long holdout model, contaminated MRR@25, and agreement with the
       published final_model.pt (scored from the bundle, not copied). No refit-parity run and no copy of the published
-      final (casmi26-saner-seeds showed both). At the end, the stage checkpoints (sha256 kept in the report) and the
-      training cache are deleted, and the output size is checked (< 50 MB).
+      final (casmi26-saner-seeds showed both). At the end the stage checkpoints (sha256 kept in the report) and the
+      training cache are deleted, EXCEPT a long holdout's best_validation_model.pt when that seed has no published final
+      or the model is missing from holdout_scores.npz: it is kept as /kaggle/working/holdout_model_long<s>.pt (+ .sha256,
+      report 'kept_holdout_models'). The output size is checked (< 50 MB, kept holdout models counted separately).
 OUTPUTS. final_model_long<s>.pt (+ .sha256) per refit, final_models_sha256.json, seeds_report.json, holdout_scores.npz,
-holdout_scores.json; small logs / configs / histories under saner_long/.
-BUDGET. 8.5 h in total. A step starts only if its hard timeout still fits: prepare 120 min, each long holdout 50 min, each
-refit 45 min, plus 8 min reserved for the summary. Training stops itself 4 min before the hard kill (train_stage's own
-deadline). The third long holdout also keeps room for the refits of the seeds already trained. A holdout stopped by that
-deadline keeps its best epoch so far and IS used, flagged time_stopped (SEEDS_USE_TIME_STOPPED_HOLDOUT=0 restores the
-seeds kernel's rule: reported, not used). A refit stopped that way is never published. Order: prepare, the three long
+holdout_scores.json, holdout_model_long<s>.pt (+ .sha256) only on the failure paths above; small logs / configs /
+histories under saner_long/.
+BUDGET. 8.5 h in total. A step starts only if its hard timeout still fits: prepare 120 min, each long holdout 60 min (soft
+deadline 56 min), each refit 55 min (soft 51 min), plus 8 min reserved for the summary. Training stops itself 4 min before
+the hard kill (train_stage's own deadline). The third long holdout also keeps room for the refits of the seeds already
+trained. Worst case with every hard timeout: 120 + 3 x 60 + 3 x 55 + 8 = 473 min. A holdout stopped by that deadline keeps
+its best epoch so far and IS used, flagged time_stopped (SEEDS_USE_TIME_STOPPED_HOLDOUT=0 restores the seeds kernel's rule:
+reported, not used); its refit has no validation and ~1.6 min less loading, so it fits the 51 min soft deadline unless
+the GPU needs > ~63 s of training per epoch. A refit stopped that way is never published. Order: prepare, the three long
 holdouts with evaluation, summary, refits, finals sanity.
-EXPECTED on a T4. Prepare ~45 min (structure memo + prepare). Each long holdout <= ~40 min: casmi26-saner-seeds v1 measured
+EXPECTED on a T4. Prepare ~45 min (structure memo + prepare). Each long holdout <= ~45 min: casmi26-saner-seeds v1 measured
 ~2.6 min of data loading + ~20.9 s per epoch (16.6 s training + 4.3 s validation). Early stopping around epochs 60-90 gives
-~24-34 min; all 120 epochs would take ~44 min, still inside the 46 min soft deadline. Each refit <= ~35 min (~1 min loading
-+ ~16.7 s per epoch: ~18-27 min for best epochs 60-90, 32 min at 112). Evaluation ~1 min per member. Total ~3.5 h
-expected, ~4.6 h at the worst-case epochs.
+~24-34 min; all 120 epochs would take ~44.4 min, inside the 56 min soft deadline (up to ~22.4 s of training per epoch).
+Each refit <= ~35 min (~1 min loading + ~16.7 s per epoch: ~18-27 min for best epochs 60-90, 34.4 min at 120; fits the
+51 min soft deadline up to ~25 s per epoch). Evaluation ~1 min per member. Total ~3.5 h expected, ~4.8 h at the worst-case
+epochs (45 + 3 x 44.4 + 3 x 34.4 + ~5 min).
 """
 import difflib, gc, hashlib, importlib.metadata, json, os, shutil, signal, subprocess, sys, threading, time, traceback
 from pathlib import Path
@@ -104,7 +117,9 @@ FINISH_RESERVE_MIN = _env_num('SEEDS_FINISH_RESERVE_MIN', 8.)
 SELFTEST_TIMEOUT_MIN = 10.
 PREP_TIMEOUT_MIN = _env_num('SEEDS_PREP_TIMEOUT_MIN', 120.)  # structure memo + prepare (seeds v1: 41 min)
 HOLDOUT_TIMEOUT_MIN = _env_num('SEEDS_HOLDOUT_TIMEOUT_MIN', 60.)  # per long seed (<= 120 epochs ~44-47 min + load; 60 keeps a margin)
-REFIT_TIMEOUT_MIN = _env_num('SEEDS_REFIT_TIMEOUT_MIN', 45.)      # per long seed (best epoch 112 ~32 min)
+REFIT_TIMEOUT_MIN = _env_num('SEEDS_REFIT_TIMEOUT_MIN', 55.)      # per long seed (best epoch 120 ~34.4 min)
+#   soft 51 min: 120 epochs up to ~25 s/epoch, and the refit of a holdout stopped by its own 56 min soft deadline
+REFIT_LOAD_SEC = 90.          # refit start-up assumed when the holdout's stage.py load_seconds is missing (seeds v1: ~58 s)
 SOFT_MARGIN_MIN = 4.          # train_stage's own deadline ends training this long before the hard kill
 MIN_LONG_HOLDOUTS = 2         # long holdouts that start without keeping room for refits (the k = 2 ensemble)
 USE_TIME_STOPPED_HOLDOUT = _env_num('SEEDS_USE_TIME_STOPPED_HOLDOUT', 1.) == 1
@@ -510,7 +525,8 @@ cfg['seed'] = SEED:
            train_stage seeds it with SEED + 1)
 The deadline is train.run's (holdout_hours / refit_hours of config.json) capped by the kernel's per-step soft limit; a
 stage it stops reports time_budget_exhausted=True. Same process set-up as train.run and as casmi26-saner-repro's seed
-reference (torch threads, then train.Data(cfg))."""
+reference (torch threads, then train.Data(cfg)). load_seconds = start-up time (imports + train.Data), for the kernel's
+refit-time prediction."""
 import json, os, sys, time
 from pathlib import Path
 T_START = time.monotonic()
@@ -529,6 +545,7 @@ if cfg['require_gpu'] and device.type != 'cuda':
     raise RuntimeError('Enable a Kaggle GPU accelerator before training')
 torch.set_num_threads(min(4, os.cpu_count() or 1))
 data = train.Data(cfg)
+LOAD_SECONDS = round(time.monotonic() - T_START, 1)
 refit = STAGE == 'refit'
 hours = cfg['refit_hours'] if refit else cfg['holdout_hours']
 deadline = min(time.monotonic() + hours * 3600, T_START + SOFT_SEC)
@@ -538,7 +555,7 @@ else:
     result = train.train_stage(data, cfg, OUT, device, deadline=deadline)
 result.update(seed=SEED, stage=STAGE, stage_seed=SEED + (1 if refit else 0), epochs_requested=EPOCHS if refit else cfg['epochs'],
               cfg_epochs=cfg['epochs'], cfg_patience=cfg['patience'], process_seconds=round(time.monotonic() - T_START, 1),
-              device=str(device))
+              load_seconds=LOAD_SECONDS, device=str(device))
 (OUT / 'training_result.json').write_text(json.dumps(result, indent=2))
 print('STAGE_RESULT', json.dumps(result), flush=True)
 '''
@@ -691,7 +708,9 @@ def pick_best(rows):
                 d_mrr25_vs={n: v['mrr25'] for n, v in b['vs'].items()}, d_top1_vs={n: v['top1'] for n, v in b['vs'].items()},
                 d_mrr25_vs_mean_member=b['vs_mean_member']['mrr25'] if b['k'] > 1 else None,
                 top5=[dict(config=r['config'], mrr25=r['mrr25']) for r in top], n_configs=len(rows),
-                note='picked on the same 1,000 molecules (selection optimism); CI95: paired bootstrap of per-query MRR@25 '
+                note='picked on the same 1,000 molecules (selection optimism); each long single (and ahmed_long) is also its '
+                     'best-epoch checkpoint picked on these molecules, so differences vs a long single are biased against '
+                     'the ensemble and long singles vs published16 biased up; CI95: paired bootstrap of per-query MRR@25 '
                      'differences, 5,000 query resamples shared by all rows')
 
 
@@ -712,11 +731,14 @@ def best_line(best):
     parts += [f'vs {n} {fmt_d(v)}' for n, v in vs.items() if n not in (PUB, LONG_REF)]
     flag = '' if best.get('ahmed_split_verified') in (None, True) else ' | WARNING ahmed_long split not verified'
     return (f"SEEDS SUMMARY best {best['config']} mrr {best['mrr25']:.5f} top1 {best['top1']:.4f} recall25 {best['recall25']:.4f}"
-            f" | {' | '.join(parts)} | of {best['n_configs']} configurations (picked on this set){flag}")
+            f" | {' | '.join(parts)} | of {best['n_configs']} configurations (picked on this set; long singles are "
+            f"best-epoch picks on it too){flag}")
 
 
-def pair_stats(sa, sb, qs, seed=0):
-    """Agreement of two checkpoints on the same candidate sets (scores: {query: per-candidate array, gold first})."""
+def pair_stats(sa, sb, qs, idx=None):
+    """Agreement of two checkpoints on the same candidate sets (scores: {query: per-candidate array, gold first}).
+    idx: bootstrap index (default boot_index(len(qs)) = BOOT resamples, BOOT_SEED: the configuration table's index, so the
+    CI of a pair equals the CI of the matching single row when both use the same queries)."""
     import numpy as np
     from scipy.stats import spearmanr
     sp, t1, ov = [], [], []
@@ -728,11 +750,13 @@ def pair_stats(sa, sb, qs, seed=0):
         ov.append(len(set(ka.tolist()) & set(kb.tolist())) / min(25, len(a)))
     ra, rb = ranks_from_scores(sa, qs), ranks_from_scores(sb, qs)
     d = mrr_vec(rb) - mrr_vec(ra)
-    bt = boot_diff(d, boot_index(len(d), 2000, seed))
+    idx = boot_index(len(d)) if idx is None else idx
+    bt = boot_diff(d, idx)
     return dict(n_queries=len(qs), spearman_per_query_mean=float(np.nanmean(sp)), spearman_per_query_median=float(np.nanmedian(sp)),
                 top1_candidate_agreement=float(np.mean(t1)), top25_overlap_mean=float(np.mean(ov)),
                 gold_rank_identical=float(np.mean(ra == rb)), mrr25_a=float(mrr_vec(ra).mean()), mrr25_b=float(mrr_vec(rb).mean()),
-                mrr25_b_minus_a=bt['diff'], mrr25_diff_ci95=bt['ci95'])
+                mrr25_b_minus_a=bt['diff'], mrr25_diff_ci95=bt['ci95'], mrr25_diff_p_gt0=bt['p_gt0'],
+                bootstrap_resamples=int(len(idx)))
 
 
 def prefix_compare(ours, ref):
@@ -897,6 +921,11 @@ class Evaluator:
             self._idx[n] = boot_index(n)
         return self._idx[n]
 
+    def pair(self, a, b):
+        """pair_stats(a, b) on their common queries with the shared bootstrap index (same CI as the configuration table)."""
+        qs = self.common_qs([a, b])
+        return pair_stats(self.scores[a], self.scores[b], qs, self.idx(len(qs)))
+
     def score(self, name, path, contaminated=False, parity=True):
         import torch
         obj = torch.load(path, map_location='cpu', weights_only=True)
@@ -971,7 +1000,7 @@ class Evaluator:
             return None
         tr = read_json(A / 'training_result.json') or {}
         pqc = self.per_query_compare(AHMED, A / 'validation_predictions.csv')
-        ps = pair_stats(self.scores[PUB], self.scores[AHMED], self.common_qs([PUB, AHMED]))
+        ps = self.pair(PUB, AHMED)
         split_ok = None if pqc is None else bool(pqc['keys_identical'])
         REPORT['ahmed_split_verified'] = split_ok
         meta.update(vs_published16=ps, training_result=tr, per_query_vs_his_predictions=pqc)
@@ -989,7 +1018,8 @@ class Evaluator:
                    'tiny differences are possible')
         REPORT['holdout'][AHMED] = dict(source=f'{AHMED_INFO["dataset"]} best_validation_model.pt ({A})', result=tr, eval=meta)
         log(f"SEEDS EVAL single {AHMED} mrr {meta['mrr25']:.5f} top1 {meta['top1']:.4f} recall25 {meta['recall25']:.4f} | "
-            f"d_mrr vs {PUB} {ps['mrr25_b_minus_a']:+.4f} [{ps['mrr25_diff_ci95'][0]:+.4f}, {ps['mrr25_diff_ci95'][1]:+.4f}] | "
+            f"d_mrr vs {PUB} {ps['mrr25_b_minus_a']:+.4f} [{ps['mrr25_diff_ci95'][0]:+.4f}, {ps['mrr25_diff_ci95'][1]:+.4f}] "
+            f"P>0 {ps['mrr25_diff_p_gt0']:.3f} | "
             f"spearman vs {PUB} {ps['spearman_per_query_mean']:.4f} top1-agree {ps['top1_candidate_agreement']:.3f} | "
             f"checkpoint epoch {meta['epoch']} | readme 0.718 | split verified {split_ok}")
         self.add_member(AHMED, f"{AHMED_INFO['dataset']} best_validation_model.pt ({AHMED_INFO['epochs']} x "
@@ -1000,21 +1030,30 @@ class Evaluator:
     def add_holdout(self, h):
         name = h['name']
         meta = self.score(name, h['path'])
-        ps = pair_stats(self.scores[PUB], self.scores[name], self.common_qs([PUB, name]))
-        ref = None
-        if LONG_REF in self.scores and name != LONG_REF:
-            ref = pair_stats(self.scores[LONG_REF], self.scores[name], self.common_qs([LONG_REF, name]))
+        ps = self.pair(PUB, name)
+        ref = self.pair(LONG_REF, name) if LONG_REF in self.scores and name != LONG_REF else None
         res = h.get('result') or {}
         train_mrr = res.get('best_diagnostic_mrr25')
+        # Selection optimism: best_epoch is the argmax of this same diagnostic MRR@25 on these 1,000 queries. The mean of
+        # the training-time values over epochs best-2..best+2 (full epochs only) is a less biased single-model estimate.
+        hm = history_map(Path(h['dir']) / 'training_history.json')
+        be = res.get('best_epoch') or 0
+        win = [hm[e] for e in range(be - 2, be + 3) if e in hm] if be else []
         meta.update(vs_published16=ps, vs_long_ref=ref, train_time_mrr25=train_mrr,
-                    train_eval_parity_abs_diff=None if train_mrr is None else abs(train_mrr - meta['mrr25']))
+                    train_eval_parity_abs_diff=None if train_mrr is None else abs(train_mrr - meta['mrr25']),
+                    history_mrr25_best_pm2=float(sum(win) / len(win)) if win else None, history_best_pm2_epochs=len(win),
+                    selection_note='best-epoch checkpoint picked by diagnostic MRR@25 on these same queries (optimistic); '
+                                   'history_mrr25_best_pm2 = mean diagnostic MRR@25 over epochs best-2..best+2')
         REPORT['holdout'][name]['eval'] = meta
         log(f"SEEDS EVAL single {name} mrr {meta['mrr25']:.5f} top1 {meta['top1']:.4f} recall25 {meta['recall25']:.4f} | "
-            f"d_mrr vs {PUB} {ps['mrr25_b_minus_a']:+.4f} [{ps['mrr25_diff_ci95'][0]:+.4f}, {ps['mrr25_diff_ci95'][1]:+.4f}] | "
+            f"d_mrr vs {PUB} {ps['mrr25_b_minus_a']:+.4f} [{ps['mrr25_diff_ci95'][0]:+.4f}, {ps['mrr25_diff_ci95'][1]:+.4f}] "
+            f"P>0 {ps['mrr25_diff_p_gt0']:.3f} | "
             f"spearman vs {PUB} {ps['spearman_per_query_mean']:.4f} top1-agree {ps['top1_candidate_agreement']:.3f} | "
             + (f"spearman vs {LONG_REF} {ref['spearman_per_query_mean']:.4f} | " if ref else '')
             + f"best_epoch {res.get('best_epoch')} completed {res.get('completed_epochs')} stopped_by {h.get('stopped_by')} | "
-              f"train-time mrr {train_mrr} | validate parity {meta['validate_parity_abs_diff']:.2e}")
+              f"train-time mrr {train_mrr} | best+-2 mean "
+              + (f"{meta['history_mrr25_best_pm2']:.5f}" if win else 'n/a') + f" (n={len(win)}) | "
+              f"validate parity {meta['validate_parity_abs_diff']:.2e}")
         self.add_member(name, f'trained here: published recipe with epochs {LONG_EPOCHS}, patience {LONG_PATIENCE}, seed '
                               f'{h["seed"]} (best epoch {res.get("best_epoch")}, completed {res.get("completed_epochs")}, '
                               f'stopped by {h.get("stopped_by")})')
@@ -1140,7 +1179,7 @@ class Evaluator:
         mat = {}
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
-                st = pair_stats(self.scores[names[i]], self.scores[names[j]], self.common_qs([names[i], names[j]]))
+                st = self.pair(names[i], names[j])
                 mat[f'{names[i]}__{names[j]}'] = dict(spearman=st['spearman_per_query_mean'], top1_agreement=st['top1_candidate_agreement'],
                                                      top25_overlap=st['top25_overlap_mean'])
         REPORT['holdout_pairs'] = mat
@@ -1171,13 +1210,13 @@ class Evaluator:
             row = dict(contaminated_mrr25=meta['mrr25'], contaminated_top1=meta['top1'], state_sha256=meta['state_sha256'])
             ok = None
             if own in self.scores:
-                ps = pair_stats(self.scores[own], self.scores[name], self.common_qs([own, name]))
+                ps = self.pair(own, name)
                 row.update(spearman_to_own_holdout=ps['spearman_per_query_mean'], top1_agreement_to_own_holdout=ps['top1_candidate_agreement'],
                            own_holdout_clean_mrr25=self.meta[own]['mrr25'])
                 ok = (ps['spearman_per_query_mean'] >= FINAL_SANITY['min_spearman_to_own_holdout']
                       and meta['mrr25'] >= FINAL_SANITY['min_contaminated_mrr25'])
             if pubname in self.scores:
-                ps = pair_stats(self.scores[pubname], self.scores[name], self.common_qs([pubname, name]))
+                ps = self.pair(pubname, name)
                 row.update(spearman_to_published_final=ps['spearman_per_query_mean'],
                            top1_agreement_to_published_final=ps['top1_candidate_agreement'],
                            top25_overlap_to_published_final=ps['top25_overlap_mean'])
@@ -1310,16 +1349,46 @@ def publish_final(seed, src, **info):
     return FINALS[seed]
 
 
-def step_refit(seed, epochs):
+def refit_prediction(h, epochs):
+    """Seconds a refit of `epochs` epochs needs at the speed of the seed's own holdout: the holdout's start-up time
+    (stage.py load_seconds: imports + train.Data, as in the refit process) + the training seconds of epochs 1..epochs
+    (train_stage's per-epoch 'seconds', which leave out validation; the refit trains the same steps per epoch;
+    casmi26-saner-seeds: refit 16.7 s vs holdout 16.6 s per epoch). An epoch the history lacks or holds only partially
+    (deadline) counts at the mean of the full epochs. None without a usable history. fits: the prediction is inside the
+    refit's soft deadline."""
+    hist = read_json(Path(h['dir']) / 'training_history.json') or []
+    full = {int(r['epoch']): float(r['seconds']) for r in hist
+            if isinstance(r, dict) and 'epoch' in r and r.get('seconds') is not None and not r.get('partial_epoch')}
+    if not full or not epochs:
+        return None
+    mean = sum(full.values()) / len(full)
+    train = sum(full.get(e, mean) for e in range(1, int(epochs) + 1))
+    load = (h.get('result') or {}).get('load_seconds')
+    load = float(load) if load is not None else REFIT_LOAD_SEC
+    soft = soft_seconds(REFIT_TIMEOUT_MIN)
+    return dict(predicted_min=round((load + train) / 60, 2), train_min=round(train / 60, 2), load_seconds=load,
+                epochs=int(epochs), epochs_measured=len(full), mean_epoch_seconds=round(mean, 2), soft_min=round(soft / 60, 2),
+                fits=load + train <= soft)
+
+
+def step_refit(seed, epochs, h=None):
     t = minutes()
     name = f'long_{seed}'
+    pred = refit_prediction(h, epochs) if h else None
     log(f'== 8. full refit {name} (train_stage refit=True, seed {seed + 1}, {epochs} epochs = the long holdout best_epoch; '
-        f'hard timeout {REFIT_TIMEOUT_MIN} min)')
+        f'hard timeout {REFIT_TIMEOUT_MIN} min; predicted {None if pred is None else pred["predicted_min"]} min)')
+    if pred is not None and not pred['fits']:
+        # It would be stopped by its own deadline and thrown away: keep the GPU time (the holdout model is kept instead).
+        check(f'refit_{name}', False, skipped=True, epochs=epochs, refit_seed=seed + 1, prediction=pred,
+              reason='predicted refit time exceeds its soft deadline at the speed of its own holdout')
+        stamp(f'refit_{name}', t, 'skipped')
+        return False
     out, rc, sec, killed, res = run_stage('refit', name, seed, epochs, REFIT_TIMEOUT_MIN)
     fm = out / 'final_model.pt'
     complete = (rc == 0 and res is not None and fm.is_file() and res.get('completed_epochs') == epochs
                 and not res.get('time_budget_exhausted'))
-    detail = dict(exit=rc, minutes=round(sec / 60, 1), killed=killed, epochs=epochs, refit_seed=seed + 1, result=res)
+    detail = dict(exit=rc, minutes=round(sec / 60, 1), killed=killed, epochs=epochs, refit_seed=seed + 1, result=res,
+                  prediction=pred)
     if complete:
         f = publish_final(seed, fm, epochs=epochs, source=f'refit trained here (published train_stage refit, seed {seed + 1}, '
                                                            f'epochs = holdout best_epoch)', refit_minutes=round(sec / 60, 1))
@@ -1330,6 +1399,51 @@ def step_refit(seed, epochs):
 
 
 # ── finish ──────────────────────────────────────────────────────────────────────────────────────────────────
+def keep_holdout_models():
+    """Long holdout checkpoints that would otherwise be lost. A long holdout's best_validation_model.pt is copied to
+    /kaggle/working/holdout_model_long<s>.pt (+ .sha256) when that seed has no published final (refit failed, stopped,
+    skipped or never run) or when the model is not in holdout_scores.npz (evaluator or scoring failed, or the holdout was
+    not used). Returns ({member: info}, {source paths whose copy failed: never deleted})."""
+    lay = read_json(SCORES_LAYOUT_PATH) or {}
+    scored = set(lay.get('members') or {})        # written after the npz: never lists a member the npz lacks
+    c = REPORT['checks']
+    kept, failed = {}, set()
+    for s in LONG_SEEDS:
+        name = f'long_{s}'
+        src = RW / f'holdout_{name}' / 'best_validation_model.pt'
+        if not src.is_file():
+            continue
+        reasons = ([] if s in FINALS else ['no published final (refit failed, stopped, skipped or not run)']) + \
+                  ([] if name in scored else ['not in holdout_scores.npz'])
+        if not reasons:
+            continue
+        dst = WORKING / f'holdout_model_long{s}.pt'
+        try:
+            shutil.copy2(src, dst)
+            fs = sha256(dst)
+            (WORKING / f'{dst.name}.sha256').write_text(f'{fs}  {dst.name}\n')
+            try:
+                ss = checkpoint_state_sha(dst)
+            except Exception as e:          # e.g. a file cut short by a hard kill: kept anyway, flagged
+                ss = f'unreadable: {e!r}'
+            hc = c.get(f'holdout_{name}') or {}
+            kept[name] = dict(file=dst.name, file_sha256=fs, state_sha256=ss, bytes=dst.stat().st_size, reasons=reasons,
+                              holdout_ok=hc.get('ok'), time_stopped=hc.get('time_stopped'), best_epoch=hc.get('best_epoch'),
+                              completed_epochs=hc.get('completed_epochs'), in_holdout_scores=name in scored,
+                              final_published=s in FINALS,
+                              note='holdout only, no successful refit' if s not in FINALS else
+                                   'refit published; this holdout model is not in holdout_scores.npz')
+        except Exception as e:
+            failed.add(src)
+            REPORT['errors'].append(dict(step=f'keep_{name}', error=repr(e), trace=traceback.format_exc()[-3000:]))
+            log(f'SEEDS ERROR keeping {src}: {e!r} (left in place)')
+    REPORT['kept_holdout_models'] = kept
+    for n, v in kept.items():
+        log(f"SEEDS KEPT {n} -> {v['file']} sha256 {v['file_sha256']} best_epoch {v['best_epoch']} | {'; '.join(v['reasons'])}")
+    save_report()
+    return kept, failed
+
+
 def step_finish(eff):
     stage_dirs = sorted(RW.glob('holdout_*')) + sorted(RW.glob('refit_*'))
     shas = {}
@@ -1337,11 +1451,21 @@ def step_finish(eff):
         shas.update({f'{d.name}/{p.name}': sha256(p) for p in sorted(d.iterdir()) if p.is_file()})
     (RW / 'stage_outputs_sha256.json').write_text(json.dumps(shas, indent=2))
     REPORT['stage_outputs_sha256'] = shas
-    # Output size: the stage checkpoints (sha256 above; the finals are in /kaggle/working, the holdout scores in
-    # holdout_scores.npz) and the whole training cache except data_audit.json are deleted.
+    # Long holdout models without a published final or without holdout scores are copied to /kaggle/working first. If that
+    # step itself fails, no best_validation_model.pt is deleted.
+    try:
+        kept, keep_failed = keep_holdout_models()
+    except Exception as e:
+        REPORT['errors'].append(dict(step='keep_holdout_models', error=repr(e), trace=traceback.format_exc()[-3000:]))
+        log(f'SEEDS ERROR in keep_holdout_models: {e!r}; every best_validation_model.pt is left in place')
+        kept, keep_failed = {}, None
+    # Output size: the stage checkpoints (sha256 above; the finals and kept holdout models are in /kaggle/working, the
+    # holdout scores in holdout_scores.npz) and the whole training cache except data_audit.json are deleted.
     dropped = 0
     for d in stage_dirs:
         for p in sorted(d.glob('*.pt')) + sorted(d.glob('validation_candidates.npz')):
+            if p.name == 'best_validation_model.pt' and (keep_failed is None or p in keep_failed):
+                continue
             dropped += p.stat().st_size; p.unlink()
     REPORT['stage_files_deleted_bytes'] = dropped
     work = Path(eff['work']) if eff else None
@@ -1353,7 +1477,10 @@ def step_finish(eff):
     REPORT['cache_deleted_bytes'] = freed
     files = {str(p.relative_to(WORKING)): p.stat().st_size for p in WORKING.rglob('*') if p.is_file()}
     total = sum(files.values())
-    check('output_size', total <= MAX_OUTPUT_MB * 1e6, megabytes=round(total / 1e6, 2), limit_mb=MAX_OUTPUT_MB, files=len(files),
+    kept_bytes = sum(files.get(v['file'], 0) for v in kept.values())
+    # The limit is for the regular outputs; holdout models kept on a failure path (at most 3 x ~12 MB) are counted apart.
+    check('output_size', total - kept_bytes <= MAX_OUTPUT_MB * 1e6, megabytes=round(total / 1e6, 2),
+          kept_holdout_models_mb=round(kept_bytes / 1e6, 2), limit_mb=MAX_OUTPUT_MB, files=len(files),
           largest=sorted(files.items(), key=lambda x: -x[1])[:8])
     c = REPORT['checks']
     must = ['published_sha256', 'patch', 'config', 'struct_memo', 'prepare_run', 'prepare_data_audit', 'prepare_molecules',
@@ -1367,6 +1494,7 @@ def step_finish(eff):
                              holdouts_ok=hold_ok, time_stopped=[s for s in LONG_SEEDS if c.get(f'holdout_long_{s}', {}).get('time_stopped')],
                              refits_ok=refit_ok, refits_missing=[s for s in hold_ok if s not in refit_ok],
                              final_models=sorted(v['file'] for v in FINALS.values()),
+                             holdout_models_kept=sorted(v['file'] for v in kept.values()),
                              best_config=best.get('config'), best_mrr25=best.get('mrr25'),
                              bgunshui_history=c.get(f'bgunshui_history_{LONG_REF}', {}).get('verdict'),
                              determinism={f'long_{s}': c.get(f'determinism_long_{s}', {}).get('verdict') for s in LONG_SEEDS},
@@ -1381,7 +1509,8 @@ def step_finish(eff):
             vp = e.get('vs_published16')
             log(f"SEEDS SUMMARY single {n} mrr {e['mrr25']:.5f} top1 {e['top1']:.4f} recall25 {e['recall25']:.4f}"
                 + (f" spearman vs {PUB} {vp['spearman_per_query_mean']:.4f}" if vp else '')
-                + (f" best_epoch {hd['best_epoch']} completed {hd.get('completed_epochs')}" if hd.get('best_epoch') else ''))
+                + (f" best_epoch {hd['best_epoch']} completed {hd.get('completed_epochs')}" if hd.get('best_epoch') else '')
+                + (f" best+-2 mean {e['history_mrr25_best_pm2']:.5f}" if e.get('history_mrr25_best_pm2') is not None else ''))
     for r in REPORT.get('ensembles') or []:
         log('SEEDS SUMMARY ' + eval_line(r)[len('SEEDS '):])
     if best:
@@ -1389,6 +1518,8 @@ def step_finish(eff):
     for s, v in sorted(FINALS.items()):
         log(f"SEEDS SUMMARY final long_{s} {v['file']} sha256 {v['file_sha256']} epochs {v.get('epochs')} "
             f"diag {json.dumps(v.get('diagnostics'), default=_js)}")
+    for n, v in kept.items():
+        log(f"SEEDS SUMMARY kept holdout model {n} {v['file']} sha256 {v['file_sha256']} best_epoch {v['best_epoch']} | {v['note']}")
     log(f'SEEDS DONE {minutes()} min; report {REPORT_PATH}; finals {FINALS_PATH}; holdout scores {SCORES_PATH}')
 
 
@@ -1424,7 +1555,7 @@ def main():
         # 8. refits of the long seeds whose holdout completed (published recipe: epochs = that seed's holdout best_epoch)
         for h in done:
             if fits(f'refit_long_{h["seed"]}', REFIT_TIMEOUT_MIN):
-                guarded(f'refit_long_{h["seed"]}', step_refit, h['seed'], int(h['best_epoch']))
+                guarded(f'refit_long_{h["seed"]}', step_refit, h['seed'], int(h['best_epoch']), h)
         # 9. contaminated diagnostics of the final models
         if ev and FINALS:
             guarded('finals', ev.score_finals)
