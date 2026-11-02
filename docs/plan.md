@@ -1054,6 +1054,16 @@ NEURAL SCORER UNDERTRAINED (Nov 2 10:45). The published saner kit (16 x 500 step
   ensembles incl. the published model, per-candidate holdout scores saved) -> K-model z-ensembles for both lines, and
   neural-weight variants (CUSTOM_W_TOP / W_MID / MIDX_NEURAL_W) on public once a stronger term is in.
 
+ENGINE 2 STUDY (Nov 2, docs/engine2_study.md): standalone Engine 2 and our stage 1 are on par (0.333-0.337 vs 0.339-0.348);
+inside the fork Engine 2 is worth +0.085 over the null engine, ours +0.041. Engine 2's library channel (class 1 npx 0.930 vs
+our 0.861) and analog channel (class 2 npx 0.524 vs 0.464) are stronger; our PeakFormer beats its FPNet (0.529 vs 0.493);
+our lists carry documentation features that echo Engine 1 / the final layer. Plan: option R = Engine 2 clone on eligible
+inputs (Engine 2 code Apache-2.0 via cubres; bank = pool v18c with our bit selection; FP channel = PeakFormer; rows =
+replays of our val / rank queries), expected +0.02-0.035 public, LB pair ~Nov 9-10 (task "Engine 2 clone").
+STEP 0 (source-blind Engine 2 OURS, ret_ranker_v18cusb): offline gate FAILED, not deployed - val cls1 0.830 -> 0.783,
+cls2 0.824 -> 0.693, npx cls1 0.816 -> 0.674, npx cls2 0.912 -> 0.661 (gate: npx cls1 within -0.01). Documentation /
+source features carry most of our ranker's npx accuracy; a fork read would confound weaker with less redundant.
+
 Final-pick framing (owner decision, Dec): the plan's rule selects eligible submissions only (pube1 family + our own line as
 insurance); pubm is the best public score but mounts the CC BY-NC-SA container and runs Engine 2 as published.
 
