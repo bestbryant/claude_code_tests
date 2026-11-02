@@ -120,6 +120,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 11-01 | casmi26-pubm-iso075 v1 | slot 3: + PF-syn isomer reranker alpha 0.75, formula scope | 0.474 |
 | 11-01 | casmi26-pubm-pfall v1 | slot 4: + PF-syn blended into the neural term (PF_W 0.5) | 0.465 |
 | 11-01 | casmi26-pubm-iso150 v1 | slot 5: + PF-syn isomer reranker alpha 1.5, formula scope | 0.463 |
+| 11-02 | casmi26-pube1 v1 | slot 1: ELIGIBLE fork elig1 (upstream mounts, our stage 1 as Engine 2) | (pending) |
+| 11-02 | casmi26-pube0 v1 | slot 2: ELIGIBLE fork elig0 (null Engine 2) | (pending) |
+| 11-02 | casmi26-pubm v1 (resubmitted) | slot 3: identical resubmission (LB noise calibration) | (pending) |
+| 11-02 | casmi26-pubm-eng3a v1 | slot 4: + our stage-1 lists RRF-merged into Engine 2 (w 1.0) | (pending) |
+| 11-02 | casmi26-pubm-sens v1 | slot 5: + saner seed ensemble (5 seeds, raw mean) | (pending) |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
