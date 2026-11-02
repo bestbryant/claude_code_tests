@@ -120,11 +120,11 @@ Community LB-probe estimates of the mix: 16/45/39% or 28/20/52%. Public pipeline
 | 11-01 | casmi26-pubm-iso075 v1 | slot 3: + PF-syn isomer reranker alpha 0.75, formula scope | 0.474 |
 | 11-01 | casmi26-pubm-pfall v1 | slot 4: + PF-syn blended into the neural term (PF_W 0.5) | 0.465 |
 | 11-01 | casmi26-pubm-iso150 v1 | slot 5: + PF-syn isomer reranker alpha 1.5, formula scope | 0.463 |
-| 11-02 | casmi26-pube1 v1 | slot 1: ELIGIBLE fork elig1 (upstream mounts, our stage 1 as Engine 2) | (pending) |
-| 11-02 | casmi26-pube0 v1 | slot 2: ELIGIBLE fork elig0 (null Engine 2) | (pending) |
-| 11-02 | casmi26-pubm v1 (resubmitted) | slot 3: identical resubmission (LB noise calibration) | (pending) |
-| 11-02 | casmi26-pubm-eng3a v1 | slot 4: + our stage-1 lists RRF-merged into Engine 2 (w 1.0) | (pending) |
-| 11-02 | casmi26-pubm-sens v1 | slot 5: + saner seed ensemble (5 seeds, raw mean) | (pending) |
+| 11-02 | casmi26-pube1 v1 | slot 1: ELIGIBLE fork elig1 (upstream mounts, our stage 1 as Engine 2) | **0.435** (best eligible) |
+| 11-02 | casmi26-pube0 v1 | slot 2: ELIGIBLE fork elig0 (null Engine 2) | 0.394 |
+| 11-02 | casmi26-pubm v1 (resubmitted) | slot 3: identical resubmission (LB noise calibration) | 0.479 (= Nov 1) |
+| 11-02 | casmi26-pubm-eng3a v1 | slot 4: + our stage-1 lists RRF-merged into Engine 2 (w 1.0) | 0.445 |
+| 11-02 | casmi26-pubm-sens v1 | slot 5: + saner seed ensemble (5 seeds, raw mean) | 0.461 |
 
 ## Oct 28 slots (pre-registered Oct 27 01:40 UTC, before the PF-syn matched re-run read and before v18cw is built)
 | slot | kernel | pair | prediction | rule |
@@ -953,6 +953,25 @@ than PF-x alone: -.0095 [-.024, +.005]) -> carry PF-x alone (pf_pfx_tpu.pt, md5 
 prediction for a spectral slot: S_f + .025 +- .012. Use: a new stage-1 ranker pair on PF-x columns (build_pfswap_pair.sh)
 for Engine 2 OURS / eng3 - built ONLY if the Nov 2 readings show our engine helps (pube1 vs pube0, eng3a vs pubm);
 otherwise PF-x stays on the shelf.
+
+## Lessons from the Nov 2 submissions (scored 04:43-05:30)
+| slot | kernel | prediction | LB | vs pubm 0.479 | rule outcome |
+|---|---|---|---|---|---|
+| 1 | pube1 (eligible, our stage 1 as Engine 2) | 0.472 +- 0.010 | **0.435** | -0.044 | < 0.476: NOT a full-strength pick; best eligible so far |
+| 2 | pube0 (eligible, null Engine 2) | 0.468 +- 0.010 | 0.394 | -0.085 | eligibility cost far above the audit's -0.005 to -0.020 |
+| 3 | pubm resubmitted unchanged | 0.479 +- 0.006 | 0.479 | 0.000 | identical reruns are deterministic here: noise floor 0 for the SAME code |
+| 4 | pubm-eng3a (our lists merged into Engine 2, w 1) | +0.003 +- 0.008 | 0.445 | -0.034 | drop: adding our engine hurts the rank line |
+| 5 | pubm-sens (5-seed saner ensemble) | +0.006 +- 0.010 | 0.461 | -0.018 | <= -0.004: the holdout gain (+0.047) does not transfer to the public LB |
+- Our Engine 2 is worth +0.041 inside the eligible fork (pube1 - pube0), but merged into the original Engine 2 it costs 0.034.
+- Every perturbation of the 0.479 line so far lost on the public LB (PF re-weighting -0.005..-0.016, seed ensemble -0.018,
+  extra engine -0.034; lineage: long-trained saner -0.019). Two non-exclusive explanations: (a) the lineage is tuned to the
+  124 public molecules by hundreds of community submissions (selection optimism of the best of many noisy variants), so any
+  change regresses on the public split whatever its private value; (b) mechanical coupling: e.g. the fragment check gates
+  leader moves on absolute neural_cos / neural_fp thresholds, and averaged or blended neural columns shift those values.
+  Analysis + discriminating Nov 3 design: workflow (Nov 2 05:35).
+- Eligible line: 0.435 is the eligible pick candidate; its gap to pubm is mostly Engine 2 quality (our engine replaces
+  prvsiyan's). PF-x stage-1 ranker pair (D3 GO) building to strengthen Engine 2 OURS (started 04:45, log
+  /home/user/work/build_v18cx.log).
 
 ## Fragment reranker offline gate (Nov 1 10:00, workflow wf_05f02b1d-b7d; scratchpad fragrr/results.md) -> NOT BUILT
 Our heliosli-style fragment reranker (1-cut / 2-cut / ring-pair fragments matched to peaks; explained intensity, matched
