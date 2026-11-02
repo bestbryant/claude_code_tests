@@ -20,6 +20,10 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   ENG2_SET=v18cx (ELIG=1 only; default v18cu) swaps Engine 2's PeakFormer and rankers for the PF-x set (pf_pfx_tpu.pt +
   ret_ranker_v18cx / v18cxr1, added to casmi26-elig-assets by make_elig_assets.py --x; pins elig.ELIG_X_SHA256):
   python scripts/make_pub_variant.py casmi26-pube1x ELIG=1 ENG2_SET=v18cx OURS=False PF_MID_W=0 ISO_ALPHA=0
+  NE480=1 adds the neural ensemble of bgunshui/casmi26-480-neural-ensemble (public LB 0.480: 0.5 z(published saner) +
+  0.5 z(80-epoch refit, kernel output bgunshui/casmi26-scorer-train-public); scripts/pub_variant/ne480.py; not with
+  SENS / ENG3_W / OURS / ELIG=0):
+  python scripts/make_pub_variant.py casmi26-pube1-ne ELIG=1 NE480=1 OURS=False PF_MID_W=0 ISO_ALPHA=0
   ENG3_W=w (w > 0; default 0 = off; not with ELIG; no PF-syn re-weighting: OURS = False, PF_MID_W = ISO_ALPHA = 0;
   the added engine's own rankers still use PeakFormer features from pf_tpu_f.pt) builds the rank-line ENG3 variant
   (scripts/pub_variant/eng3.py): frozen cell 32 runs the original Engine 2 unchanged and then OUR stage 1 (casmi.run_eng2,
@@ -86,12 +90,18 @@ assert len(elig_args) <= 1, 'ELIG given twice'
 ELIG = int(elig_args[0]) if elig_args else None
 if ELIG is not None and ELIG not in (0, 1):
     sys.exit(f'ELIG={ELIG}: ELIG=0 (F1 + F2a + F3 + F4) or ELIG=1 (F1 + F2b + F3 + F4: our stage 1 as Engine 2)')
+ne_args = [a.split('=', 1)[1] for a in args if a.startswith('NE480=')]
+args = [a for a in args if not a.startswith('NE480=')]
+assert len(ne_args) <= 1 and all(v in ('0', '1') for v in ne_args), 'NE480=0 or NE480=1, once'
+NE480 = bool(ne_args and ne_args[0] == '1')
 set_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG2_SET=')]
 args = [a for a in args if not a.startswith('ENG2_SET=')]
 assert len(set_args) <= 1, 'ENG2_SET given twice'
 ENG2_SET = set_args[0] if set_args else 'v18cu'
 if ENG2_SET != 'v18cu' and ELIG != 1:
     sys.exit(f'ENG2_SET={ENG2_SET}: the Engine 2 model set only exists in ELIG=1 builds')
+if NE480 and ELIG == 0:
+    sys.exit('NE480 is not combined with ELIG=0 (null Engine 2): ELIG=1 or the pubm base')
 eng3_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG3_W=')]
 args = [a for a in args if not a.startswith('ENG3_W=')]
 assert len(eng3_args) <= 1, 'ENG3_W given twice'
@@ -395,6 +405,8 @@ if (cfg['ISO_COS_W'] > 0 or cfg['ISO_FREEZE_LEADER']) and not cfg['ISO_ALPHA'] >
 if ENG3_W > 0 and (cfg['OURS'] or cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0):
     sys.exit('ENG3_W builds carry no PF-syn re-weighting (dropped from the rank line on Nov 1): '
              'OURS=False PF_MID_W=0 ISO_ALPHA=0')
+if NE480 and (cfg['OURS'] or cfg['PF_MID_W'] > 0 or cfg['ISO_ALPHA'] > 0 or SENS or ENG3_W > 0):
+    sys.exit('NE480 is the only neural-term change of its build: OURS=False PF_MID_W=0 ISO_ALPHA=0, no SENS / ENG3_W')
 if SENS and sens.check_config(cfg, SENS):
     sys.exit(sens.check_config(cfg, SENS))
 if wm.check_config(cfg, W_TOP, W_MID, MIDX_W):
@@ -410,6 +422,13 @@ eng3_report = eng3.apply(nb, meta, ENG3_W, cfg) if ENG3_W > 0 else None       # 
 sens_report = sens.apply(nb, meta, SENS, SENS_MODE, cfg) if SENS else None    # SENS: new cell after PF-syn, driver
                                                                                # call, cells 0 / 1; kernel_sources
                                                                                # (ELIG=1: also cells 8 / 21 / 22 / 24)
+if NE480:                                                                      # NE480: driver cell, cell 0, cell 8
+    import importlib.util as _ilu                                              # (ELIG=1); kernel_sources
+    _spec = _ilu.spec_from_file_location('pub_variant_ne480', os.path.join(here, 'ne480.py'))
+    ne480 = _ilu.module_from_spec(_spec); _spec.loader.exec_module(ne480)     # our generator code, not notebook code
+    ne480_report = ne480.apply(nb, meta, cfg, elig if ELIG == 1 else None)
+else:
+    ne480_report = None
 for i, c in enumerate(cells):
     if c['cell_type'] == 'code':
         ast.parse(c['source'], f'cell {i}')                   # syntax only; nothing here is executed
@@ -417,6 +436,8 @@ nb['metadata']['casmi']['ours'] = {
     'pf_checkpoint': 'bryantyu/casmi26-models/pf_tpu_f.pt', 'template': 'scripts/make_pub_variant.py',
     'final_layer': 'baidalinadilzhan/casmi26-midx-exact-dedup-fill cell 15 + PF_MID_W hook (cell 16)',
     'iso': 'scripts/pub_variant/iso_cell.py (cell 17)', 'config': 'cell 1'}
+if ne480_report:
+    nb['metadata']['casmi']['ours']['ne480'] = ne480_report
 if elig_report and ELIG == 1:
     nb['metadata']['casmi']['ours']['pf_checkpoint'] = ('bryantyu/casmi26-elig-assets/pf_tpu_f.pt (ELIG=1: the same file, '
                                                         'at the root of the flat dataset; PF-syn ' +
