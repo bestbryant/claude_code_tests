@@ -320,6 +320,61 @@ C54_1 = [(V43_OLD,
           f"V43_ELIG = {V43_ELIG1!r}\n"),
          (V43_METHOD, V43_METHOD + "        elig=dict(V43_ELIG, engine2_run=scope.get('ENG2_SUMMARY')),\n")]
 
+# ---- ELIG=1 Engine 2 model set (ENG2_SET of make_pub_variant.py) ----
+# v18cu: PF-syn PeakFormer pf_tpu_f.pt + LightGBM pair ret_ranker_v18cu / v18cur1 (casmi26-pube1 and its variants).
+# v18cx: PF-x PeakFormer pf_pfx_tpu.pt (d384 x 6, kernel output bryantyu/casmi26-pfx-tpu, md5 53b2c5eb; D3 offline +0.042
+#        RR over pf_tpu_f) + the pair ret_ranker_v18cx / v18cxr1 that kernels/casmi26-v18cx-build trains on PF-x columns
+#        (build_v18c.sh BASE=v18c REUSE_C1=0, stages C1-D, LightGBM seed 0 / 1). The files are ADDED to casmi26-elig-assets
+#        (make_elig_assets.py --x): the v18cu files stay byte-identical, so builds of either set read the same dataset.
+ENG2_SET = 'v18cu'
+ENG2_SETS = {
+    'v18cu': dict(ranker='ret_ranker_v18cu,ret_ranker_v18cur1', pf='pf_tpu_f.pt',
+                  models=['pf_tpu_f.pt', 'ret_ranker_v18cu.txt', 'ret_ranker_v18cu_feats.txt', 'ret_ranker_v18cur1.txt',
+                          'ret_ranker_v18cur1_feats.txt']),
+    'v18cx': dict(ranker='ret_ranker_v18cx,ret_ranker_v18cxr1', pf='pf_pfx_tpu.pt',
+                  models=['pf_pfx_tpu.pt', 'ret_ranker_v18cx.txt', 'ret_ranker_v18cx_feats.txt', 'ret_ranker_v18cxr1.txt',
+                          'ret_ranker_v18cxr1_feats.txt'])}
+# SHA-256 of the v18cx model files as make_elig_assets.py --x ships them (filled from the build kernel's outputs; None =
+# not built yet, set_eng2('v18cx') refuses).
+ELIG_X_SHA256 = {'pf_pfx_tpu.pt': None, 'ret_ranker_v18cx.txt': None, 'ret_ranker_v18cx_feats.txt': None,
+                 'ret_ranker_v18cxr1.txt': None, 'ret_ranker_v18cxr1_feats.txt': None}
+# descriptive text of cell 0 / cell 32 / the receipt that names the model set
+_SET_TEXT = {'v18cx': [
+    ('PeakFormer pf_tpu_f.pt, LightGBM seed ensemble ret_ranker_v18cu + v18cur1',
+     'PF-x PeakFormer pf_pfx_tpu.pt, LightGBM seed ensemble ret_ranker_v18cx + v18cxr1'),
+    ('fp_model_v1r.pt, pf_tpu_f.pt, ret_ranker_v18cu + v18cur1', 'fp_model_v1r.pt, pf_pfx_tpu.pt, ret_ranker_v18cx + v18cxr1'),
+    ('PF-syn PeakFormer pf_tpu_f; LightGBM seed ensemble ret_ranker_v18cu + v18cur1',
+     'PF-x PeakFormer pf_pfx_tpu (d384 x 6); LightGBM seed ensemble ret_ranker_v18cx + v18cxr1')]}
+
+
+def set_eng2(name):
+    """Select Engine 2's model set before apply(): rebinds ENG2_CFG and the texts built from it (cell 32, receipt)."""
+    global ENG2_SET, ENG2_CFG, C32_NEW1, V43_ELIG1, C54_1
+    assert name in ENG2_SETS, f'ENG2_SET={name}: one of {sorted(ENG2_SETS)}'
+    assert ENG2_SET == 'v18cu', 'set_eng2 is called once, before apply()'
+    if name == 'v18cu':
+        return ENG2_CFG
+    s, base = ENG2_SETS[name], ENG2_SETS['v18cu']
+    missing = sorted(k for k in s['models'] if not ELIG_X_SHA256.get(k))
+    assert not missing, f'ENG2_SET={name}: no SHA-256 pins yet for {missing} (fill ELIG_X_SHA256 from the built files)'
+    pins = {k: v for k, v in ELIG_ASSETS_SHA256.items() if k not in base['models']}
+    pins.update({k: ELIG_X_SHA256[k] for k in s['models']})
+    new = dict(ENG2_CFG, ranker=s['ranker'], pf=s['pf'], asset_sha256=pins)
+    old_line, new_line = f"ENG2_CFG = {ENG2_CFG!r}\n", f"ENG2_CFG = {new!r}\n"
+    assert C32_NEW1.count(old_line) == 1
+    c32 = C32_NEW1.replace(old_line, new_line)
+    for a, b in _SET_TEXT[name][:1]:
+        assert c32.count(a) == 1, f'cell 32 text: {a!r}'
+        c32 = c32.replace(a, b)
+    e = dict(V43_ELIG1)
+    a, b = _SET_TEXT[name][1]
+    assert e['engine2'].count(a) == 1, 'receipt text'
+    e['engine2'] = e['engine2'].replace(a, b)
+    c54 = [(o, n.replace(f"V43_ELIG = {V43_ELIG1!r}\n", f"V43_ELIG = {e!r}\n")) for o, n in C54_1]
+    assert sum(f"V43_ELIG = {e!r}\n" in n for _, n in c54) == 1
+    ENG2_SET, ENG2_CFG, C32_NEW1, V43_ELIG1, C54_1 = name, new, c32, e, c54
+    return new
+
 
 def splice(text, edits, what):
     for old, new in edits:
@@ -450,6 +505,20 @@ def md0_elig1(ours):
               "as well")
     else:
         pf = "with OURS = False, PF-syn (cell 11) and ISO (cell 17) are off"
+    text = _md0_elig1_text(pf)
+    if ENG2_SET != 'v18cu':
+        a, b = _SET_TEXT[ENG2_SET][2]
+        assert text.count(a) == 1, 'cell 0 model-set text'
+        text = text.replace(a, b).replace(
+            '> - **F2b, our stage 1 as Engine 2.**',
+            f'> - **Engine 2 model set {ENG2_SET}** (ENG2_SET of the generator): the PF-x PeakFormer pf_pfx_tpu.pt and the '
+            'LightGBM pair ret_ranker_v18cx / v18cxr1, trained on PF-x columns by kernels/casmi26-v18cx-build '
+            '(scripts/build_v18c.sh BASE=v18c REUSE_C1=0, stages C1-D, seed 0 / 1), replace pf_tpu_f.pt and '
+            'ret_ranker_v18cu / v18cur1; the rest of F2b is unchanged.\n> - **F2b, our stage 1 as Engine 2.**', 1)
+    return text
+
+
+def _md0_elig1_text(pf):
     return f"""# Eligible fork elig1 · Variant M core + midx final layer, our stage 1 as Engine 2, upstream datasets only
 
 > **Eligibility build elig1** (scripts/make_pub_variant.py with ELIG=1; the audit and fixes F1-F8 are in
@@ -873,6 +942,8 @@ def apply(nb, meta, level, cfg):
                                           pool='bryantyu/casmi26-pool-v18c', config=ENG2_CFG,
                                           assets_builder='scripts/pub_variant/make_elig_assets.py'),
                              notebook_cells_edited=sorted(edited), datasets=mounts, detached=DETACHED + DETACHED_ELIG1,
-                             not_attached_ours=OURS_DATASETS, asset_pins=len(ELIG_ASSETS_SHA256), open=OPEN1)
+                             not_attached_ours=OURS_DATASETS, asset_pins=len(ENG2_CFG['asset_sha256']), open=OPEN1)
+        if ENG2_SET != 'v18cu':                 # default builds stay byte-identical to the committed kernels
+            casmi['elig']['eng2_set'] = ENG2_SET
     meta['dataset_sources'] = mounts
     return dict(frozen=info, changes=changes, frozen_patched=patched)

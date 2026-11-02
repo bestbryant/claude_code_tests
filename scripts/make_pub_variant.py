@@ -17,6 +17,9 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   (eng2_merge.py, written by cell 8), cells 39 / 45 merge its top 40 with the null engine where it has no list;
   dataset_sources = the upstream set + those two datasets (never casmi26-code / -models), e.g.
   python scripts/make_pub_variant.py casmi26-pube1 ELIG=1 OURS=False PF_MID_W=0 ISO_ALPHA=0
+  ENG2_SET=v18cx (ELIG=1 only; default v18cu) swaps Engine 2's PeakFormer and rankers for the PF-x set (pf_pfx_tpu.pt +
+  ret_ranker_v18cx / v18cxr1, added to casmi26-elig-assets by make_elig_assets.py --x; pins elig.ELIG_X_SHA256):
+  python scripts/make_pub_variant.py casmi26-pube1x ELIG=1 ENG2_SET=v18cx OURS=False PF_MID_W=0 ISO_ALPHA=0
   ENG3_W=w (w > 0; default 0 = off; not with ELIG; no PF-syn re-weighting: OURS = False, PF_MID_W = ISO_ALPHA = 0;
   the added engine's own rankers still use PeakFormer features from pf_tpu_f.pt) builds the rank-line ENG3 variant
   (scripts/pub_variant/eng3.py): frozen cell 32 runs the original Engine 2 unchanged and then OUR stage 1 (casmi.run_eng2,
@@ -83,6 +86,12 @@ assert len(elig_args) <= 1, 'ELIG given twice'
 ELIG = int(elig_args[0]) if elig_args else None
 if ELIG is not None and ELIG not in (0, 1):
     sys.exit(f'ELIG={ELIG}: ELIG=0 (F1 + F2a + F3 + F4) or ELIG=1 (F1 + F2b + F3 + F4: our stage 1 as Engine 2)')
+set_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG2_SET=')]
+args = [a for a in args if not a.startswith('ENG2_SET=')]
+assert len(set_args) <= 1, 'ENG2_SET given twice'
+ENG2_SET = set_args[0] if set_args else 'v18cu'
+if ENG2_SET != 'v18cu' and ELIG != 1:
+    sys.exit(f'ENG2_SET={ENG2_SET}: the Engine 2 model set only exists in ELIG=1 builds')
 eng3_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG3_W=')]
 args = [a for a in args if not a.startswith('ENG3_W=')]
 assert len(eng3_args) <= 1, 'ENG3_W given twice'
@@ -347,6 +356,8 @@ if ELIG is not None:
     _spec = _ilu.spec_from_file_location('pub_variant_elig', os.path.join(here, 'elig.py'))
     elig = _ilu.module_from_spec(_spec); _spec.loader.exec_module(elig)       # our generator code, not notebook code
     c1 = splice(c1, elig.cell1_edits(ELIG) if ELIG else elig.cell1_edits(), 'cell 1 (elig)')
+    if ELIG == 1:
+        elig.set_eng2(ENG2_SET)                                              # v18cu = as before
 if ENG3_W > 0:
     import importlib.util as _ilu
     _spec = _ilu.spec_from_file_location('pub_variant_eng3', os.path.join(here, 'eng3.py'))

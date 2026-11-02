@@ -201,6 +201,54 @@ PROV = {
     'ret_ranker_v18cur1_feats.txt': ('scripts/train_ret_ranker.py (same list)', '-', '-', '-')}
 
 
+X = False
+V18CX_OUT = os.environ.get('V18CX_OUT', '/tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929f1c29ca/'
+                           'scratchpad/v18cx_out')
+X_FILES = ['pf_pfx_tpu.pt', 'ret_ranker_v18cx.txt', 'ret_ranker_v18cx_feats.txt', 'ret_ranker_v18cxr1.txt',
+           'ret_ranker_v18cxr1_feats.txt']
+X_README = """
+## Engine 2 model set v18cx (added in a later version; the files above are unchanged)
+
+Builds with ENG2_SET=v18cx (kernels/casmi26-pube1x) run Engine 2 with the PF-x PeakFormer pf_pfx_tpu.pt and the LightGBM
+pair ret_ranker_v18cx / v18cxr1 instead of pf_tpu_f.pt and ret_ranker_v18cu / v18cur1 (fp_model_v1r.pt and the code are
+shared). pf_pfx_tpu.pt is the output of kernel bryantyu/casmi26-pfx-tpu (TPU training, d384 x 6; same PF-syn data chain as
+pf_tpu_f.pt). The pair comes from kernel bryantyu/casmi26-v18cx-build: scripts/build_v18c.sh run unmodified with
+BASE=v18c REUSE_C1=0 STOP_AFTER=D (stages C1-D on the v18c stage-B rows: PeakFormer pf_* columns from pf_pfx_tpu.pt, FP
+columns from fp_model_v1r.pt, LightGBM ranker seed 0, then the same rows with seed 1). Builds with the default set read
+none of these files.
+"""
+
+
+def enable_x(out_dir=None):
+    """--x: add the v18cx model set (PF-x PeakFormer + the ranker pair of kernels/casmi26-v18cx-build) to the dataset."""
+    global X, MODEL_FILES, LICENCE_LINE
+    src = out_dir or V18CX_OUT
+    MODELS['pf_pfx_tpu.pt'] = ('53b2c5ebb9c80c8e4236d318773ad3b6', ['/home/user/work/pfs', src])
+    md5 = {}
+    mf = os.path.join(src, 'md5.txt')
+    if os.path.isfile(mf):                           # the build kernel's md5.txt (md5sum format)
+        for line in open(mf):
+            parts = line.split()
+            if len(parts) == 2:
+                md5[os.path.basename(parts[1].lstrip('*'))] = parts[0]
+    for n in X_FILES[1:]:
+        MODELS[n] = (md5.get(n) if n.endswith('.txt') and not n.endswith('_feats.txt') else None, [src])
+    MODEL_FILES = MODEL_FILES + X_FILES
+    LICENCE_LINE = LICENCE_LINE.replace('the six model files (', f'the {len(MODEL_FILES)} model files (').replace(
+        ', '.join(MODEL_FILES[:6]), ', '.join(MODEL_FILES))
+    PROV['pf_pfx_tpu.pt'] = ('kernel bryantyu/casmi26-pfx-tpu: scripts/train_pf_xla.py, PF-x d384 x 6 on the PF-syn '
+                             'data of pf_tpu_f.pt (TPU v5e)', 'as pf_tpu_f.pt', '53b2c5eb',
+                             'not bit-exact (TPU training, F6 class); chain in docs/reproduce.md section 7 (open)')
+    PROV['ret_ranker_v18cx.txt'] = ('kernel bryantyu/casmi26-v18cx-build: scripts/build_v18c.sh BASE=v18c REUSE_C1=0 '
+                                    'STOP_AFTER=D, LightGBM seed 0', 'ret18c rows (pool v18c), fp_model_v1r.pt, '
+                                    'pf_pfx_tpu.pt', (MODELS['ret_ranker_v18cx.txt'][0] or '-')[:8], 'deterministic')
+    PROV['ret_ranker_v18cxr1.txt'] = ('same kernel, LightGBM seed 1 on the same rows', 'same rows',
+                                      (MODELS['ret_ranker_v18cxr1.txt'][0] or '-')[:8], 'deterministic')
+    PROV['ret_ranker_v18cx_feats.txt'] = ('scripts/train_ret_ranker.py (feature list of the ranker)', '-', '-', '-')
+    PROV['ret_ranker_v18cxr1_feats.txt'] = ('scripts/train_ret_ranker.py (same list)', '-', '-', '-')
+    X = True
+
+
 def pins():
     """ELIG_ASSETS_SHA256 of scripts/pub_variant/elig.py (the notebook's pins of the 22 code and model files)."""
     import importlib.util
@@ -208,7 +256,10 @@ def pins():
                                                                                  'elig.py'))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)                     # our generator module (constants only)
-    return dict(mod.ELIG_ASSETS_SHA256)
+    want = dict(mod.ELIG_ASSETS_SHA256)
+    if X:
+        want.update(mod.ELIG_X_SHA256)
+    return want
 
 
 def main(out):
@@ -233,6 +284,9 @@ def main(out):
     assert sorted(MODELS) == sorted(MODEL_FILES)
     feats = [open(os.path.join(out, f'{r}_feats.txt')).read().split() for r in ('ret_ranker_v18cu', 'ret_ranker_v18cur1')]
     assert feats[0] == feats[1] and 'pf_cos' in feats[0] and 'fp_cos' in feats[0], 'seed replicates share one feature list'
+    if X:
+        fx = [open(os.path.join(out, f'{r}_feats.txt')).read().split() for r in ('ret_ranker_v18cx', 'ret_ranker_v18cxr1')]
+        assert fx[0] == fx[1] == feats[0], 'the v18cx pair has the v18c-family feature list'
     files = sorted(how)
     texts = ('README.md', 'LICENSE.txt', 'MODELS_LICENSE.txt')
     for stale in texts + ('MANIFEST.sha256', 'dataset-metadata.json'):
@@ -251,7 +305,7 @@ def main(out):
     gen_note = f' at commit {head}' + (' (with uncommitted changes to the script)' if gen_dirty else '')
     readme = README.format(pool=POOL_DS, rows='\n'.join(rows), head=head,
                            dirty=(' plus uncommitted ' + ', '.join(dirty)) if dirty else '', licence=LICENCE_LINE,
-                           gen_note=gen_note)
+                           gen_note=gen_note) + (X_README if X else '')
     with open(os.path.join(out, 'README.md'), 'w') as f:
         f.write(readme)
     with open(os.path.join(out, 'LICENSE.txt'), 'w') as f:
@@ -277,6 +331,8 @@ def main(out):
     print(json.dumps(dict(out=out, files=len(listed) + 2, bytes=size, how=how, head=head, uncommitted=dirty,
                           builder_uncommitted=gen_dirty, licence=KAGGLE_LICENCE,
                           pins=f'{len(files) - len(diff)}/{len(want)} equal to elig.ELIG_ASSETS_SHA256'), indent=1))
+    if X and any(want.get(n) is None for n in X_FILES):
+        print('ELIG_X_SHA256 to pin in scripts/pub_variant/elig.py:', json.dumps({n: got[n] for n in X_FILES}, indent=1))
     if diff:
         print('PIN MISMATCH (re-pin ELIG_ASSETS_SHA256 in scripts/pub_variant/elig.py and rebuild the kernel):', diff)
         sys.exit(1)
@@ -284,5 +340,8 @@ def main(out):
 
 
 if __name__ == '__main__':
+    if '--x' in sys.argv:
+        sys.argv.remove('--x')
+        enable_x()
     main(sys.argv[1] if len(sys.argv) > 1 else
          '/tmp/claude-0/-home-user-claude-code-tests/09a15150-bdf1-5786-8fb7-e9929f1c29ca/scratchpad/elig/ds_casmi26_elig')
