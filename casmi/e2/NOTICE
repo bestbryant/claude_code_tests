@@ -1,0 +1,61 @@
+casmi/e2 -- Engine 2 clone on eligible inputs (docs/engine2_study.md option R)
+==============================================================================
+
+This directory contains two files derived from third-party code and several files of our own.
+
+Third-party code (Apache License, Version 2.0)
+----------------------------------------------
+  casmi/e2/pv.py        derived from Engine 2's pv.py
+  casmi/e2/engine.py    derived from Engine 2's casmi_engine.py
+
+Origin: the public Kaggle analog-propagation notebook of prvsiyan (version of 2026-09-16), as extended by megayak
+("casmi26-two-rankers-one-engine"). The text was taken from ENG_FILES, the strings written by cell 32 of the frozen
+0.465 notebook decoded from the public fork (pubm-decoded notebook sha256
+d1e757c2b71b46e6e8a5777f14302a4737d0fdbcd56d8365093c039b93c5fd88). Public Kaggle notebook code is released under the
+Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0); the related training and ranker sources are
+Apache-2.0 per github.com/cubres/enveda-casmi-2026 reproduction/legacy-v2/NOTICE.
+
+Upstream text (byte copies kept for the patch audit; never imported):
+  casmi/e2/upstream/pv.py.txt            sha256 ac2e7c527f327cfe2acdef6c1a6128a0a360f1f91d5e3e0c8ade338a4a9078f6 (356 lines)
+  casmi/e2/upstream/casmi_engine.py.txt  sha256 e461349b37f5097fa2c2e52cedc0716e6fa26567513bab0bb3841cc37e1d5b4f (511 lines)
+
+Modifications: by bryantyu, 2026-11. Every changed or added line ends with "# OURS ..." or lies between
+"# OURS begin" and "# OURS end"; a removed upstream range is replaced by one comment line
+"# OURS: removed upstream Lx-Ly (reason)". scripts/test_e2_vendor_audit.py checks this against the upstream copies.
+Upstream line numbers below refer to the upstream text copies.
+
+  pv.py
+    P0  header
+    P1  rank_features(..., model_raw=None): per-candidate FP score input (L210)
+    P2  the FP block also runs when model_raw is given (L227)
+    P3  raw = model_raw (PeakFormer f.z) if given, else cf @ model_logits as upstream; shape assert (L228)
+    P4  the agreement block also runs when model_raw is given (L234)
+    P5  mr = _rank_norm(raw), identical to upstream when model_logits is given (L235)
+  casmi_engine.py -> engine.py
+    E0  header
+    E1  package-relative imports of pv / CFG; our helpers (hide, bankio, config); CFG.N_ANALOG from config (L9-10)
+    E2  BANK_DIR global (after L28)
+    E3  find() disabled: no shortest-path file search (L42-45)
+    E4  _fp_init reads fp_bits.npy from BANK_DIR (L110)
+    E5  build_pool(L, workers, bank_dir): loads the eligible bank (pool v18c, our bit selection) from an explicit,
+        MANIFEST-checked directory; removed the COCONUT / ChEBI / LMSD / PubChemLite merges, the in-kernel training
+        fingerprinting and the mass re-sort (L145-189)
+    E6  pool_fps unpacks the bank's nbits instead of a hard-coded 6930 (L194)
+    E7  top_analogs(p, s, n=None) (L248-251)
+    E8  _hide_analog: leakage hiding inside one analog store, with representative re-pick (new, after L251)
+    E9-E15  molecule_channels(..., hide=None, n_analog=None): library-row hiding, analog hiding in the all / pos / neg
+        stores, n_analog, diagnostics returned (L254-283)
+    E16 blk_base passes zlog / zraw (model_raw) (L320)
+    E17-E20 compute_channels(..., hide=None, fp_raw=None, n_analog=None): per-molecule hide spec, FP channel from
+        fp_raw instead of the FPNet (removed L366-370), records zraw and diag (L347-376)
+    E21 compute_frag(..., frag_lookup=None): precomputed fragment masses or a serial path (L384-390)
+    E22 score_molecules drops zraw too when use_fp is False (L434)
+    E23 setup(): main()'s library / pool / index sequence as a function (new, appended after main)
+    E24 main(): bank_dir and fp_raw instead of the FPNet model paths; FPNet loading removed (L483-499)
+
+Not vendored: pv_fp.py (the FPNet; replaced by our PeakFormer) and eng_runner.py (the serving runner is ours).
+
+Our own code (not derived from the above)
+------------------------------------------
+  casmi/e2/__init__.py, config.py, bankio.py, hide.py, fpadapter.py, gates.py, and scripts/e2_replay.py,
+  scripts/e2_pack_inputs.py, scripts/make_e2_replay_kernel.py and the scripts/test_e2_*.py tests.
