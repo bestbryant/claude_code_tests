@@ -1,0 +1,9 @@
+Verbatim reference copies (text only, not imported or executed by our code) of the public "Engine 2" sources used by the
+CASMI 2026 public notebook lineage:
+  pv.py.txt            prvsiyan analog-propagation pipeline components (public Kaggle notebook code, version 2026-09-16,
+                       with megayak's '# ADDED' extensions), as written by the frozen 0.465 notebook (cell 32, ENG_FILES)
+  casmi_engine.py.txt  the end-to-end Engine 2 runner written by the same cell
+Licence: Apache License 2.0 (Kaggle public notebook code default; the same sources are published under Apache-2.0 in
+github.com/cubres/enveda-casmi-2026, reproduction/legacy-v2). Copyright their authors (prvsiyan, megayak, cubres).
+They serve as the diff base for our modified copies in casmi/e2/ (every change marked '# OURS'); see
+docs/engine2_study.md (option R) and docs/fork_eligibility.md (asset A28).
