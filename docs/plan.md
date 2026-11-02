@@ -1037,6 +1037,12 @@ NEURAL SCORER UNDERTRAINED (Nov 2 10:45). The published saner kit (16 x 500 step
   = 0.480 (+0.001); our 5-seed raw mean -0.018. Either the pipeline's weights / gates are tuned to the published model
   (w_top .25, w_mid .75, fragment-check support, midx 0.75/(3+nr)) or holdout gains do not transfer to the test molecules,
   or selection optimism (~0.015) masks them. Nov 3 swap placebo reads H1 (selection) vs averaging harm.
+- STRATA SPLIT of our 5-seed (16-epoch) ensemble on the holdout (scripts/analysis/strata_seeds.py; per-candidate scores
+  of the casmi26-saner-seeds output + val1000_strata): ens5_z - published = +0.049 [+0.032, +0.066] overall, +0.055 on
+  e180 (657, Enamine / timsTOF library copies), +0.034 on the rest (331), but -0.007 [-0.051, +0.041] on COCONUT (102,
+  the stratum closest to the hidden test). Gain vs the mean member on COCONUT +0.021 [-0.002, +0.046]. Consistent with the
+  shift explanation of its public -0.018. RULE for neural-term changes: judge them on the COCONUT stratum of the holdout
+  (CI included), not on the overall holdout; the long-model kernel saves per-candidate scores for exactly this split.
 - Work: kernels/casmi26-saner-long (long seeds 20261023/20262023/20263023, 120 x 500 steps, patience 8, holdout
   ensembles incl. the published model, per-candidate holdout scores saved) -> K-model z-ensembles for both lines, and
   neural-weight variants (CUSTOM_W_TOP / W_MID / MIDX_NEURAL_W) on public once a stronger term is in.
