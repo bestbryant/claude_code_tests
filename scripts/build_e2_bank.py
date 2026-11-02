@@ -258,7 +258,8 @@ def main(argv=None):
     rd_mass = np.full(n, np.nan)
     counts = np.zeros(NCOL, np.int64)
     tasks = [(s, list(smiles[s:s + a.chunk]), in_train[s:s + a.chunk] == 1) for s in range(0, n, a.chunk)]
-    every = max(1, len(tasks) // 20)
+    ntask = len(tasks)
+    every = max(1, ntask // 20)
     t1 = time.time()
 
     def take(res, done):
@@ -267,9 +268,9 @@ def main(argv=None):
         ok[s:s + len(okc)] = okc
         rd_mass[s:s + len(okc)] = mc
         counts[:] += cc
-        if done % every == 0 or done == len(tasks):
+        if done % every == 0 or done == ntask:
             r = min(n, done * a.chunk) / max(time.time() - t1, 1e-9)
-            log(t0, f'descriptors {done}/{len(tasks)} chunks, {r:,.0f} rows/s, ETA {(n - min(n, done * a.chunk)) / r:,.0f}s')
+            log(t0, f'descriptors {done}/{ntask} chunks, {r:,.0f} rows/s, ETA {(n - min(n, done * a.chunk)) / r:,.0f}s')
 
     if a.procs <= 1:
         _init()
@@ -280,7 +281,7 @@ def main(argv=None):
         with Pool(a.procs, initializer=_init) as mp:
             for i, res in enumerate(mp.imap(_chunk, tasks, chunksize=1), 1):
                 take(res, i)
-    del tasks
+    tasks = None
     full.flush()
     t_desc = time.time() - t1
     n_fail = int((~ok).sum())
@@ -314,7 +315,7 @@ def main(argv=None):
         fp[s:s + blk] = np.packbits(sel, axis=1)
         pop[s:s + blk] = sel.sum(1, dtype=np.int32)
     fp.flush()
-    del fp, full
+    fp = full = None                          # close both memmaps before removing the temporary file
     os.remove(tmp_path)
     log(t0, f'packed {out["fp"]} ({n:,} x {nbyte}); mean popcount {pop[ok].mean() if ok.any() else 0:.1f}')
 

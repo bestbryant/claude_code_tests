@@ -739,16 +739,23 @@ def prefix_compare(ours, ref):
     """ours: {epoch: diagnostic MRR@25}; ref: list of the reference's values, epoch 1 first. Compared on shared epochs."""
     got = [(e, ours.get(e), v) for e, v in enumerate(ref, 1) if ours.get(e) is not None and v is not None]
     d = [abs(o - v) for _, o, v in got]
-    return dict(compared=len(got), reference_epochs=len(ref), max_abs_diff=max(d) if d else None,
-                first_diff_epoch=next((e for e, o, v in got if o != v), None),
-                bit_exact=bool(got) and len(got) == len(ref) and max(d) == 0,
-                match_4dp=bool(got) and len(got) == len(ref) and all(abs(round(o, 4) - round(v, 4)) <= 1e-6 for _, o, v in got))
+    complete = bool(got) and len(got) == len(ref)
+    exact = bool(got) and max(d) == 0
+    m4 = bool(got) and all(abs(round(o, 4) - round(v, 4)) <= 1e-6 for _, o, v in got)
+    verdict = ('NO_OVERLAP' if not got else 'BIT_EXACT' if exact else 'MATCH_4DP' if m4 else 'DIFFERS')
+    if got and not complete and verdict != 'DIFFERS':
+        verdict += '_PARTIAL'          # identical on the epochs both runs have; ours stopped earlier
+    return dict(compared=len(got), reference_epochs=len(ref), complete=complete, max_abs_diff=max(d) if d else None,
+                first_diff_epoch=next((e for e, o, v in got if o != v), None), bit_exact=complete and exact,
+                match_4dp=complete and m4, verdict=verdict)
 
 
 def history_map(path, field='diagnostic_mrr25'):
-    """{epoch: value} from a train_stage training_history.json (list of per-epoch records)."""
+    """{epoch: value} from a train_stage training_history.json (list of per-epoch records). An epoch cut short by the
+    deadline (partial_epoch true) is left out: it is not comparable with a full epoch of another run."""
     h = read_json(path) or []
-    return {int(r['epoch']): r.get(field) for r in h if isinstance(r, dict) and 'epoch' in r and r.get(field) is not None}
+    return {int(r['epoch']): r.get(field) for r in h
+            if isinstance(r, dict) and 'epoch' in r and r.get(field) is not None and not r.get('partial_epoch')}
 
 
 # ── 5. Evaluator (published code, GPU) ───────────────────────────────────────────────────────────────────────
@@ -1250,8 +1257,8 @@ def check_history(B, h):
         ref = list((REFS.get('seeds_v1_history') or {}).get(str(seed)) or [])
         src = 'casmi26-saner-seeds v1 holdout history of this seed (16 x 500 steps)'
     cmp = prefix_compare(mrr, ref)
-    verdict = ('NO_HISTORY' if not mrr else 'NO_REFERENCE' if not ref else 'BIT_EXACT' if cmp['bit_exact'] else
-               'MATCH_4DP' if cmp['match_4dp'] else 'DIFFERS')
+    verdict = 'NO_HISTORY' if not mrr else 'NO_REFERENCE' if not ref else cmp.pop('verdict')
+    cmp.pop('verdict', None)
     check(f'determinism_{name}', None, verdict=verdict, reference=src, **cmp, **base,
           note='first epochs of the long run vs the 16-epoch run of the same seed; DIFFERS = GPU nondeterminism or a '
                'schedule that depends on cfg["epochs"], not a broken run')
@@ -1270,8 +1277,11 @@ def check_history(B, h):
     full = prefix_compare(mrr, b.get('history_mrr25') or [])
     be = b['best_epoch']
     e52 = mrr.get(be)
-    match = bool(rows) and all(r['match'] for r in rows.values()) and all(r['match'] for r in t1.values())
-    check(f'bgunshui_history_{name}', None, verdict='MATCH' if match else 'DIFFERS', reference=b.get('kernel'), epochs=rows,
+    allr = list(rows.values()) + list(t1.values())
+    have = [r for r in allr if r['ours'] is not None]
+    verdict = ('NO_HISTORY' if not have else 'DIFFERS' if not all(r['match'] for r in have) else
+               'MATCH' if len(have) == len(allr) else 'MATCH_PARTIAL')     # PARTIAL: ours stopped before the last epoch
+    check(f'bgunshui_history_{name}', None, verdict=verdict, reference=b.get('kernel'), epochs=rows,
           top1=t1, **{f'epoch{be}_ours': e52, f'epoch{be}_bgunshui': b['best_diagnostic_mrr25'],
                       f'epoch{be}_within_1e6': e52 is not None and abs(e52 - b['best_diagnostic_mrr25']) <= 1e-6},
           full_history=full, bgunshui_run=dict(epochs=b['epochs'], patience=b['patience'], best_epoch=be,
