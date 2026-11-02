@@ -1043,6 +1043,13 @@ NEURAL SCORER UNDERTRAINED (Nov 2 10:45). The published saner kit (16 x 500 step
   the stratum closest to the hidden test). Gain vs the mean member on COCONUT +0.021 [-0.002, +0.046]. Consistent with the
   shift explanation of its public -0.018. RULE for neural-term changes: judge them on the COCONUT stratum of the holdout
   (CI included), not on the overall holdout; the long-model kernel saves per-candidate scores for exactly this split.
+- STRATA SPLIT of the LONG model (scripts/analysis/strata_long.py; both validation_predictions.csv, same 1,000 keys):
+  long - published = +0.234 [+0.209, +0.259] overall, +0.255 e180, +0.191 rest, and +0.135 [+0.065, +0.208] on COCONUT
+  (102; top-1 0.265 -> 0.382). Unlike the seed ensemble, the long schedule gains on the test-like stratum: it is a real
+  scorer improvement. Its public -0.019 as a straight swap (-0.011 with the fragment check off; the check was +0.005 with
+  the published model, -0.008 with the long one) points at integration (gates tuned to the published model) plus
+  selection (~-1.2 sigma for a neutral change), not at a worse scorer. -> Nov 4+: integration variants on the ne480
+  base (long model in the ensemble; long model in the ranks 2-25 neural rank only; fragment check on published scores).
 - Work: kernels/casmi26-saner-long (long seeds 20261023/20262023/20263023, 120 x 500 steps, patience 8, holdout
   ensembles incl. the published model, per-candidate holdout scores saved) -> K-model z-ensembles for both lines, and
   neural-weight variants (CUSTOM_W_TOP / W_MID / MIDX_NEURAL_W) on public once a stronger term is in.
