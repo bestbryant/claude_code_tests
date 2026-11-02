@@ -69,6 +69,7 @@ SWAP = {  # SENS_MODE swap (seed-swap placebo, docs/plan.md NOV 3 SLOTS; checked
     'casmi26-pubm-swap2': ['SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20263023]'] + PUBM,
     'casmi26-pube1-swap1': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM,
     'casmi26-pube1-swap2': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20263023]'] + PUBM}
+NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM}   # NE480 builds (checked by test_ne480_build.py)
 SWAP_MODES = "MODES = ('raw', 'z', 'swap')"            # the sens.py line that marks a generator with the swap mode
 BUILDS = {  # slug: (args, base slug, base args, w_top, w_mid, midx_w, elig)
     WM100: (WM100_ARGS, 'casmi26-pubm-sens', SENS5 + PUBM, 0.25, 1.0, 1.0, False),
@@ -372,7 +373,7 @@ def main():
     pub = {s for s in os.listdir(os.path.join(REPO, 'kernels'))
            if os.path.isfile(os.path.join(REPO, 'kernels', s, 'notebook.ipynb')) and
            'ours-iso-rerank' in open(os.path.join(REPO, 'kernels', s, 'notebook.ipynb'), encoding='utf-8').read()}
-    assert pub - {WM100} - set(SWAP) == set(EXISTING), sorted((pub - set(SWAP)) ^ set(EXISTING))   # every pub variant
+    assert pub - {WM100} - set(SWAP) - set(NE) == set(EXISTING), sorted((pub - set(SWAP) - set(NE)) ^ set(EXISTING))
     with tempfile.TemporaryDirectory() as d:
         bases = {b: a for _, (_, b, a, *_r) in BUILDS.items()}
         for slug, args in list(bases.items()) + [(s, v[0]) for s, v in BUILDS.items()]:
