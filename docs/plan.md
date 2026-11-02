@@ -958,6 +958,18 @@ build_v18cx.sh, BASE=v18c REUSE_C1=0 STOP_AFTER=D); KILLED by a container recycl
 09:27; only the 3 C1 shard logs remained). Lesson: long local jobs do not survive idle periods -> moved to a Kaggle build kernel
 (workflow wf_c220e52c-85c: kernels/casmi26-v18cx-build + dataset bryantyu/casmi26-v18cx-inputs).
 
+PF-x STAGE-1 PAIR BUILT (Kaggle kernel casmi26-v18cx-build v1, Nov 2 10:07-11:09; inputs checked 22 / problems none;
+casmi26-code 1e31261 MANIFEST 4a360debfd8c; rdkit 2026.03.3; feature list MATCHES md5 93d47b72; V18CX_BUILD_DONE):
+| ranker | cls 1 | cls 2 | npx cls 1 | npx cls 2 | OOF |
+|---|---|---|---|---|---|
+| v18cx (PF-x, seed 0) | .8344 | .8542 | .828 | .928 | .8339 |
+| v18cu (pf_tpu_f, seed 0) | .8300 | .8243 | .816 | .912 | .8305 |
+| v18cxr1 (seed 1) | .8332 | .8457 | .814 | .922 | .8379 |
+| v18cur1 (seed 1) | .8284 | .8371 | .795 | .894 | .8309 |
+C1 PeakFormer scoring ~32 min per 330k-row shard on Kaggle (pf_tpu_f locally ~25 min). Deployed: casmi26-elig-assets new
+version (+ pf_pfx_tpu.pt, ret_ranker_v18cx / v18cxr1; 27 / 27 pins), ENG2_SET=v18cx (cap 75 min), kernel casmi26-pube1x
+pushed 11:2x for verification -> a Nov 4 eligible slot (pube1x vs pube1 0.435).
+
 ## Lessons from the Nov 2 submissions (scored 04:43-05:30)
 | slot | kernel | prediction | LB | vs pubm 0.479 | rule outcome |
 |---|---|---|---|---|---|
