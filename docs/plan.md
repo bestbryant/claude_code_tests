@@ -969,6 +969,10 @@ casmi26-code 1e31261 MANIFEST 4a360debfd8c; rdkit 2026.03.3; feature list MATCHE
 C1 PeakFormer scoring ~32 min per 330k-row shard on Kaggle (pf_tpu_f locally ~25 min). Deployed: casmi26-elig-assets new
 version (+ pf_pfx_tpu.pt, ret_ranker_v18cx / v18cxr1; 27 / 27 pins), ENG2_SET=v18cx (cap 75 min), kernel casmi26-pube1x
 pushed 11:2x for verification -> a Nov 4 eligible slot (pube1x vs pube1 0.435).
+casmi26-pube1x v1 VERIFIED (11:34): "ELIG 1 | F1 datasets mounted 12 / 12 | detached ones present: none | extra mounts:
+none"; ENGINE 2 OURS 12 / 12 (fallback 0, 265.9 s; stage 1 45.0 s vs 46.2 s with pf_tpu_f - PF-x is not slower here);
+files ok (manifest 30 / 30, pins 22 / 22, pool 3 / 3; models pf_pfx_tpu 17122539, v18cx 90be3068, v18cxr1 e974f876);
+SUBMISSION READY 400, MERGE applied 400, Exact V2 control 4b0e0593d8489b6a; no Traceback / WARNING.
 
 ## Lessons from the Nov 2 submissions (scored 04:43-05:30)
 | slot | kernel | prediction | LB | vs pubm 0.479 | rule outcome |
