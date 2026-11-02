@@ -16,7 +16,8 @@ import tempfile
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 GEN = os.path.join(REPO, 'scripts', 'make_pub_variant.py')
 PUBM = ['OURS=False', 'PF_MID_W=0', 'ISO_ALPHA=0']
-NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM}
+NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM,
+      'casmi26-ne-long': ['NE480=1', 'NE_SRC=ahmed'] + PUBM, 'casmi26-ne-3': ['NE480=1', 'NE_SRC=both'] + PUBM}
 UPSTREAM = '/home/user/kern/bgunshui_casmi26-480-neural-ensemble/casmi26-480-neural-ensemble.ipynb'
 PF_CALL = ['try:', '    PF_REPORT = ours_pf_blend()          # PF-syn joins the neural term; saner-only on any failure',
            'except Exception as _pf_exc:',
@@ -80,6 +81,21 @@ def main():
                 fi = ids_.index('ac4866c0')
                 assert fix(src(up['cells'][10])) == src(nb['cells'][fi]), 'materialise_sources = upstream cell 10'
                 print('materialise_sources cell = upstream cell 10 (box characters repaired)')
+        for slug, args, n_members in (('zz-ne-long', ['NE480=1', 'NE_SRC=ahmed'] + PUBM, 1),
+                                      ('zz-ne-3', ['NE480=1', 'NE_SRC=both'] + PUBM, 2)):          # 5. generic blocks
+            rc, log = gen(slug, args, d)
+            assert rc == 0, log
+            nb, meta = load(d, slug)
+            nb0, meta0 = load(d, 'zz-pubm')
+            changed = [i for i, (x, y) in enumerate(zip(nb['cells'], nb0['cells'])) if src(x) != src(y)]
+            ids_ = [c.get('id') for c in nb['cells']]
+            assert changed == sorted([0, ids_.index('ac4866c0'), ids_.index('67514abd')]), (slug, changed)
+            assert 'ahmedberatozer/casmi26-spectrum-model-long' in meta['dataset_sources']
+            assert meta['kernel_sources'] == (['bgunshui/casmi26-scorer-train-public'] if n_members == 2 else [])
+            assert len(nb['metadata']['casmi']['ours']['ne480']['members']) == n_members
+        for bad in (['ELIG=1', 'NE480=1', 'NE_SRC=ahmed'] + PUBM, ['NE_SRC=ahmed'] + PUBM, ['NE480=1', 'NE_SRC=x'] + PUBM):
+            rc, log = gen('zz-bad', bad, d)
+            assert rc != 0, bad
         for bad in (['NE480=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM, ['NE480=1', 'OURS=True'],
                     ['ELIG=0', 'NE480=1'] + PUBM):                         # 4
             rc, log = gen('zz-bad', bad, d)

@@ -24,6 +24,10 @@ Usage: python scripts/make_pub_variant.py <slug> [ELIG=0] [KEY=VALUE ...] [--out
   0.5 z(80-epoch refit, kernel output bgunshui/casmi26-scorer-train-public); scripts/pub_variant/ne480.py; not with
   SENS / ENG3_W / OURS / ELIG=0):
   python scripts/make_pub_variant.py casmi26-pube1-ne ELIG=1 NE480=1 OURS=False PF_MID_W=0 ISO_ALPHA=0
+  NE_SRC=ahmed | both (with NE480=1, rank line only): the extra scorer is ahmedberatozer/casmi26-spectrum-model-long
+  (40 x 2000 steps; holdout MRR 0.718, COCONUT stratum +0.135 over the published model) or both extra scorers;
+  equal-weight z mean (ne480.py generic blocks):
+  python scripts/make_pub_variant.py casmi26-ne-long NE480=1 NE_SRC=ahmed OURS=False PF_MID_W=0 ISO_ALPHA=0
   ENG3_W=w (w > 0; default 0 = off; not with ELIG; no PF-syn re-weighting: OURS = False, PF_MID_W = ISO_ALPHA = 0;
   the added engine's own rankers still use PeakFormer features from pf_tpu_f.pt) builds the rank-line ENG3 variant
   (scripts/pub_variant/eng3.py): frozen cell 32 runs the original Engine 2 unchanged and then OUR stage 1 (casmi.run_eng2,
@@ -94,12 +98,20 @@ ne_args = [a.split('=', 1)[1] for a in args if a.startswith('NE480=')]
 args = [a for a in args if not a.startswith('NE480=')]
 assert len(ne_args) <= 1 and all(v in ('0', '1') for v in ne_args), 'NE480=0 or NE480=1, once'
 NE480 = bool(ne_args and ne_args[0] == '1')
+src_args = [a.split('=', 1)[1] for a in args if a.startswith('NE_SRC=')]
+args = [a for a in args if not a.startswith('NE_SRC=')]
+assert len(src_args) <= 1, 'NE_SRC given twice'
+NE_SRC = src_args[0] if src_args else 'bgunshui'
+if NE_SRC not in ('bgunshui', 'ahmed', 'both') or (NE_SRC != 'bgunshui' and not NE480):
+    sys.exit(f'NE_SRC={NE_SRC}: bgunshui (default), ahmed or both, with NE480=1')
 set_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG2_SET=')]
 args = [a for a in args if not a.startswith('ENG2_SET=')]
 assert len(set_args) <= 1, 'ENG2_SET given twice'
 ENG2_SET = set_args[0] if set_args else 'v18cu'
 if ENG2_SET != 'v18cu' and ELIG != 1:
     sys.exit(f'ENG2_SET={ENG2_SET}: the Engine 2 model set only exists in ELIG=1 builds')
+if NE480 and NE_SRC != 'bgunshui' and ELIG is not None:
+    sys.exit(f'NE_SRC={NE_SRC} is a rank-line option (no ELIG builds)')
 if NE480 and ELIG == 0:
     sys.exit('NE480 is not combined with ELIG=0 (null Engine 2): ELIG=1 or the pubm base')
 eng3_args = [a.split('=', 1)[1] for a in args if a.startswith('ENG3_W=')]
@@ -426,7 +438,7 @@ if NE480:                                                                      #
     import importlib.util as _ilu                                              # (ELIG=1); kernel_sources
     _spec = _ilu.spec_from_file_location('pub_variant_ne480', os.path.join(here, 'ne480.py'))
     ne480 = _ilu.module_from_spec(_spec); _spec.loader.exec_module(ne480)     # our generator code, not notebook code
-    ne480_report = ne480.apply(nb, meta, cfg, elig if ELIG == 1 else None)
+    ne480_report = ne480.apply(nb, meta, cfg, elig if ELIG == 1 else None, src=NE_SRC)
 else:
     ne480_report = None
 for i, c in enumerate(cells):
