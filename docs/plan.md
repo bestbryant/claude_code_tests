@@ -1001,6 +1001,11 @@ harmful, the published single model stays. Eligible-base calibration: Q <= -0.00
 must beat the Q-scaled neutral expectation + 1.2 sigma; Q >= -0.003 -> the 0.008 rule stands. Noise: |swap1 - swap2| per base
 estimates paired noise (expect 0.010-0.016; > 0.025 -> widen every interval 1.5x). Fallback if a swap kernel is not
 verified by 00:05: casmi26-pubm-eng3a-sens / nothing (no eng3b / wm100 - no decision value).
+Swap kernels VERIFIED (07:42): casmi26-pubm-swap1 ("SENS applied | K 2 | mode swap | molecules 12 | rows 540 | changed top1
+(neural) 8 | rank corr 0.9085"; MERGE applied 400, output 435d7bc2), casmi26-pubm-swap2 (top1 9, rank corr 0.8915; 8bc5ef51),
+casmi26-pube1-swap1 (ELIG 1 12 / 12 + kernel source 1 / 1, hash MATCH 364 / MISMATCH 0, ENGINE 2 OURS 12 / 12; swap top1 8,
+rank corr 0.9029; d14b6212), casmi26-pube1-swap2 (ELIG ok; swap top1 9, rank corr 0.8804; 52f4c75c); all sha 1/1 ok,
+SUBMISSION READY 400, no WARNING / Traceback.
 Final-pick framing (owner decision, Dec): the plan's rule selects eligible submissions only (pube1 family + our own line as
 insurance); pubm is the best public score but mounts the CC BY-NC-SA container and runs Engine 2 as published.
 
