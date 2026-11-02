@@ -1025,6 +1025,22 @@ Both only if VERIFIED by 00:05 (ne480: "OURS BUNDLE READY ... casmi_spectrum_mod
 Eligibility note: the refit is a public kernel's output of the published kit on train.parquet (reproducible as F7 was); its
 reproduction, licence and attribution are open before any eligible pick may carry it.
 
+NEURAL SCORER UNDERTRAINED (Nov 2 10:45). The published saner kit (16 x 500 steps, patience 4) is far from converged:
+- bgunshui/casmi26-scorer-train-public (kit unchanged, epochs 80): early stop at 56, best epoch 52, holdout diagnostic
+  MRR@25 0.660 (published 0.484; our 5-seed 16-epoch ensemble 0.531); curve 0.4925 @17, 0.5451 @25, 0.6094 @37,
+  0.6350 @45, 0.6532 @49 - still rising. One epoch (500 steps, batch 96) = 17 s on a T4; prepare ~1.7 h (theirs).
+- ahmedberatozer/casmi26-spectrum-model-long (Oct 25; kit byte-identical, 40 x 2000 steps, patience 5, best epoch 36):
+  holdout MRR@25 0.718, top-1 0.591 (published 0.344); training cache public (ahmedberatozer/casmi26-neural-long-prep).
+- The holdout is structure-disjoint (1,000 random molecules, 256 candidates, up to 152 same-formula decoys per query:
+  validation_predictions.csv), so the gain includes isomer discrimination.
+- Public LB so far: a straight swap to a long model reportedly -0.019 (lineage notes); 0.5 z(published) + 0.5 z(80-epoch)
+  = 0.480 (+0.001); our 5-seed raw mean -0.018. Either the pipeline's weights / gates are tuned to the published model
+  (w_top .25, w_mid .75, fragment-check support, midx 0.75/(3+nr)) or holdout gains do not transfer to the test molecules,
+  or selection optimism (~0.015) masks them. Nov 3 swap placebo reads H1 (selection) vs averaging harm.
+- Work: kernels/casmi26-saner-long (long seeds 20261023/20262023/20263023, 120 x 500 steps, patience 8, holdout
+  ensembles incl. the published model, per-candidate holdout scores saved) -> K-model z-ensembles for both lines, and
+  neural-weight variants (CUSTOM_W_TOP / W_MID / MIDX_NEURAL_W) on public once a stronger term is in.
+
 Final-pick framing (owner decision, Dec): the plan's rule selects eligible submissions only (pube1 family + our own line as
 insurance); pubm is the best public score but mounts the CC BY-NC-SA container and runs Engine 2 as published.
 
