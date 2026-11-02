@@ -1010,6 +1010,21 @@ Swap kernels VERIFIED (07:42): casmi26-pubm-swap1 ("SENS applied | K 2 | mode sw
 casmi26-pube1-swap1 (ELIG 1 12 / 12 + kernel source 1 / 1, hash MATCH 364 / MISMATCH 0, ENGINE 2 OURS 12 / 12; swap top1 8,
 rank corr 0.9029; d14b6212), casmi26-pube1-swap2 (ELIG ok; swap top1 9, rank corr 0.8804; 52f4c75c); all sha 1/1 ok,
 SUBMISSION READY 400, no WARNING / Traceback.
+NOV 3 AMENDMENT (Nov 2 10:40, before any Nov 3 reading): a new public notebook scores 0.480 (bgunshui/casmi26-480-neural-
+ensemble, Nov 2 00:01; alexchilton's verbatim rerun 0.480, 91 votes). Board Nov 2 10:14: 388 teams at 0.479 (us: rank 299),
+29 at 0.480, 42 above. It is casmi26-pubm + neural_score := 0.5 z(published saner) + 0.5 z(80-epoch refit of the same kit,
+kernel output bgunshui/casmi26-scorer-train-public; outsiders scored by the refit) - every other cell byte-identical to pubm
+(diff Nov 2). Slots 4 and 5 change (H3 loses its read; Q then rests on slot 3 alone, paired noise on the pubm base only):
+| slot | kernel | prediction | rule |
+|---|---|---|---|
+| 4 | casmi26-ne480 (verbatim fork, sha256 e11df2ba) | 0.480 (deterministic reruns: alexchilton 0.480) | 0.480 -> rank-line base becomes ne480 (rank ~299 -> ~72) |
+| 5 | casmi26-pube1-ne (eligible elig1 + NE480=1) | 0.436 +- 0.010 | >= 0.443: NE joins the eligible line; <= 0.427: dropped; else neutral (pube1 stays) |
+Both only if VERIFIED by 00:05 (ne480: "OURS BUNDLE READY ... casmi_spectrum_model_ours_v2", "ENSEMBLE neural = 0.5*z(public)
++ 0.5*z(ours)", SUBMISSION READY / submission.csv 400 rows... as the pubm checks; pube1-ne: also "ELIG 1 | F1 datasets mounted
+12 / 12 | kernel sources mounted 1 / 1", ENGINE 2 OURS 12 / 12, no EXTRA MOUNT); else the original slot 4 / 5 kernels.
+Eligibility note: the refit is a public kernel's output of the published kit on train.parquet (reproducible as F7 was); its
+reproduction, licence and attribution are open before any eligible pick may carry it.
+
 Final-pick framing (owner decision, Dec): the plan's rule selects eligible submissions only (pube1 family + our own line as
 insurance); pubm is the best public score but mounts the CC BY-NC-SA container and runs Engine 2 as published.
 
