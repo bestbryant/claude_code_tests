@@ -973,6 +973,37 @@ otherwise PF-x stays on the shelf.
   prvsiyan's). PF-x stage-1 ranker pair (D3 GO) building to strengthen Engine 2 OURS (started 04:45, log
   /home/user/work/build_v18cx.log).
 
+## Perturbation analysis (Nov 2 06:30, workflow wf_32c24d67-790; docs/perturbation_analysis_nov2.md)
+- Selection optimism of the lineage on the 124 public molecules ~0.015 (0.009-0.019; simulation of greedy best-of-N climbs
+  + the community's submission counts); pubm's private expectation ~0.464 in public units, shared by every verbatim copy
+  (230 teams at 0.479). A truly neutral change re-drawing k% of contested molecules reads ~ -1.2 sigma on public (capped at
+  -0.015): PF_MID / ISO 0.75 / PF blend / SENS readings are consistent with NEUTRAL (posterior private deltas ~0 +- 0.004-
+  0.007); ISO 1.5 and especially ENG3 (-1.8 sigma beyond neutral; Engine 2 dilution displaces its unique picks) are real harm.
+- Absolute neural-threshold coupling not supported (the relative .23-sd margin dominates); relative rank-1 gate coupling
+  plausible for SENS / PF but not separable from selection on public.
+- Lesson: this board prices STRUCTURAL changes (public / private correlation 0.8-0.98: pube0, pube1, eng3) but not
+  re-weightings (0.04-0.7). SENS / PF_MID / ISO / eng3 enter no pick.
+
+## NOV 3 SLOTS (pre-registered Nov 2 06:40, before any Nov 3 reading): seed-swap placebo, 2 x 2
+The published saner model replaced by ONE refit seed of the same recipe (true private effect 0 by exchangeability);
+selection (H1) predicts ~ -c sigma on public, averaging-specific harm (H3) predicts ~0. P = mean(slots 1, 2) - 0.479;
+Q = mean(slots 3, 5) - 0.435.
+| slot | kernel | H1 prediction | H3 prediction |
+|---|---|---|---|
+| 1 | casmi26-pubm-swap1 (SENS swap, seed 20262023) | 0.466 +- 0.011 | 0.479 +- 0.013 |
+| 2 | casmi26-pubm-swap2 (seed 20263023) | 0.466 +- 0.011 | 0.479 +- 0.013 |
+| 3 | casmi26-pube1-swap1 (eligible + seed 20262023) | 0.426 +- 0.011 | 0.435 +- 0.013 |
+| 4 | casmi26-pube1-sens (verified Nov 1) | 0.427 +- 0.010 | 0.420 +- 0.010 |
+| 5 | casmi26-pube1-swap2 (eligible + seed 20263023) | 0.426 +- 0.011 | 0.435 +- 0.013 |
+Rules: H1 supported if P <= -0.008 and (-0.018 - P) >= -0.008 -> the public board is not used for re-weighting / neural-term
+decisions on lineage bases. H3 supported if P >= -0.004 and (slot 4 - 0.435 - Q) <= -0.008 -> neural ensembles treated as
+harmful, the published single model stays. Eligible-base calibration: Q <= -0.007 -> any eligible change read on public
+must beat the Q-scaled neutral expectation + 1.2 sigma; Q >= -0.003 -> the 0.008 rule stands. Noise: |swap1 - swap2| per base
+estimates paired noise (expect 0.010-0.016; > 0.025 -> widen every interval 1.5x). Fallback if a swap kernel is not
+verified by 00:05: casmi26-pubm-eng3a-sens / nothing (no eng3b / wm100 - no decision value).
+Final-pick framing (owner decision, Dec): the plan's rule selects eligible submissions only (pube1 family + our own line as
+insurance); pubm is the best public score but mounts the CC BY-NC-SA container and runs Engine 2 as published.
+
 ## Fragment reranker offline gate (Nov 1 10:00, workflow wf_05f02b1d-b7d; scratchpad fragrr/results.md) -> NOT BUILT
 Our heliosli-style fragment reranker (1-cut / 2-cut / ring-pair fragments matched to peaks; explained intensity, matched
 counts, complementary pairs, neutral losses, rarity weights, within-group z / ranks; LightGBM lambdarank within query x
