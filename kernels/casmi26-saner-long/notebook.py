@@ -103,7 +103,7 @@ BUDGET_MIN = _env_num('SEEDS_BUDGET_MIN', 510.)              # 8.5 h total
 FINISH_RESERVE_MIN = _env_num('SEEDS_FINISH_RESERVE_MIN', 8.)
 SELFTEST_TIMEOUT_MIN = 10.
 PREP_TIMEOUT_MIN = _env_num('SEEDS_PREP_TIMEOUT_MIN', 120.)  # structure memo + prepare (seeds v1: 41 min)
-HOLDOUT_TIMEOUT_MIN = _env_num('SEEDS_HOLDOUT_TIMEOUT_MIN', 50.)  # per long seed (<= 120 epochs ~44 min)
+HOLDOUT_TIMEOUT_MIN = _env_num('SEEDS_HOLDOUT_TIMEOUT_MIN', 60.)  # per long seed (<= 120 epochs ~44-47 min + load; 60 keeps a margin)
 REFIT_TIMEOUT_MIN = _env_num('SEEDS_REFIT_TIMEOUT_MIN', 45.)      # per long seed (best epoch 112 ~32 min)
 SOFT_MARGIN_MIN = 4.          # train_stage's own deadline ends training this long before the hard kill
 MIN_LONG_HOLDOUTS = 2         # long holdouts that start without keeping room for refits (the k = 2 ensemble)
