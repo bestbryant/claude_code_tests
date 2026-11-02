@@ -70,7 +70,8 @@ SWAP = {  # SENS_MODE swap (seed-swap placebo, docs/plan.md NOV 3 SLOTS; checked
     'casmi26-pube1-swap1': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20262023]'] + PUBM,
     'casmi26-pube1-swap2': ['ELIG=1', 'SENS=2', 'SENS_MODE=swap', 'SENS_SEEDS=[20263023]'] + PUBM}
 NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM, 'casmi26-ne-long': ['NE480=1', 'NE_SRC=ahmed'] + PUBM,
-      'casmi26-ne-3': ['NE480=1', 'NE_SRC=both'] + PUBM}   # NE480 builds (checked by test_ne480_build.py)
+      'casmi26-ne-3': ['NE480=1', 'NE_SRC=both'] + PUBM,   # NE480 builds (checked by test_ne480_build.py)
+      'casmi26-pube1x': ['ELIG=1', 'ENG2_SET=v18cx'] + PUBM}   # Engine 2 model set v18cx (regenerated below)
 SWAP_MODES = "MODES = ('raw', 'z', 'swap')"            # the sens.py line that marks a generator with the swap mode
 BUILDS = {  # slug: (args, base slug, base args, w_top, w_mid, midx_w, elig)
     WM100: (WM100_ARGS, 'casmi26-pubm-sens', SENS5 + PUBM, 0.25, 1.0, 1.0, False),

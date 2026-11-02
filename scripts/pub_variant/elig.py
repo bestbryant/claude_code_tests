@@ -331,13 +331,18 @@ ENG2_SETS = {
     'v18cu': dict(ranker='ret_ranker_v18cu,ret_ranker_v18cur1', pf='pf_tpu_f.pt',
                   models=['pf_tpu_f.pt', 'ret_ranker_v18cu.txt', 'ret_ranker_v18cu_feats.txt', 'ret_ranker_v18cur1.txt',
                           'ret_ranker_v18cur1_feats.txt']),
-    'v18cx': dict(ranker='ret_ranker_v18cx,ret_ranker_v18cxr1', pf='pf_pfx_tpu.pt',
+    'v18cx': dict(ranker='ret_ranker_v18cx,ret_ranker_v18cxr1', pf='pf_pfx_tpu.pt', cap_s=4500.0,   # PF-x 2.8x params:
+                  # C1 scoring ~1.3x slower than pf_tpu_f in the build kernel; 75-min cap (the notebook has hours of slack)
                   models=['pf_pfx_tpu.pt', 'ret_ranker_v18cx.txt', 'ret_ranker_v18cx_feats.txt', 'ret_ranker_v18cxr1.txt',
                           'ret_ranker_v18cxr1_feats.txt'])}
 # SHA-256 of the v18cx model files as make_elig_assets.py --x ships them (filled from the build kernel's outputs; None =
 # not built yet, set_eng2('v18cx') refuses).
-ELIG_X_SHA256 = {'pf_pfx_tpu.pt': None, 'ret_ranker_v18cx.txt': None, 'ret_ranker_v18cx_feats.txt': None,
-                 'ret_ranker_v18cxr1.txt': None, 'ret_ranker_v18cxr1_feats.txt': None}
+ELIG_X_SHA256 = {   # kernels/casmi26-v18cx-build v1 outputs (Nov 2 11:09; md5 b2590593 / 0bf88486) + pf_pfx_tpu.pt (md5 53b2c5eb)
+    'pf_pfx_tpu.pt': '171225397d7a034dea913632fe5bd0f5dba92e01adc53eb98cb3a6e3d7692002',
+    'ret_ranker_v18cx.txt': '90be306829e9f89d5a57442ac9e6e86a690777cf0c1f9e0e76792d757b56db6b',
+    'ret_ranker_v18cx_feats.txt': 'e8922e21257c907c7820c71603a8b93bb256f3ee8a35e73b1e79d4829f944224',
+    'ret_ranker_v18cxr1.txt': 'e974f876de4752cc5dae1def3fe964443a82defb26ec55ed498a3e811da31310',
+    'ret_ranker_v18cxr1_feats.txt': 'e8922e21257c907c7820c71603a8b93bb256f3ee8a35e73b1e79d4829f944224'}
 # descriptive text of cell 0 / cell 32 / the receipt that names the model set
 _SET_TEXT = {'v18cx': [
     ('PeakFormer pf_tpu_f.pt, LightGBM seed ensemble ret_ranker_v18cu + v18cur1',
@@ -359,7 +364,7 @@ def set_eng2(name):
     assert not missing, f'ENG2_SET={name}: no SHA-256 pins yet for {missing} (fill ELIG_X_SHA256 from the built files)'
     pins = {k: v for k, v in ELIG_ASSETS_SHA256.items() if k not in base['models']}
     pins.update({k: ELIG_X_SHA256[k] for k in s['models']})
-    new = dict(ENG2_CFG, ranker=s['ranker'], pf=s['pf'], asset_sha256=pins)
+    new = dict(ENG2_CFG, ranker=s['ranker'], pf=s['pf'], asset_sha256=pins, cap_s=s.get('cap_s', ENG2_CFG['cap_s']))
     old_line, new_line = f"ENG2_CFG = {ENG2_CFG!r}\n", f"ENG2_CFG = {new!r}\n"
     assert C32_NEW1.count(old_line) == 1
     c32 = C32_NEW1.replace(old_line, new_line)
@@ -509,6 +514,8 @@ def md0_elig1(ours):
     if ENG2_SET != 'v18cu':
         a, b = _SET_TEXT[ENG2_SET][2]
         assert text.count(a) == 1, 'cell 0 model-set text'
+        assert text.count('capped at 45 minutes') == 1, 'cell 0 cap text'
+        text = text.replace('capped at 45 minutes', f"capped at {ENG2_CFG['cap_s'] / 60:.0f} minutes")
         text = text.replace(a, b).replace(
             '> - **F2b, our stage 1 as Engine 2.**',
             f'> - **Engine 2 model set {ENG2_SET}** (ENG2_SET of the generator): the PF-x PeakFormer pf_pfx_tpu.pt and the '

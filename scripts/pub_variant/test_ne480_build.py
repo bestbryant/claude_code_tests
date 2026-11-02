@@ -16,7 +16,7 @@ import tempfile
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 GEN = os.path.join(REPO, 'scripts', 'make_pub_variant.py')
 PUBM = ['OURS=False', 'PF_MID_W=0', 'ISO_ALPHA=0']
-NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM,
+NE = {'casmi26-pube1-ne': ['ELIG=1', 'NE480=1'] + PUBM, 'casmi26-pube1x': ['ELIG=1', 'ENG2_SET=v18cx'] + PUBM,
       'casmi26-ne-long': ['NE480=1', 'NE_SRC=ahmed'] + PUBM, 'casmi26-ne-3': ['NE480=1', 'NE_SRC=both'] + PUBM}
 UPSTREAM = '/home/user/kern/bgunshui_casmi26-480-neural-ensemble/casmi26-480-neural-ensemble.ipynb'
 PF_CALL = ['try:', '    PF_REPORT = ours_pf_blend()          # PF-syn joins the neural term; saner-only on any failure',
