@@ -953,6 +953,10 @@ than PF-x alone: -.0095 [-.024, +.005]) -> carry PF-x alone (pf_pfx_tpu.pt, md5 
 prediction for a spectral slot: S_f + .025 +- .012. Use: a new stage-1 ranker pair on PF-x columns (build_pfswap_pair.sh)
 for Engine 2 OURS / eng3 - built ONLY if the Nov 2 readings show our engine helps (pube1 vs pube0, eng3a vs pubm);
 otherwise PF-x stays on the shelf.
+Nov 2: our engine helps inside the eligible fork (pube1 - pube0 = +0.041) -> PF-x stage-1 pair started locally 04:45 (scratchpad
+build_v18cx.sh, BASE=v18c REUSE_C1=0 STOP_AFTER=D); KILLED by a container recycle while the session was idle (uptime 1 min at
+09:27; only the 3 C1 shard logs remained). Lesson: long local jobs do not survive idle periods -> moved to a Kaggle build kernel
+(workflow wf_c220e52c-85c: kernels/casmi26-v18cx-build + dataset bryantyu/casmi26-v18cx-inputs).
 
 ## Lessons from the Nov 2 submissions (scored 04:43-05:30)
 | slot | kernel | prediction | LB | vs pubm 0.479 | rule outcome |
