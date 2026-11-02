@@ -1088,6 +1088,10 @@ our 0.861) and analog channel (class 2 npx 0.524 vs 0.464) are stronger; our Pea
 our lists carry documentation features that echo Engine 1 / the final layer. Plan: option R = Engine 2 clone on eligible
 inputs (Engine 2 code Apache-2.0 via cubres; bank = pool v18c with our bit selection; FP channel = PeakFormer; rows =
 replays of our val / rank queries), expected +0.02-0.035 public, LB pair ~Nov 9-10 (task "Engine 2 clone").
+STEP 1 DONE (Kaggle CPU kernel casmi26-e2-bank v1, Nov 2 11:07-11:35, 1,666 s): bank 1,160,133 rows (= pool v18c rows),
+nbits 6,930 (Morgan r2 1,460 / r3 3,283 / RDKit path 2,048 / MACCS 139; fp_bits.npy MATCH with the local full selection),
+frequency rows 275,810, RDKit failures 0, all hard gates ok (verify 1,000 / 1,000, in_train = training keys, masses
+ascending), coco_fp.npy 1.0 GB md5 80601cb7; E2_BANK_KERNEL_DONE. Used as kernel source bryantyu/casmi26-e2-bank by step 2.
 STEP 0 (source-blind Engine 2 OURS, ret_ranker_v18cusb): offline gate FAILED, not deployed - val cls1 0.830 -> 0.783,
 cls2 0.824 -> 0.693, npx cls1 0.816 -> 0.674, npx cls2 0.912 -> 0.661 (gate: npx cls1 within -0.01). Documentation /
 source features carry most of our ranker's npx accuracy; a fork read would confound weaker with less redundant.
